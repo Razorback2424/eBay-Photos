@@ -2,6 +2,16 @@ import { create } from 'zustand';
 
 import type { DetectedCard } from '../types/detections';
 
+export interface ManualDetectionAdjustment {
+  id: string;
+  card: DetectedCard;
+}
+
+export interface DetectionAdjustment {
+  disabledAuto: number[];
+  manual: ManualDetectionAdjustment[];
+}
+
 export type SessionStep = 'files' | 'detections' | 'pairs' | 'naming' | 'output';
 
 export interface FileAsset {
@@ -34,7 +44,9 @@ export interface Detection {
 export interface Pairing {
   id: string;
   primaryFileId: string;
+  primaryDetectionId?: string;
   secondaryFileId?: string;
+  secondaryDetectionId?: string;
   status: 'pending' | 'matched' | 'rejected';
 }
 
@@ -77,10 +89,11 @@ const initialState = {
   currentStep: 'files' as SessionStep,
   completedSteps: [] as SessionStep[],
   workingImages: {} as Record<string, WorkingImageInfo>,
-  detectedCards: {} as Record<string, DetectedCard[]>
+  detectedCards: {} as Record<string, DetectedCard[]>,
+  detectionAdjustments: {} as Record<string, DetectionAdjustment>
 };
 
-export interface SessionState extends typeof initialState {
+export type SessionState = typeof initialState & {
   setFiles: (files: FileAsset[]) => void;
   setDetections: (detections: Detection[]) => void;
   setPairs: (pairs: Pairing[]) => void;
@@ -91,12 +104,15 @@ export interface SessionState extends typeof initialState {
   setWorkingImage: (fileId: string, info: WorkingImageInfo | null) => void;
   clearWorkingImages: () => void;
   setDetectedCards: (fileId: string, cards: DetectedCard[]) => void;
+  toggleDetectionActive: (fileId: string, index: number) => void;
+  addManualDetection: (fileId: string, card: DetectedCard) => void;
+  removeManualDetection: (fileId: string, manualId: string) => void;
   reset: () => void;
   canAccessStep: (step: SessionStep) => boolean;
   getFirstAccessibleStep: () => SessionStep;
   getNextStep: (step: SessionStep) => SessionStep | null;
   getPreviousStep: (step: SessionStep) => SessionStep | null;
-}
+};
 
 export const useSessionStore = create<SessionState>((set, get) => ({
   ...initialState,
@@ -131,10 +147,67 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       const next = { ...state.detectedCards };
       if (!cards || cards.length === 0) {
         delete next[fileId];
+        const adjustments = { ...state.detectionAdjustments };
+        delete adjustments[fileId];
+        return { detectedCards: next, detectionAdjustments: adjustments };
       } else {
         next[fileId] = cards;
+        const adjustments = { ...state.detectionAdjustments };
+        if (!adjustments[fileId]) {
+          adjustments[fileId] = { disabledAuto: [], manual: [] };
+        }
+        return { detectedCards: next, detectionAdjustments: adjustments };
       }
-      return { detectedCards: next };
+    }),
+  toggleDetectionActive: (fileId, index) =>
+    set((state) => {
+      const current = state.detectionAdjustments[fileId] ?? { disabledAuto: [], manual: [] };
+      const disabledSet = new Set(current.disabledAuto);
+      if (disabledSet.has(index)) {
+        disabledSet.delete(index);
+      } else {
+        disabledSet.add(index);
+      }
+      return {
+        detectionAdjustments: {
+          ...state.detectionAdjustments,
+          [fileId]: {
+            ...current,
+            disabledAuto: Array.from(disabledSet).sort((a, b) => a - b)
+          }
+        }
+      };
+    }),
+  addManualDetection: (fileId, card) =>
+    set((state) => {
+      const current = state.detectionAdjustments[fileId] ?? { disabledAuto: [], manual: [] };
+      const manualId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      return {
+        detectionAdjustments: {
+          ...state.detectionAdjustments,
+          [fileId]: {
+            ...current,
+            manual: [...current.manual, { id: manualId, card }]
+          }
+        }
+      };
+    }),
+  removeManualDetection: (fileId, manualId) =>
+    set((state) => {
+      const current = state.detectionAdjustments[fileId];
+      if (!current) {
+        return state;
+      }
+      const nextManual = current.manual.filter((item) => item.id !== manualId);
+      return {
+        detectionAdjustments: {
+          ...state.detectionAdjustments,
+          [fileId]: {
+            ...current,
+            manual: nextManual
+          }
+        }
+      };
     }),
   reset: () =>
     set({
