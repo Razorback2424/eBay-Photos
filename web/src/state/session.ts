@@ -26,6 +26,7 @@ export interface WorkingImageInfo {
   blob: Blob;
   width: number;
   height: number;
+  originalBlob: Blob;
   originalWidth: number;
   originalHeight: number;
   scaleX: number;
@@ -61,9 +62,12 @@ export interface NamingPreset {
 }
 
 export interface OutputConfig {
-  directory: string;
+  directoryHandle: FileSystemDirectoryHandle | null;
+  directoryName: string;
   includeManifests: boolean;
-  format: 'json' | 'csv' | 'xml';
+  format: 'jpeg' | 'png';
+  quality: number;
+  includeWarped: boolean;
 }
 
 export const SESSION_STEPS: SessionStep[] = [
