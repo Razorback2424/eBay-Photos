@@ -4,8 +4,6 @@ import { NameCardsStep } from '../steps/NameCards/NameCardsStep';
 import { getStepPath, useSessionStore } from '../state/session';
 import { rootRoute } from './__root';
 
-const NamingStep = () => <NameCardsStep />;
-
 export const namingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/naming',
@@ -16,6 +14,6 @@ export const namingRoute = createRoute({
       throw redirect({ to: getStepPath(fallback) });
     }
   },
-  component: NamingStep
+  component: () => <NameCardsStep />
 });
 

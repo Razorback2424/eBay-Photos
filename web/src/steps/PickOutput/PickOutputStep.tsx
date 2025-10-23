@@ -216,12 +216,7 @@ export const PickOutputStep = () => {
       return false;
     }
   }, [
-    config.directoryHandle,
-    config.directoryName,
-    config.includeManifests,
-    config.format,
-    config.quality,
-    config.includeWarped,
+    config,
     directorySupported,
     detectedCards,
     detectionAdjustments,

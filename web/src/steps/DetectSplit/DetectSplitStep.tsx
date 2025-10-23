@@ -421,7 +421,7 @@ export const DetectSplitStep = () => {
   const frontWorking = frontFile ? workingImages[frontFile.id] : undefined;
   const backWorking = backFile ? workingImages[backFile.id] : undefined;
 
-  const frontDetections = frontFile ? detectedCards[frontFile.id] ?? [] : [];
+  const frontDetections = useMemo(() => (frontFile ? detectedCards[frontFile.id] ?? [] : []), [frontFile, detectedCards]);
 
   const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
   const adjustDialogId = useId();
@@ -429,9 +429,12 @@ export const DetectSplitStep = () => {
   const adjustDialogDescriptionId = useId();
   const adjustListLabelId = useId();
 
-  const frontAdjustments = frontFile ? detectionAdjustments[frontFile.id] : undefined;
-  const frontManualDetections = frontAdjustments?.manual ?? [];
-  const frontInactiveDetections = frontAdjustments?.disabledAuto ?? [];
+  const frontAdjustments = useMemo(
+    () => (frontFile ? detectionAdjustments[frontFile.id] : undefined),
+    [frontFile, detectionAdjustments]
+  );
+  const frontManualDetections = useMemo(() => frontAdjustments?.manual ?? [], [frontAdjustments]);
+  const frontInactiveDetections = useMemo(() => frontAdjustments?.disabledAuto ?? [], [frontAdjustments]);
 
   const [frontStatus, setFrontStatus] = useState<DetectionStatus>(frontDetections.length > 0 ? 'ready' : 'idle');
   const [frontError, setFrontError] = useState<string | null>(null);
@@ -449,6 +452,36 @@ export const DetectSplitStep = () => {
   }, [frontDetections, frontInactiveDetections, frontManualDetections]);
 
   const noDetectionsReady = frontStatus === 'ready' && totalActiveDetections === 0;
+
+  const handleToggleAutoDetection = useCallback(
+    (index: number) => {
+      if (!frontFile) {
+        return;
+      }
+      toggleDetectionActive(frontFile.id, index);
+    },
+    [frontFile, toggleDetectionActive]
+  );
+
+  const handleAddManualDetection = useCallback(
+    (card: DetectedCard) => {
+      if (!frontFile) {
+        return;
+      }
+      addManualDetection(frontFile.id, card);
+    },
+    [addManualDetection, frontFile]
+  );
+
+  const handleRemoveManualDetection = useCallback(
+    (manualId: string) => {
+      if (!frontFile) {
+        return;
+      }
+      removeManualDetection(frontFile.id, manualId);
+    },
+    [frontFile, removeManualDetection]
+  );
 
   const renderPrimaryPreview = useCallback(
     (showOverlay: boolean) => {
@@ -489,36 +522,6 @@ export const DetectSplitStep = () => {
       frontSpinnerVisible,
       frontError
     ]
-  );
-
-  const handleToggleAutoDetection = useCallback(
-    (index: number) => {
-      if (!frontFile) {
-        return;
-      }
-      toggleDetectionActive(frontFile.id, index);
-    },
-    [frontFile, toggleDetectionActive]
-  );
-
-  const handleAddManualDetection = useCallback(
-    (card: DetectedCard) => {
-      if (!frontFile) {
-        return;
-      }
-      addManualDetection(frontFile.id, card);
-    },
-    [addManualDetection, frontFile]
-  );
-
-  const handleRemoveManualDetection = useCallback(
-    (manualId: string) => {
-      if (!frontFile) {
-        return;
-      }
-      removeManualDetection(frontFile.id, manualId);
-    },
-    [frontFile, removeManualDetection]
   );
 
   useEffect(() => {
@@ -601,7 +604,7 @@ export const DetectSplitStep = () => {
     return () => {
       cancelled = true;
     };
-  }, [workerReady, frontFile, frontWorking, frontDetections.length, frontStatus, setDetectedCards]);
+  }, [workerReady, frontFile, frontWorking, frontDetections.length, setDetectedCards, frontStatus]);
 
   useEffect(() => {
     if (!workerReady || !backFile || !backWorking) {
@@ -642,7 +645,7 @@ export const DetectSplitStep = () => {
     return () => {
       cancelled = true;
     };
-  }, [workerReady, backFile, backWorking, backStatus, setDetectedCards]);
+  }, [workerReady, backFile, backWorking, setDetectedCards, backStatus]);
 
   const thumbnails = useMemo(() => {
     if (!frontWorking || frontDetections.length === 0) {
@@ -686,7 +689,7 @@ export const DetectSplitStep = () => {
         });
       });
 
-      adjustments?.manual.forEach((entry) => {
+      adjustments?.manual?.forEach((entry) => {
         const card = entry.card;
         const x1 = Math.max(0, Math.min(1, card.bbox.x / width));
         const y1 = Math.max(0, Math.min(1, card.bbox.y / height));

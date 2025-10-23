@@ -30,7 +30,7 @@ export const detectChromiumFeatures = (): ChromiumFeatureReport => {
 
   const hasFileSystemAccessAPI =
     'showOpenFilePicker' in window || 'chooseFileSystemEntries' in window || 'FileSystemHandle' in window;
-  const hasLaunchQueue = 'launchQueue' in window && typeof (window as any).launchQueue === 'object';
+  const hasLaunchQueue = 'launchQueue' in window && typeof (window as { launchQueue?: unknown }).launchQueue === 'object';
   const hasViewTransitionAPI = 'startViewTransition' in document || 'DocumentTransition' in window;
 
   return {
