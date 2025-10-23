@@ -535,7 +535,7 @@ export const DetectSplitStep = () => {
   const [workerReady, setWorkerReady] = useState(false);
 
   useEffect(() => {
-    const worker = new Worker(workerUrl, { type: 'module' });
+    const worker = new Worker(workerUrl, { type: 'classic' });
     workerRef.current = worker;
     const endpoint = worker as unknown as Endpoint;
     proxyRef.current = wrap<DetectionWorker>(endpoint) as WorkerProxy;
