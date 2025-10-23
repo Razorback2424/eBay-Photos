@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OpenCV.js Worker Spike</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 2rem;
+        line-height: 1.6;
+      }
+      pre {
+        background: rgba(0, 0, 0, 0.05);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        max-width: 40rem;
+        min-height: 10rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>OpenCV.js Web Worker spike</h1>
+    <p>
+      This page boots the dedicated worker that imports OpenCV.js from the official
+      CDN, generates a synthetic test image, performs a Canny edge detection, and
+      reports the contour count and timing information to the UI.
+    </p>
+    <button id="run">Run worker</button>
+    <pre id="output">Waiting for worker…</pre>
+
+    <script type="module">
+      const output = document.getElementById("output");
+      const worker = new Worker(new URL("./cannyWorker.js", import.meta.url));
+
+      worker.addEventListener("message", (event) => {
+        const data = event.data;
+        const lines = [`[${new Date().toLocaleTimeString()}] ${data.type}`];
+        if (data.message) {
+          lines.push(data.message);
+        }
+        if (data.timings) {
+          lines.push("Timings: " + JSON.stringify(data.timings));
+        }
+        if (typeof data.contourCount === "number") {
+          lines.push(`Contours detected: ${data.contourCount}`);
+        }
+        if (data.dimensions) {
+          lines.push(`Source image: ${data.dimensions.width}×${data.dimensions.height}`);
+        }
+        output.textContent = lines.join("\n");
+      });
+
+      worker.addEventListener("error", (event) => {
+        output.textContent = `Worker error: ${event.message}`;
+      });
+
+      document.getElementById("run").addEventListener("click", () => {
+        output.textContent = "Dispatching run request…";
+        worker.postMessage({ type: "run" });
+      });
+    </script>
+  </body>
+</html>

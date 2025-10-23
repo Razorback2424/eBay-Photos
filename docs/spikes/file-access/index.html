@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>File System Access API Sandbox</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      body {
+        margin: 2rem;
+        max-width: 60rem;
+      }
+      h1 {
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+      }
+      dl {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 0.25rem 1rem;
+        margin-bottom: 2rem;
+      }
+      dt {
+        font-weight: 600;
+      }
+      dd {
+        margin: 0;
+      }
+      pre {
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 0.5rem;
+        overflow-x: auto;
+        line-height: 1.4;
+        max-height: 20rem;
+      }
+      button {
+        padding: 0.5rem 1rem;
+        border: 1px solid currentColor;
+        border-radius: 0.375rem;
+        background: transparent;
+        cursor: pointer;
+      }
+      .log-entry {
+        margin-bottom: 0.5rem;
+      }
+      .log-entry strong {
+        display: inline-block;
+        min-width: 14rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>File System Access API capability probe</h1>
+    <p>
+      This sandbox collects capability information for the File System Access API and
+      surfaces the browser's responses to actual picker invocations. Use this page in
+      Chromium-based browsers with the <code>--enable-features=FileSystemAccessAPI</code>
+      flag when available to experiment with file and directory access.
+    </p>
+
+    <dl id="feature-list"></dl>
+
+    <div>
+      <button id="try-open-file">Try open file picker</button>
+      <button id="try-open-directory">Try open directory picker</button>
+      <button id="try-save-file">Try save file handle</button>
+    </div>
+
+    <h2>Event log</h2>
+    <pre id="log" aria-live="polite"></pre>
+
+    <script>
+      const features = [
+        {
+          name: "window.showOpenFilePicker",
+          test: () => typeof window.showOpenFilePicker === "function",
+        },
+        {
+          name: "window.showDirectoryPicker",
+          test: () => typeof window.showDirectoryPicker === "function",
+        },
+        {
+          name: "window.showSaveFilePicker",
+          test: () => typeof window.showSaveFilePicker === "function",
+        },
+        {
+          name: "FileSystemWritableFileStream",
+          test: () => typeof window.FileSystemWritableFileStream === "function",
+        },
+      ];
+
+      const featureList = document.getElementById("feature-list");
+      const log = document.getElementById("log");
+
+      function logMessage(type, message, extra) {
+        const timestamp = new Date().toISOString();
+        const line = `[${timestamp}] ${type}: ${message}`;
+        const details = extra ? `\n${JSON.stringify(extra, null, 2)}` : "";
+        log.textContent = `${line}${details}\n${log.textContent}`;
+      }
+
+      function renderFeatureList() {
+        featureList.innerHTML = "";
+        for (const feature of features) {
+          const dt = document.createElement("dt");
+          dt.textContent = feature.name;
+          const dd = document.createElement("dd");
+          const supported = Boolean(feature.test());
+          dd.textContent = supported ? "Supported" : "Not available";
+          dd.setAttribute("data-supported", supported);
+          featureList.append(dt, dd);
+        }
+      }
+
+      async function safeInvoke(fn, label) {
+        try {
+          const result = await fn();
+          logMessage(label, "Success", result);
+        } catch (error) {
+          logMessage(label, error.name || "Error", {
+            message: error.message,
+            stack: error.stack,
+          });
+        }
+      }
+
+      document.getElementById("try-open-file").addEventListener("click", () => {
+        if (typeof window.showOpenFilePicker !== "function") {
+          logMessage("showOpenFilePicker", "Not supported in this context");
+          return;
+        }
+        safeInvoke(() => window.showOpenFilePicker({ multiple: false }), "showOpenFilePicker");
+      });
+
+      document.getElementById("try-open-directory").addEventListener("click", () => {
+        if (typeof window.showDirectoryPicker !== "function") {
+          logMessage("showDirectoryPicker", "Not supported in this context");
+          return;
+        }
+        safeInvoke(() => window.showDirectoryPicker(), "showDirectoryPicker");
+      });
+
+      document.getElementById("try-save-file").addEventListener("click", () => {
+        if (typeof window.showSaveFilePicker !== "function") {
+          logMessage("showSaveFilePicker", "Not supported in this context");
+          return;
+        }
+        safeInvoke(async () => {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: "file-access-sandbox.txt",
+            types: [
+              {
+                description: "Plain text",
+                accept: { "text/plain": [".txt"] },
+              },
+            ],
+          });
+          if (!handle || !handle.createWritable) {
+            return { message: "No handle returned" };
+          }
+          if (typeof handle.createWritable !== "function") {
+            return { message: "Writable stream not supported on handle" };
+          }
+          const writable = await handle.createWritable();
+          await writable.write("Sandbox test at " + new Date().toISOString());
+          await writable.close();
+          return { message: "Wrote sample payload" };
+        }, "showSaveFilePicker");
+      });
+
+      renderFeatureList();
+      logMessage("init", "Feature detection complete");
+    </script>
+  </body>
+</html>
