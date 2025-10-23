@@ -1,68 +1,6 @@
 import { expose } from 'comlink';
 import type { DetectedCard, DetectionQuadPoint } from '../types/detections';
-
-const OPENCV_BASE_URL = 'https://docs.opencv.org/4.x/';
-const OPENCV_SCRIPT_URL = `${OPENCV_BASE_URL}opencv.js`;
-
-type CV = typeof globalThis extends { cv: infer T } ? T : any;
-
-const ensureOpenCv = (() => {
-  let initPromise: Promise<CV> | null = null;
-  return () => {
-    if (!initPromise) {
-      initPromise = loadOpenCv().catch((error) => {
-        initPromise = null;
-        throw error;
-      });
-    }
-    return initPromise;
-  };
-})();
-
-const loadOpenCv = async (): Promise<CV> => {
-  if ((self as unknown as { cv?: CV }).cv) {
-    return (self as unknown as { cv: CV }).cv;
-  }
-
-  const moduleConfig = {
-    locateFile(path: string) {
-      if (path.endsWith('.wasm')) {
-        return `${OPENCV_BASE_URL}${path}`;
-      }
-      return `${OPENCV_BASE_URL}${path}`;
-    },
-    onRuntimeInitialized() {
-      /* resolved via promise */
-    }
-  } as Record<string, unknown>;
-
-  (self as Record<string, unknown>).Module = moduleConfig;
-
-  const response = await fetch(OPENCV_SCRIPT_URL);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch OpenCV.js (${response.status})`);
-  }
-  const source = await response.text();
-
-  return await new Promise<CV>((resolve, reject) => {
-    moduleConfig.onRuntimeInitialized = () => {
-      const runtime = (self as unknown as { cv: CV }).cv;
-      if (!runtime) {
-        reject(new Error('OpenCV runtime failed to initialise.'));
-        return;
-      }
-      resolve(runtime);
-    };
-
-    try {
-      const evaluator = new Function('self', source);
-      evaluator(self);
-    } catch (error) {
-      initPromise = null;
-      reject(error instanceof Error ? error : new Error('Failed to evaluate OpenCV script.'));
-    }
-  });
-};
+import { ensureOpenCv, CV } from './opencv';
 
 type Point = DetectionQuadPoint;
 
