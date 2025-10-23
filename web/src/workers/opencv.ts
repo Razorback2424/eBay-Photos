@@ -6,6 +6,7 @@ export type CV = typeof globalThis extends { cv: infer T } ? T : unknown;
 type Runtime = {
   cv?: CV;
   Module?: Record<string, unknown>;
+  importScripts?: (...urls: string[]) => void;
 } & typeof globalThis;
 
 const loadOpenCv = async (): Promise<CV> => {
@@ -28,12 +29,6 @@ const loadOpenCv = async (): Promise<CV> => {
 
   runtime.Module = moduleConfig;
 
-  const response = await fetch(OPENCV_SCRIPT_URL);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch OpenCV.js (${response.status})`);
-  }
-  const source = await response.text();
-
   return await new Promise<CV>((resolve, reject) => {
     moduleConfig.onRuntimeInitialized = () => {
       if (!runtime.cv) {
@@ -44,10 +39,12 @@ const loadOpenCv = async (): Promise<CV> => {
     };
 
     try {
-      const evaluator = new Function('self', source);
-      evaluator(self);
+      if (typeof runtime.importScripts !== 'function') {
+        throw new Error('OpenCV can only be loaded in classic workers with importScripts support.');
+      }
+      runtime.importScripts(OPENCV_SCRIPT_URL);
     } catch (error) {
-      reject(error instanceof Error ? error : new Error('Failed to evaluate OpenCV script.'));
+      reject(error instanceof Error ? error : new Error('Failed to load OpenCV script.'));
     }
   });
 };

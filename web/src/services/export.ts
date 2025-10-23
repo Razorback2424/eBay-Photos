@@ -258,7 +258,7 @@ export const exportSession = async ({
   const namingMap = new Map(naming.map((entry) => [entry.pairId, entry]));
   const fileMap = new Map(files.map((file) => [file.id, file]));
 
-  const workerInstance = new Worker(workerUrl, { type: 'module' });
+  const workerInstance = new Worker(workerUrl, { type: 'classic' });
   const worker = wrap<ExportWorker>(workerInstance as unknown as Endpoint);
 
   const zip = options.directoryHandle ? null : new JSZip();
