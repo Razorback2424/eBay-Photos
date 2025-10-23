@@ -9,7 +9,7 @@ export interface StepNavigationProps {
   nextLabel?: string;
   backLabel?: string;
   nextDisabled?: boolean;
-  onNext?: () => boolean | void;
+  onNext?: () => boolean | void | Promise<boolean | void>;
 }
 
 export const StepNavigation = ({
@@ -36,9 +36,9 @@ export const StepNavigation = ({
     router.navigate({ to: getStepPath(previousStep) });
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (onNext) {
-      const result = onNext();
+      const result = await onNext();
       if (result === false) {
         return;
       }
@@ -49,6 +49,10 @@ export const StepNavigation = ({
     }
     setCurrentStep(nextStep);
     router.navigate({ to: getStepPath(nextStep) });
+  };
+
+  const handleNextClick = () => {
+    void handleNext();
   };
 
   return (
@@ -62,7 +66,7 @@ export const StepNavigation = ({
         <Button variant="secondary" onClick={handleBack} disabled={!previousStep} aria-disabled={!previousStep}>
           {backLabel}
         </Button>
-        <Button onClick={handleNext} disabled={nextDisabled || (!nextStep && !onNext)}>
+        <Button onClick={handleNextClick} disabled={nextDisabled || (!nextStep && !onNext)}>
           {nextLabel}
         </Button>
       </div>

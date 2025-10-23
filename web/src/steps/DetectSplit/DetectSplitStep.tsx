@@ -4,6 +4,7 @@ import type { PointerEvent } from 'react';
 import { StepNavigation } from '../../components/StepNavigation';
 import { ManualDetectionAdjustment, useSessionStore } from '../../state/session';
 import { Button } from '../../ui/Button';
+import { Spinner } from '../../ui/Spinner';
 import { Stack } from '../../ui/Stack';
 import { Text } from '../../ui/Text';
 import type { DetectedCard } from '../../types/detections';
@@ -41,6 +42,29 @@ interface FrontDetectionPreviewProps extends DetectionPreviewProps {
   showAdjust: boolean;
   onAddManual: (card: DetectedCard) => void;
 }
+
+const useDelayedVisibility = (active: boolean, delayMs: number) => {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    if (active) {
+      timer = setTimeout(() => {
+        setVisible(true);
+      }, delayMs);
+    } else {
+      setVisible(false);
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [active, delayMs]);
+
+  return visible;
+};
 
 const FrontDetectionPreview = ({
   working,
@@ -408,6 +432,18 @@ export const DetectSplitStep = () => {
   const [frontError, setFrontError] = useState<string | null>(null);
   const [backStatus, setBackStatus] = useState<DetectionStatus>('idle');
   const [backError, setBackError] = useState<string | null>(null);
+  const frontSpinnerVisible = useDelayedVisibility(frontStatus === 'pending', 300);
+  const backSpinnerVisible = useDelayedVisibility(backStatus === 'pending', 300);
+
+  const totalActiveDetections = useMemo(() => {
+    const inactiveSet = new Set(frontInactiveDetections);
+    const activeAuto = frontDetections.reduce((count, _, index) => {
+      return inactiveSet.has(index) ? count : count + 1;
+    }, 0);
+    return activeAuto + frontManualDetections.length;
+  }, [frontDetections, frontInactiveDetections, frontManualDetections]);
+
+  const noDetectionsReady = frontStatus === 'ready' && totalActiveDetections === 0;
 
   const handleToggleAutoDetection = useCallback(
     (index: number) => {
@@ -651,9 +687,9 @@ export const DetectSplitStep = () => {
                   showAdjust={showAdjust && frontStatus === 'ready'}
                   onAddManual={handleAddManualDetection}
                 />
-                {frontStatus === 'pending' && (
-                  <span className="detect-preview__status" role="status">
-                    Detecting primary photo…
+                {frontSpinnerVisible && (
+                  <span className="detect-preview__status">
+                    <Spinner size="sm" label="Detecting primary photo…" />
                   </span>
                 )}
                 {frontStatus === 'error' && frontError && (
@@ -725,8 +761,10 @@ export const DetectSplitStep = () => {
                   )}
                 </Stack>
               )}
-              {frontStatus === 'ready' && frontDetections.length === 0 && (
-                <Text variant="muted">No cards detected in the primary image.</Text>
+              {noDetectionsReady && (
+                <Text variant="muted" role="alert">
+                  No active detections are available. Draw a manual rectangle or reactivate a detection to continue.
+                </Text>
               )}
               {thumbnails && thumbnails.length > 0 && <div className="detection-thumbnails">{thumbnails}</div>}
             </Stack>
@@ -743,6 +781,7 @@ export const DetectSplitStep = () => {
               <Text variant="muted">
                 Secondary detections run automatically to help with pairing suggestions.
               </Text>
+              {backSpinnerVisible && <Spinner size="sm" label="Detecting secondary photo…" />}
               {backStatus === 'ready' && (
                 <Text variant="muted" aria-live="polite">
                   {detectedCards[backFile!.id]?.length ?? 0} potential card{(detectedCards[backFile!.id]?.length ?? 0) === 1 ? '' : 's'} identified on the back image.
@@ -759,7 +798,11 @@ export const DetectSplitStep = () => {
           )}
         </div>
       </div>
-      <StepNavigation step="detections" nextLabel="Pair imagery" nextDisabled={frontStatus === 'pending'} />
+      <StepNavigation
+        step="detections"
+        nextLabel="Pair imagery"
+        nextDisabled={frontStatus !== 'ready' || totalActiveDetections === 0}
+      />
     </Stack>
   );
 };

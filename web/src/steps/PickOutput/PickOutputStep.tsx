@@ -5,7 +5,9 @@ import { NamingPreset, OutputConfig, Pairing, useSessionStore, WorkingImageInfo 
 import { Stack } from '../../ui/Stack';
 import { Text } from '../../ui/Text';
 import { Button } from '../../ui/Button';
-import { exportSession } from '../../services/export';
+import { ProgressBar } from '../../ui/ProgressBar';
+import { Spinner } from '../../ui/Spinner';
+import { exportSession, ExportProgressUpdate } from '../../services/export';
 
 const defaultOutput: OutputConfig = {
   directoryHandle: null,
@@ -61,6 +63,7 @@ export const PickOutputStep = () => {
   }));
 
   const [exportState, setExportState] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
+  const [progress, setProgress] = useState<ExportProgressUpdate | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [directorySupported, setDirectorySupported] = useState(
     () => typeof window !== 'undefined' && 'showDirectoryPicker' in window
@@ -110,8 +113,20 @@ export const PickOutputStep = () => {
       });
       setDirectorySupported(true);
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        return;
+      if (error instanceof DOMException) {
+        if (error.name === 'AbortError') {
+          return;
+        }
+        if (error.name === 'NotAllowedError') {
+          setErrorMessage('Access to this folder was denied. Please allow access and try again.');
+          setOutput({
+            ...config,
+            directoryHandle: null,
+            directoryName: ''
+          });
+          setExportState('error');
+          return;
+        }
       }
       setErrorMessage(error instanceof Error ? error.message : 'Unable to access this folder.');
       setExportState('error');
@@ -133,6 +148,7 @@ export const PickOutputStep = () => {
       return false;
     }
 
+    setProgress(null);
     setExportState('running');
     setErrorMessage(null);
 
@@ -150,17 +166,29 @@ export const PickOutputStep = () => {
           format: config.format,
           quality: config.quality,
           includeWarped: config.includeWarped
+        },
+        onProgress: (update) => {
+          setProgress(update);
         }
       });
       setExportState('success');
       return true;
     } catch (error) {
       setExportState('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Export failed.');
+      const message = error instanceof Error ? error.message : 'Export failed.';
+      setErrorMessage(message);
+      if (error instanceof Error && error.message.toLowerCase().includes('selected folder was revoked')) {
+        setOutput({
+          ...config,
+          directoryHandle: null,
+          directoryName: ''
+        });
+      }
       return false;
     }
   }, [
     config.directoryHandle,
+    config.directoryName,
     config.includeManifests,
     config.format,
     config.quality,
@@ -172,6 +200,7 @@ export const PickOutputStep = () => {
     naming,
     pairs,
     readyForExport,
+    setOutput,
     workingImages
   ]);
 
@@ -277,10 +306,17 @@ export const PickOutputStep = () => {
         <Text variant="body">Pairs ready for export: {pairs.length}</Text>
         <Text variant="body">Naming presets: {naming.length}</Text>
       </Stack>
-      {exportState === 'running' && (
-        <Text role="status" aria-live="polite">
-          Exporting assets… this can take a moment for high-resolution imagery.
-        </Text>
+      {(exportState === 'running' || progress) && (
+        <Stack gap={8} role="status" aria-live="polite">
+          {progress ? (
+            <>
+              <ProgressBar value={progress.completed} max={progress.total} label="Export progress" />
+              <Text variant="muted">{progress.message}</Text>
+            </>
+          ) : (
+            <Spinner size="sm" label="Preparing export…" />
+          )}
+        </Stack>
       )}
       {exportState === 'success' && (
         <Text role="status" aria-live="polite" variant="muted">
