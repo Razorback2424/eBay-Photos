@@ -450,6 +450,26 @@ export const DetectSplitStep = () => {
 
   const noDetectionsReady = frontStatus === 'ready' && totalActiveDetections === 0;
 
+  const handleToggleAutoDetection = useCallback(
+    (index: number) => {
+      if (!frontFile) {
+        return;
+      }
+      toggleDetectionActive(frontFile.id, index);
+    },
+    [frontFile, toggleDetectionActive]
+  );
+
+  const handleAddManualDetection = useCallback(
+    (card: DetectedCard) => {
+      if (!frontFile) {
+        return;
+      }
+      addManualDetection(frontFile.id, card);
+    },
+    [addManualDetection, frontFile]
+  );
+
   const renderPrimaryPreview = useCallback(
     (showOverlay: boolean) => {
       if (!frontWorking) {
@@ -489,26 +509,6 @@ export const DetectSplitStep = () => {
       frontSpinnerVisible,
       frontError
     ]
-  );
-
-  const handleToggleAutoDetection = useCallback(
-    (index: number) => {
-      if (!frontFile) {
-        return;
-      }
-      toggleDetectionActive(frontFile.id, index);
-    },
-    [frontFile, toggleDetectionActive]
-  );
-
-  const handleAddManualDetection = useCallback(
-    (card: DetectedCard) => {
-      if (!frontFile) {
-        return;
-      }
-      addManualDetection(frontFile.id, card);
-    },
-    [addManualDetection, frontFile]
   );
 
   const handleRemoveManualDetection = useCallback(
