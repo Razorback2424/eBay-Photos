@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useId } from 'react';
 import type { PointerEvent } from 'react';
 
 import { StepNavigation } from '../../components/StepNavigation';
 import { ManualDetectionAdjustment, useSessionStore } from '../../state/session';
 import { Button } from '../../ui/Button';
+import { Modal } from '../../ui/Modal';
+import { Spinner } from '../../ui/Spinner';
 import { Stack } from '../../ui/Stack';
 import { Text } from '../../ui/Text';
 import type { DetectedCard } from '../../types/detections';
@@ -41,6 +43,29 @@ interface FrontDetectionPreviewProps extends DetectionPreviewProps {
   showAdjust: boolean;
   onAddManual: (card: DetectedCard) => void;
 }
+
+const useDelayedVisibility = (active: boolean, delayMs: number) => {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    if (active) {
+      timer = setTimeout(() => {
+        setVisible(true);
+      }, delayMs);
+    } else {
+      setVisible(false);
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [active, delayMs]);
+
+  return visible;
+};
 
 const FrontDetectionPreview = ({
   working,
@@ -398,7 +423,11 @@ export const DetectSplitStep = () => {
 
   const frontDetections = frontFile ? detectedCards[frontFile.id] ?? [] : [];
 
-  const [showAdjust, setShowAdjust] = useState(false);
+  const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
+  const adjustDialogId = useId();
+  const adjustDialogTitleId = useId();
+  const adjustDialogDescriptionId = useId();
+  const adjustListLabelId = useId();
 
   const frontAdjustments = frontFile ? detectionAdjustments[frontFile.id] : undefined;
   const frontManualDetections = frontAdjustments?.manual ?? [];
@@ -408,6 +437,59 @@ export const DetectSplitStep = () => {
   const [frontError, setFrontError] = useState<string | null>(null);
   const [backStatus, setBackStatus] = useState<DetectionStatus>('idle');
   const [backError, setBackError] = useState<string | null>(null);
+  const frontSpinnerVisible = useDelayedVisibility(frontStatus === 'pending', 300);
+  const backSpinnerVisible = useDelayedVisibility(backStatus === 'pending', 300);
+
+  const totalActiveDetections = useMemo(() => {
+    const inactiveSet = new Set(frontInactiveDetections);
+    const activeAuto = frontDetections.reduce((count, _, index) => {
+      return inactiveSet.has(index) ? count : count + 1;
+    }, 0);
+    return activeAuto + frontManualDetections.length;
+  }, [frontDetections, frontInactiveDetections, frontManualDetections]);
+
+  const noDetectionsReady = frontStatus === 'ready' && totalActiveDetections === 0;
+
+  const renderPrimaryPreview = useCallback(
+    (showOverlay: boolean) => {
+      if (!frontWorking) {
+        return null;
+      }
+      return (
+        <div className="detect-preview__canvasWrapper">
+          <FrontDetectionPreview
+            working={frontWorking}
+            detections={frontDetections}
+            manual={frontManualDetections}
+            inactive={frontInactiveDetections}
+            status={frontStatus}
+            showAdjust={showOverlay}
+            onAddManual={handleAddManualDetection}
+          />
+          {frontSpinnerVisible && (
+            <span className="detect-preview__status">
+              <Spinner size="sm" label="Detecting primary photo…" />
+            </span>
+          )}
+          {frontStatus === 'error' && frontError && (
+            <span className="detect-preview__status detect-preview__status--error" role="alert">
+              {frontError}
+            </span>
+          )}
+        </div>
+      );
+    },
+    [
+      frontWorking,
+      frontDetections,
+      frontManualDetections,
+      frontInactiveDetections,
+      frontStatus,
+      handleAddManualDetection,
+      frontSpinnerVisible,
+      frontError
+    ]
+  );
 
   const handleToggleAutoDetection = useCallback(
     (index: number) => {
@@ -441,7 +523,7 @@ export const DetectSplitStep = () => {
 
   useEffect(() => {
     if (!frontWorking || frontStatus !== 'ready') {
-      setShowAdjust(false);
+      setAdjustDialogOpen(false);
     }
   }, [frontStatus, frontWorking]);
 
@@ -641,92 +723,22 @@ export const DetectSplitStep = () => {
           </Text>
           {frontWorking ? (
             <Stack gap={12}>
-              <div className="detect-preview__canvasWrapper">
-                <FrontDetectionPreview
-                  working={frontWorking}
-                  detections={frontDetections}
-                  manual={frontManualDetections}
-                  inactive={frontInactiveDetections}
-                  status={frontStatus}
-                  showAdjust={showAdjust && frontStatus === 'ready'}
-                  onAddManual={handleAddManualDetection}
-                />
-                {frontStatus === 'pending' && (
-                  <span className="detect-preview__status" role="status">
-                    Detecting primary photo…
-                  </span>
-                )}
-                {frontStatus === 'error' && frontError && (
-                  <span className="detect-preview__status detect-preview__status--error" role="alert">
-                    {frontError}
-                  </span>
-                )}
-              </div>
+              {!adjustDialogOpen && renderPrimaryPreview(false)}
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => setShowAdjust((value) => !value)}
+                onClick={() => setAdjustDialogOpen(true)}
                 disabled={!frontWorking || frontStatus !== 'ready'}
-                aria-expanded={showAdjust && frontStatus === 'ready'}
+                aria-haspopup="dialog"
+                aria-controls={adjustDialogId}
+                aria-expanded={adjustDialogOpen && frontStatus === 'ready'}
               >
-                {showAdjust ? 'Hide adjust detections' : 'Adjust detections'}
+                Adjust detections
               </Button>
-              {showAdjust && frontWorking && frontStatus === 'ready' && (
-                <Stack gap={8} className="detection-adjustments" role="region" aria-label="Adjust detections">
-                  <Text variant="muted">
-                    Click detections below to deactivate or draw a rectangle on the preview to add missing cards.
-                  </Text>
-                  <div className="detection-adjustments__list">
-                    {frontDetections.length > 0 ? (
-                      frontDetections.map((_, index) => {
-                        const inactive = frontInactiveDetections.includes(index);
-                        return (
-                          <button
-                            key={`auto-${index}`}
-                            type="button"
-                            className={`detection-adjustments__toggle${inactive ? ' detection-adjustments__toggle--inactive' : ''}`}
-                            onClick={() => handleToggleAutoDetection(index)}
-                            aria-pressed={!inactive}
-                          >
-                            <span>Detection {index + 1}</span>
-                            <span>{inactive ? 'Inactive' : 'Active'}</span>
-                          </button>
-                        );
-                      })
-                    ) : (
-                      <Text variant="muted">No automatic detections available.</Text>
-                    )}
-                  </div>
-                  {frontManualDetections.length > 0 && (
-                    <Stack gap={4}>
-                      <Text as="span" variant="label">
-                        Manual additions
-                      </Text>
-                      <div className="detection-adjustments__manualList">
-                        {frontManualDetections.map((item, index) => {
-                          const width = Math.round(item.card.bbox.width);
-                          const height = Math.round(item.card.bbox.height);
-                          return (
-                            <div key={item.id} className="detection-adjustments__manualItem">
-                              <span>
-                                Manual {index + 1}{' '}
-                                <span className="detection-adjustments__manualSize">
-                                  {width}×{height}px
-                                </span>
-                              </span>
-                              <button type="button" onClick={() => handleRemoveManualDetection(item.id)}>
-                                Remove
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </Stack>
-                  )}
-                </Stack>
-              )}
-              {frontStatus === 'ready' && frontDetections.length === 0 && (
-                <Text variant="muted">No cards detected in the primary image.</Text>
+              {noDetectionsReady && (
+                <Text variant="muted" role="alert">
+                  No active detections are available. Draw a manual rectangle or reactivate a detection to continue.
+                </Text>
               )}
               {thumbnails && thumbnails.length > 0 && <div className="detection-thumbnails">{thumbnails}</div>}
             </Stack>
@@ -743,6 +755,7 @@ export const DetectSplitStep = () => {
               <Text variant="muted">
                 Secondary detections run automatically to help with pairing suggestions.
               </Text>
+              {backSpinnerVisible && <Spinner size="sm" label="Detecting secondary photo…" />}
               {backStatus === 'ready' && (
                 <Text variant="muted" aria-live="polite">
                   {detectedCards[backFile!.id]?.length ?? 0} potential card{(detectedCards[backFile!.id]?.length ?? 0) === 1 ? '' : 's'} identified on the back image.
@@ -759,7 +772,92 @@ export const DetectSplitStep = () => {
           )}
         </div>
       </div>
-      <StepNavigation step="detections" nextLabel="Pair imagery" nextDisabled={frontStatus === 'pending'} />
+      {adjustDialogOpen && frontWorking && frontStatus === 'ready' && (
+        <Modal
+          isOpen={adjustDialogOpen}
+          onClose={() => setAdjustDialogOpen(false)}
+          labelledBy={adjustDialogTitleId}
+          describedBy={adjustDialogDescriptionId}
+          id={adjustDialogId}
+        >
+          <Stack gap={16}>
+            <Stack gap={8}>
+              <Text as="h2" variant="title" id={adjustDialogTitleId}>
+                Adjust detections
+              </Text>
+              <Text variant="body" id={adjustDialogDescriptionId}>
+                Use the preview to toggle detections or draw new rectangles. Press Escape to close this dialog.
+              </Text>
+            </Stack>
+            <Stack gap={16}>
+              {renderPrimaryPreview(true)}
+              <Stack gap={8} className="detection-adjustments" role="group" aria-labelledby={adjustListLabelId}>
+                <Text as="h3" variant="label" id={adjustListLabelId}>
+                  Detection controls
+                </Text>
+                <Text variant="muted">
+                  Click detections below to deactivate or draw on the preview to add missing cards.
+                </Text>
+                <div className="detection-adjustments__list">
+                  {frontDetections.length > 0 ? (
+                    frontDetections.map((_, index) => {
+                      const inactive = frontInactiveDetections.includes(index);
+                      return (
+                        <button
+                          key={`auto-${index}`}
+                          type="button"
+                          className={`detection-adjustments__toggle${inactive ? ' detection-adjustments__toggle--inactive' : ''}`}
+                          onClick={() => handleToggleAutoDetection(index)}
+                          aria-pressed={!inactive}
+                        >
+                          <span>Detection {index + 1}</span>
+                          <span>{inactive ? 'Inactive' : 'Active'}</span>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <Text variant="muted">No automatic detections available.</Text>
+                  )}
+                </div>
+                {frontManualDetections.length > 0 && (
+                  <Stack gap={4}>
+                    <Text as="span" variant="label">
+                      Manual additions
+                    </Text>
+                    <div className="detection-adjustments__manualList">
+                      {frontManualDetections.map((item, index) => {
+                        const width = Math.round(item.card.bbox.width);
+                        const height = Math.round(item.card.bbox.height);
+                        return (
+                          <div key={item.id} className="detection-adjustments__manualItem">
+                            <span>
+                              Manual {index + 1}{' '}
+                              <span className="detection-adjustments__manualSize">
+                                {width}×{height}px
+                              </span>
+                            </span>
+                            <button type="button" onClick={() => handleRemoveManualDetection(item.id)}>
+                              Remove
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Stack>
+                )}
+              </Stack>
+              <Button type="button" onClick={() => setAdjustDialogOpen(false)}>
+                Done adjusting
+              </Button>
+            </Stack>
+          </Stack>
+        </Modal>
+      )}
+      <StepNavigation
+        step="detections"
+        nextLabel="Pair imagery"
+        nextDisabled={frontStatus !== 'ready' || totalActiveDetections === 0}
+      />
     </Stack>
   );
 };

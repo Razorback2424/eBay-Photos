@@ -101,7 +101,8 @@ export interface DecodedImage {
 
 export const decodeImage = async (file: File): Promise<DecodedImage> => {
   if (!ACCEPTED_TYPES.some((type) => file.type === type) && !isHeicLike(file)) {
-    throw new Error('Unsupported file type.');
+    const label = file.name ? `"${file.name}"` : 'the selected image';
+    throw new Error(`Unsupported file type for ${label}. Please choose a JPEG, PNG, HEIC, HEIF, or AVIF image.`);
   }
 
   let decodedBlob: Blob = file;
@@ -111,7 +112,9 @@ export const decodeImage = async (file: File): Promise<DecodedImage> => {
     decodedBitmap = await createBitmap(file);
   } catch (error) {
     if (!isHeicLike(file)) {
-      throw error instanceof Error ? error : new Error('Unable to decode image.');
+      const label = file.name ? `"${file.name}"` : 'this image';
+      const message = error instanceof Error ? error.message : null;
+      throw new Error(message ? `${message} (${label}).` : `Unable to decode ${label}. The file may be corrupted.`);
     }
 
     decodedBlob = await decodeHeicWithWasm(file);
