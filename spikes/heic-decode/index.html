@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>libheif-js decoding spike</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 2rem;
+        line-height: 1.6;
+      }
+      #preview {
+        display: block;
+        margin-top: 1.5rem;
+        max-width: 100%;
+        height: auto;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
+      pre {
+        background: rgba(0, 0, 0, 0.05);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        max-width: 48rem;
+        overflow-x: auto;
+      }
+      label {
+        display: block;
+        margin-top: 1.5rem;
+        font-weight: 600;
+      }
+      .metrics {
+        margin-top: 1.5rem;
+      }
+    </style>
+    <script src="https://unpkg.com/libheif-js@1.15.1/dist/libheif.js"></script>
+  </head>
+  <body>
+    <h1>libheif-js decoding spike</h1>
+    <p>
+      Select a HEIC/HEIF asset in the 12–48 megapixel range to measure how long libheif-js
+      needs to parse, decode, and upload the bitmap into the GPU-backed pipeline.
+      Chrome requires the <code>--allow-file-access-from-files</code> flag when running this
+      page from disk so the worker thread can fetch the WASM assets.
+    </p>
+
+    <label>
+      Choose HEIC asset
+      <input id="file" type="file" accept="image/heic,image/heif,.heic,.heif" />
+    </label>
+
+    <div class="metrics">
+      <pre id="log">Awaiting file selection…</pre>
+    </div>
+
+    <canvas id="preview" width="0" height="0" hidden></canvas>
+
+    <script>
+      const fileInput = document.getElementById("file");
+      const log = document.getElementById("log");
+      const previewCanvas = document.getElementById("preview");
+      let libheifModulePromise = null;
+
+      async function ensureModule() {
+        if (!libheifModulePromise) {
+          libheifModulePromise = LibHeif({
+            locateFile(path) {
+              if (path.endsWith(".wasm")) {
+                return `https://unpkg.com/libheif-js@1.15.1/dist/${path}`;
+              }
+              return path;
+            },
+          });
+        }
+        return libheifModulePromise;
+      }
+
+      function logMessage(lines) {
+        const array = Array.isArray(lines) ? lines : [String(lines)];
+        log.textContent = array.join("\n");
+      }
+
+      async function decodeFile(file) {
+        if (!file) {
+          return;
+        }
+
+        const libheif = await ensureModule();
+        const buffer = new Uint8Array(await file.arrayBuffer());
+
+        const decodeStart = performance.now();
+        const decoder = new libheif.HeifDecoder();
+        decoder.decode(buffer);
+        const image = decoder.nextImage();
+        if (!image) {
+          throw new Error("Decoder did not return an image frame");
+        }
+        const width = image.get_width();
+        const height = image.get_height();
+
+        const rgba = new Uint8ClampedArray(width * height * 4);
+        const displayStart = performance.now();
+        image.display(
+          rgba,
+          libheif.HeifColorSpace.RGB,
+          libheif.HeifChroma.INTERLEAVED_RGBA
+        );
+        const displayTime = performance.now() - displayStart;
+
+        const bitmapStart = performance.now();
+        const bitmap = await createImageBitmap(
+          new ImageData(rgba, width, height)
+        );
+        const bitmapTime = performance.now() - bitmapStart;
+        const decodeTime = performance.now() - decodeStart;
+
+        renderPreview(bitmap, width, height);
+
+        image.free();
+        decoder.free();
+
+        logMessage([
+          `File: ${file.name} (${Math.round((buffer.byteLength / 1024 / 1024) * 10) / 10} MiB)`,
+          `Resolution: ${width}×${height} (${Math.round((width * height) / 1_000_000)} MP)`,
+          `Decode pipeline: ${decodeTime.toFixed(1)} ms`,
+          `Color conversion: ${displayTime.toFixed(1)} ms`,
+          `ImageBitmap upload: ${bitmapTime.toFixed(1)} ms`,
+        ]);
+      }
+
+      function renderPreview(bitmap, width, height) {
+        const maxWidth = 1024;
+        const scale = Math.min(1, maxWidth / width);
+        previewCanvas.width = width * scale;
+        previewCanvas.height = height * scale;
+        previewCanvas.hidden = false;
+
+        const ctx = previewCanvas.getContext("2d");
+        ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        ctx.drawImage(bitmap, 0, 0, previewCanvas.width, previewCanvas.height);
+      }
+
+      fileInput.addEventListener("change", () => {
+        if (!fileInput.files || fileInput.files.length === 0) {
+          logMessage("No file selected.");
+          return;
+        }
+        logMessage("Decoding…");
+        decodeFile(fileInput.files[0]).catch((error) => {
+          console.error(error);
+          logMessage([
+            "Decoding failed.",
+            error && error.message ? error.message : String(error),
+          ]);
+        });
+      });
+    </script>
+  </body>
+</html>
