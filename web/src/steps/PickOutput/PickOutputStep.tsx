@@ -1,10 +1,11 @@
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useMemo, useState, useId } from 'react';
 
 import { StepNavigation } from '../../components/StepNavigation';
 import { NamingPreset, OutputConfig, Pairing, useSessionStore, WorkingImageInfo } from '../../state/session';
 import { Stack } from '../../ui/Stack';
 import { Text } from '../../ui/Text';
 import { Button } from '../../ui/Button';
+import { Modal } from '../../ui/Modal';
 import { ProgressBar } from '../../ui/ProgressBar';
 import { Spinner } from '../../ui/Spinner';
 import { exportSession, ExportProgressUpdate } from '../../services/export';
@@ -64,10 +65,20 @@ export const PickOutputStep = () => {
 
   const [exportState, setExportState] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
   const [progress, setProgress] = useState<ExportProgressUpdate | null>(null);
+  const [errorTitle, setErrorTitle] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [directorySupported, setDirectorySupported] = useState(
     () => typeof window !== 'undefined' && 'showDirectoryPicker' in window
   );
+
+  const dialogTitleId = useId();
+  const dialogDescriptionId = useId();
+  const formatFieldId = useId();
+  const formatDescriptionId = useId();
+  const qualityFieldId = useId();
+  const qualityDescriptionId = useId();
+  const includeWarpedId = useId();
+  const includeManifestsId = useId();
 
   useEffect(() => {
     if (!output) {
@@ -101,6 +112,9 @@ export const PickOutputStep = () => {
         directoryHandle: null,
         directoryName: ''
       });
+      setErrorTitle('Directory access unavailable');
+      setErrorMessage('Your browser does not support directory exports. A ZIP archive will be prepared instead.');
+      setExportState('error');
       return;
     }
 
@@ -112,12 +126,16 @@ export const PickOutputStep = () => {
         directoryName: handle.name ?? 'Selected folder'
       });
       setDirectorySupported(true);
+      setErrorTitle(null);
+      setErrorMessage(null);
+      setExportState('idle');
     } catch (error) {
       if (error instanceof DOMException) {
         if (error.name === 'AbortError') {
           return;
         }
         if (error.name === 'NotAllowedError') {
+          setErrorTitle('Folder access denied');
           setErrorMessage('Access to this folder was denied. Please allow access and try again.');
           setOutput({
             ...config,
@@ -128,6 +146,7 @@ export const PickOutputStep = () => {
           return;
         }
       }
+      setErrorTitle('Unable to access folder');
       setErrorMessage(error instanceof Error ? error.message : 'Unable to access this folder.');
       setExportState('error');
     }
@@ -143,6 +162,14 @@ export const PickOutputStep = () => {
     [pairs, naming, workingImages]
   );
 
+  const isDialogOpen = exportState === 'error' && Boolean(errorTitle && errorMessage);
+
+  const handleCloseDialog = useCallback(() => {
+    setErrorMessage(null);
+    setErrorTitle(null);
+    setExportState('idle');
+  }, [setErrorMessage, setErrorTitle, setExportState]);
+
   const handleExport = useCallback(async () => {
     if (!readyForExport) {
       return false;
@@ -151,6 +178,7 @@ export const PickOutputStep = () => {
     setProgress(null);
     setExportState('running');
     setErrorMessage(null);
+    setErrorTitle(null);
 
     try {
       await exportSession({
@@ -176,6 +204,7 @@ export const PickOutputStep = () => {
     } catch (error) {
       setExportState('error');
       const message = error instanceof Error ? error.message : 'Export failed.';
+      setErrorTitle('Export failed');
       setErrorMessage(message);
       if (error instanceof Error && error.message.toLowerCase().includes('selected folder was revoked')) {
         setOutput({
@@ -239,23 +268,33 @@ export const PickOutputStep = () => {
       <details>
         <summary className="output-options__summary">Advanced export options</summary>
         <Stack gap={16} className="output-options" role="group" aria-label="Advanced export options">
-          <label className="output-options__field">
-            <Text as="span" variant="label">
-              Image format
-            </Text>
-            <select value={config.format} onChange={handleOptionChange('format', (value) => value as OutputConfig['format'])}>
+          <div className="output-options__field">
+            <label htmlFor={formatFieldId}>
+              <Text as="span" variant="label">
+                Image format
+              </Text>
+            </label>
+            <select
+              id={formatFieldId}
+              value={config.format}
+              onChange={handleOptionChange('format', (value) => value as OutputConfig['format'])}
+              aria-describedby={formatDescriptionId}
+            >
               <option value="jpeg">JPEG (smaller files)</option>
               <option value="png">PNG (lossless)</option>
             </select>
-            <Text as="span" variant="muted">
+            <Text as="span" variant="muted" id={formatDescriptionId}>
               Currently: {imageFormatLabel}
             </Text>
-          </label>
-          <label className="output-options__field">
-            <Text as="span" variant="label">
-              JPEG quality
-            </Text>
+          </div>
+          <div className="output-options__field">
+            <label htmlFor={qualityFieldId}>
+              <Text as="span" variant="label">
+                JPEG quality
+              </Text>
+            </label>
             <input
+              id={qualityFieldId}
               type="range"
               min={70}
               max={100}
@@ -267,35 +306,42 @@ export const PickOutputStep = () => {
               aria-valuemax={100}
               aria-valuenow={config.quality}
               aria-disabled={config.format !== 'jpeg'}
+              aria-describedby={qualityDescriptionId}
             />
-            <Text as="span" variant="muted">
+            <Text as="span" variant="muted" id={qualityDescriptionId}>
               {qualityLabel}
             </Text>
-          </label>
-          <label className="output-options__toggle">
-            <Stack direction="row" gap={8} align="center">
-              <input
-                type="checkbox"
-                checked={config.includeWarped}
-                onChange={handleOptionChange('includeWarped', (value) => Boolean(value))}
-              />
-              <Text as="span" variant="body">
-                Include warped front export (OpenCV required)
-              </Text>
-            </Stack>
-          </label>
-          <label className="output-options__toggle">
-            <Stack direction="row" gap={8} align="center">
-              <input
-                type="checkbox"
-                checked={config.includeManifests}
-                onChange={handleOptionChange('includeManifests', (value) => Boolean(value))}
-              />
-              <Text as="span" variant="body">
-                Include JSON manifest per card pair
-              </Text>
-            </Stack>
-          </label>
+          </div>
+          <div className="output-options__toggle">
+            <input
+              id={includeWarpedId}
+              type="checkbox"
+              checked={config.includeWarped}
+              onChange={handleOptionChange('includeWarped', (value) => Boolean(value))}
+            />
+            <label htmlFor={includeWarpedId}>
+              <Stack direction="row" gap={8} align="center">
+                <Text as="span" variant="body">
+                  Include warped front export (OpenCV required)
+                </Text>
+              </Stack>
+            </label>
+          </div>
+          <div className="output-options__toggle">
+            <input
+              id={includeManifestsId}
+              type="checkbox"
+              checked={config.includeManifests}
+              onChange={handleOptionChange('includeManifests', (value) => Boolean(value))}
+            />
+            <label htmlFor={includeManifestsId}>
+              <Stack direction="row" gap={8} align="center">
+                <Text as="span" variant="body">
+                  Include JSON manifest per card pair
+                </Text>
+              </Stack>
+            </label>
+          </div>
         </Stack>
       </details>
       <Stack gap={8}>
@@ -323,10 +369,25 @@ export const PickOutputStep = () => {
           Export complete. Check your folder{directorySupported ? '' : ' or downloads list'} for the generated assets.
         </Text>
       )}
-      {exportState === 'error' && errorMessage && (
-        <Text role="alert" variant="body">
-          {errorMessage}
-        </Text>
+      {isDialogOpen && errorTitle && errorMessage && (
+        <Modal
+          isOpen={isDialogOpen}
+          onClose={handleCloseDialog}
+          labelledBy={dialogTitleId}
+          describedBy={dialogDescriptionId}
+        >
+          <Stack gap={12}>
+            <Text as="h2" variant="title" id={dialogTitleId}>
+              {errorTitle}
+            </Text>
+            <Text variant="body" id={dialogDescriptionId}>
+              {errorMessage}
+            </Text>
+            <Button type="button" onClick={handleCloseDialog}>
+              Close
+            </Button>
+          </Stack>
+        </Modal>
       )}
       <StepNavigation
         step="output"
