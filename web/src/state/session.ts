@@ -53,9 +53,11 @@ export interface Pairing {
 export interface NamingPreset {
   id: string;
   pairId: string;
-  title: string;
-  subtitle?: string;
-  keywords: string[];
+  cardName: string;
+  setName: string;
+  setFolder: string;
+  cardFolder: string;
+  folderPath: string;
 }
 
 export interface OutputConfig {
