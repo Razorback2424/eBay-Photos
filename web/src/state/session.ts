@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+import type { DetectedCard } from '../types/detections';
+
 export type SessionStep = 'files' | 'detections' | 'pairs' | 'naming' | 'output';
 
 export interface FileAsset {
@@ -8,6 +10,16 @@ export interface FileAsset {
   size: number;
   type: string;
   lastModified: number;
+}
+
+export interface WorkingImageInfo {
+  blob: Blob;
+  width: number;
+  height: number;
+  originalWidth: number;
+  originalHeight: number;
+  scaleX: number;
+  scaleY: number;
 }
 
 export interface Detection {
@@ -63,7 +75,9 @@ const initialState = {
   naming: [] as NamingPreset[],
   output: null as OutputConfig | null,
   currentStep: 'files' as SessionStep,
-  completedSteps: [] as SessionStep[]
+  completedSteps: [] as SessionStep[],
+  workingImages: {} as Record<string, WorkingImageInfo>,
+  detectedCards: {} as Record<string, DetectedCard[]>
 };
 
 export interface SessionState extends typeof initialState {
@@ -74,6 +88,9 @@ export interface SessionState extends typeof initialState {
   setOutput: (output: OutputConfig | null) => void;
   setCurrentStep: (step: SessionStep) => void;
   completeStep: (step: SessionStep) => void;
+  setWorkingImage: (fileId: string, info: WorkingImageInfo | null) => void;
+  clearWorkingImages: () => void;
+  setDetectedCards: (fileId: string, cards: DetectedCard[]) => void;
   reset: () => void;
   canAccessStep: (step: SessionStep) => boolean;
   getFirstAccessibleStep: () => SessionStep;
@@ -98,7 +115,33 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         completedSteps: [...state.completedSteps, step]
       };
     }),
-  reset: () => set({ ...initialState }),
+  setWorkingImage: (fileId, info) =>
+    set((state) => {
+      const next = { ...state.workingImages };
+      if (info) {
+        next[fileId] = info;
+      } else {
+        delete next[fileId];
+      }
+      return { workingImages: next };
+    }),
+  clearWorkingImages: () => set({ workingImages: {}, detectedCards: {} }),
+  setDetectedCards: (fileId, cards) =>
+    set((state) => {
+      const next = { ...state.detectedCards };
+      if (!cards || cards.length === 0) {
+        delete next[fileId];
+      } else {
+        next[fileId] = cards;
+      }
+      return { detectedCards: next };
+    }),
+  reset: () =>
+    set({
+      ...initialState,
+      workingImages: {},
+      detectedCards: {}
+    }),
   canAccessStep: (step) => {
     const idx = SESSION_STEPS.indexOf(step);
     if (idx <= 0) {
