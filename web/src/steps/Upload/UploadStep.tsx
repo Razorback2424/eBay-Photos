@@ -269,8 +269,10 @@ export const UploadStep = () => {
     secondary: { status: 'empty' }
   });
 
-  const { setFiles } = useSessionStore((state) => ({
-    setFiles: state.setFiles
+  const { setFiles, setWorkingImage, clearWorkingImages } = useSessionStore((state) => ({
+    setFiles: state.setFiles,
+    setWorkingImage: state.setWorkingImage,
+    clearWorkingImages: state.clearWorkingImages
   }));
 
   useEffect(() => {
@@ -338,12 +340,41 @@ export const UploadStep = () => {
   useEffect(() => {
     const primary = slots.primary;
     const secondary = slots.secondary;
-    if (primary.status === 'ready' && secondary.status === 'ready' && primary.file && secondary.file) {
-      setFiles([toAsset(primary.file), toAsset(secondary.file)]);
+    if (
+      primary.status === 'ready' &&
+      secondary.status === 'ready' &&
+      primary.file &&
+      secondary.file &&
+      primary.decoded &&
+      secondary.decoded
+    ) {
+      const primaryAsset = toAsset(primary.file);
+      const secondaryAsset = toAsset(secondary.file);
+      setFiles([primaryAsset, secondaryAsset]);
+      clearWorkingImages();
+      setWorkingImage(primaryAsset.id, {
+        blob: primary.decoded.workingBlob,
+        width: primary.decoded.workingWidth,
+        height: primary.decoded.workingHeight,
+        originalWidth: primary.decoded.width,
+        originalHeight: primary.decoded.height,
+        scaleX: primary.decoded.width / Math.max(1, primary.decoded.workingWidth),
+        scaleY: primary.decoded.height / Math.max(1, primary.decoded.workingHeight)
+      });
+      setWorkingImage(secondaryAsset.id, {
+        blob: secondary.decoded.workingBlob,
+        width: secondary.decoded.workingWidth,
+        height: secondary.decoded.workingHeight,
+        originalWidth: secondary.decoded.width,
+        originalHeight: secondary.decoded.height,
+        scaleX: secondary.decoded.width / Math.max(1, secondary.decoded.workingWidth),
+        scaleY: secondary.decoded.height / Math.max(1, secondary.decoded.workingHeight)
+      });
     } else {
       setFiles([]);
+      clearWorkingImages();
     }
-  }, [slots, setFiles]);
+  }, [slots, setFiles, setWorkingImage, clearWorkingImages]);
 
   const bothReady = slots.primary.status === 'ready' && slots.secondary.status === 'ready';
 
