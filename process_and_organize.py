@@ -7,7 +7,12 @@ import math
 import json
 import shutil
 from datetime import date
-import pillow_heif
+try:
+    import pillow_heif
+    HAS_PILLOW_HEIF = True
+except ImportError:
+    pillow_heif = None
+    HAS_PILLOW_HEIF = False
 from PIL import Image
 import numpy as np
 
@@ -128,6 +133,9 @@ def read_image_universal(filepath):
         if filepath.lower().endswith(('.jpg', '.jpeg')):
             return cv2.imread(filepath)
         elif filepath.lower().endswith('.heic'):
+            if not HAS_PILLOW_HEIF:
+                print("Error: pillow_heif is required to process HEIC images. Install pillow-heif or convert the file.")
+                return None
             heif_file = pillow_heif.read_heif(filepath)
             image = Image.frombytes(
                 heif_file.mode,
