@@ -1,0 +1,36 @@
+{
+  "batches": [
+    {
+      "id": "jpg_controlled",
+      "path": "jpg/controlled",
+      "lighting": "even",
+      "cards": 1,
+      "format": "jpg",
+      "notes": "Baseline front/back captures with neutral exposure."
+    },
+    {
+      "id": "jpg_low_light",
+      "path": "jpg/low_light",
+      "lighting": "warm",
+      "cards": 1,
+      "format": "jpg",
+      "notes": "Indoor tungsten reference introducing noise-like gradients."
+    },
+    {
+      "id": "jpg_mixed_background",
+      "path": "jpg/mixed_background",
+      "lighting": "mixed",
+      "cards": 2,
+      "format": "jpg",
+      "notes": "Multi-card frames used to validate detection robustness."
+    },
+    {
+      "id": "heic_high_res",
+      "path": "heic",
+      "lighting": "varied",
+      "cards": 1,
+      "format": "heic",
+      "notes": "Pending real 48MP HEIC assets from device capture."
+    }
+  ]
+}
