@@ -416,13 +416,6 @@ export const DetectSplitStep = () => {
     removeManualDetection: state.removeManualDetection
   }));
 
-  console.log('[DetectSplitStep] Component rendered with state from useSessionStore:', {
-    files,
-    workingImages,
-    detectedCards,
-    detectionAdjustments,
-  });
-
   const frontFile = files[0];
   const backFile = files[1];
   const frontWorking = frontFile ? workingImages[frontFile.id] : undefined;
@@ -591,14 +584,11 @@ export const DetectSplitStep = () => {
 
     (async () => {
       try {
-        console.log('[DetectSplitStep] Starting detection for front image.');
         const bitmap = await createImageBitmap(frontWorking.blob);
         const detections = await proxy.detect(transfer(bitmap, [bitmap]));
         if (cancelled) {
-          console.log('[DetectSplitStep] Detection cancelled for front image.');
           return;
         }
-        console.log('[DetectSplitStep] Detection successful for front image:', detections);
         setDetectedCards(frontFile.id, detections);
         setFrontStatus('ready');
       } catch (error) {

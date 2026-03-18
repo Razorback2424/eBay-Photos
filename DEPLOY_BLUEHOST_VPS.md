@@ -40,22 +40,25 @@ pip install -r requirements-web.txt
 Create a production `.env`:
 
 ```bash
-cp .env.production.example .env
+cp .env.example .env
 ```
 
 Set at minimum:
 - `APP_ENV=production`
 - `APP_BASE_URL=https://your-domain.com`
 - `PHOTO_PREP_APP_SECRET=...`
-- `AUTH_MODE=auth0`
-- `AUTH0_*`
+- `LAUNCH_MODE=true`
+- `AUTH_MODE=gumroad`
+- `GUMROAD_PRODUCT_PERMALINK`
+- `GUMROAD_PRODUCT_ID`
+- `GUMROAD_PRODUCT_URL`
+- `SUPPORT_EMAIL`
 - `FREE_TRIAL_ENABLED=true`
 - `FREE_TRIAL_CARDS_TOTAL=25`
 - `MASTER_USER_EMAILS=your-email@example.com`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_PRICE_ID`
-- `STRIPE_WEBHOOK_SECRET`
 - `ENABLE_DEMO_BILLING_CONTROLS=false`
+
+If you still maintain a separate Stripe subscription flow in your deployment, configure the Stripe variables as well. For the current Gumroad launch path, do not use the Auth0 block as your minimum production setup.
 
 ## 4. Preflight Checks
 
@@ -80,6 +83,7 @@ gunicorn -c gunicorn.conf.py wsgi:application
 ```
 
 Default bind is `127.0.0.1:8000`.
+Do not add a `--workers` override. The checked-in `gunicorn.conf.py` already pins `workers = 1`, which is required for the in-process queue/background worker model.
 
 ## 6. Reverse Proxy (Nginx/Apache)
 
@@ -91,27 +95,24 @@ Configure your reverse proxy to:
 If using Nginx, ensure:
 - `client_max_body_size` is high enough for your upload batches
 
-## 7. Stripe Webhook
+## 7. Gumroad Launch Notes
 
-In Stripe dashboard, configure webhook endpoint:
+- Configure the Gumroad product to deliver the license key immediately after purchase.
+- Paste your custom confirmation copy into Gumroad so buyers get clear access instructions instead of the default template.
+- The product page and post-purchase message should send customers to `/login` to enter the purchase email and license key.
 
-- `https://your-domain.com/webhooks/stripe`
+## 8. Optional Stripe Billing
 
-Subscribe to:
-- `customer.subscription.created`
-- `customer.subscription.updated`
-- `customer.subscription.deleted`
-- `checkout.session.completed`
+If you are running the separate Stripe subscription path in parallel, configure:
 
-## 8. Auth0 URLs
+- webhook endpoint: `https://your-domain.com/webhooks/stripe`
+- events:
+  - `customer.subscription.created`
+  - `customer.subscription.updated`
+  - `customer.subscription.deleted`
+  - `checkout.session.completed`
 
-In Auth0 app config:
-- Allowed Callback URLs:
-  - `https://your-domain.com/auth/callback`
-- Allowed Logout URLs:
-  - `https://your-domain.com/workspace`
-- Allowed Web Origins:
-  - `https://your-domain.com`
+This is optional for the Gumroad-first launch flow. Auth0 is not part of the minimum production setup for launch.
 
 ## 9. Persistence / Backups
 
@@ -123,11 +124,21 @@ MVP recommendation:
 
 `_Web_Runs/` is temporary (24h retention). Backing it up is usually unnecessary.
 
-## 10. Post-Launch Smoke Test
+## 10. Before Going Live
+
+1. Confirm `.env` uses `APP_ENV=production`
+2. Confirm `.env` uses `LAUNCH_MODE=true`
+3. Confirm `.env` uses `AUTH_MODE=gumroad`
+4. Confirm `ENABLE_DEMO_BILLING_CONTROLS=false`
+5. Confirm `PHOTO_PREP_APP_SECRET` is a real random secret
+6. Confirm Gumroad product settings send the buyer their license key and direct them to `/login`
+7. Confirm Gunicorn is starting with `-c gunicorn.conf.py` and still running one worker
+
+## 11. Post-Launch Smoke Test
 
 1. Sign up / sign in
 2. Use free trial to process 1 batch
 3. Confirm batch page + ZIP download
-4. Run Stripe checkout
-5. Confirm webhook updates subscription status
+4. Complete a Gumroad purchase with the real product link
+5. Confirm the buyer can enter the purchase email + license key at `/login`
 6. Confirm paid processing still works

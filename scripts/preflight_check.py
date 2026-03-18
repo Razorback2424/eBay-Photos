@@ -23,7 +23,12 @@ def main():
 
     # Environment / mode
     add_check("app_env_set", bool(os.environ.get("APP_ENV")), f"APP_ENV={os.environ.get('APP_ENV','')}")
-    add_check("auth_mode", auth_service.auth_mode() in {"demo", "auth0"}, f"AUTH_MODE={auth_service.auth_mode()}")
+    active_auth_mode = auth_service.auth_mode()
+    add_check(
+        "auth_mode",
+        active_auth_mode in {"demo", "auth0", "gumroad"},
+        f"AUTH_MODE={active_auth_mode} ({'supported' if active_auth_mode in {'demo', 'auth0', 'gumroad'} else 'unsupported'})",
+    )
     add_check("secret_key_not_default", app_module.app.config.get("SECRET_KEY") != "local-dev-secret-change-me", "PHOTO_PREP_APP_SECRET must be non-default")
     add_check("demo_billing_controls_disabled_in_production", (not billing.is_production()) or (not billing.demo_billing_controls_enabled()), f"enabled={billing.demo_billing_controls_enabled()}")
 
