@@ -1,0 +1,17 @@
+{
+  "mode": "quality",
+  "chosen_name": "eee arene guma~p",
+  "collector_number": "370/284",
+  "set_hint": null,
+  "visual_top": null,
+  "confidence": 0.3,
+  "auto_accept": false,
+  "cn_info": {
+    "value": "370/284",
+    "source": "tesseract_line",
+    "raw": "3\n7\n0/28\n\n4\n",
+    "angle": 0,
+    "config": "--psm 6 -l eng -c tessedit_char_whitelist=0123456789/"
+  },
+  "front_contour_index": 1
+}

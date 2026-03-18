@@ -1,0 +1,1444 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>card works Workspace</title>
+  {% if plausible_domain %}
+  <script defer data-domain="{{ plausible_domain }}" src="{{ plausible_script_src }}"></script>
+  {% endif %}
+  <style>
+    :root {
+      --bg-start: #f6f9fc;
+      --bg-end: #e6eef7;
+      --ink: #1b2a3a;
+      --muted: #5a6b7d;
+      --panel: rgba(255, 255, 255, 0.9);
+      --line: rgba(18, 40, 62, 0.14);
+      --accent: #0f9d8a;
+      --accent-strong: #0a7b6d;
+      --danger: #b23a48;
+      --shadow: 0 18px 40px rgba(21, 47, 73, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+      background: radial-gradient(circle at 20% 0%, #ffffff 0%, var(--bg-start) 38%, var(--bg-end) 100%);
+      min-height: 100vh;
+      position: relative;
+    }
+    body:before, body:after {
+      content: "";
+      position: fixed;
+      border-radius: 999px;
+      filter: blur(42px);
+      opacity: .16;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body:before {
+      width: 36vw;
+      height: 36vw;
+      right: -8vw;
+      top: -10vw;
+      background: rgba(15, 157, 138, .9);
+    }
+    body:after {
+      width: 42vw;
+      height: 42vw;
+      left: -14vw;
+      bottom: -16vw;
+      background: rgba(90, 167, 255, .75);
+    }
+    .app-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(14px);
+      background: rgba(246, 250, 254, .78);
+      border-bottom: 1px solid rgba(18, 40, 62, .08);
+    }
+    .toolbar-inner {
+      width: min(1440px, 96vw);
+      margin: 0 auto;
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      background: linear-gradient(145deg, #0f9d8a, #0a7b6d);
+      box-shadow: 0 10px 18px rgba(15,157,138,.22);
+      position: relative;
+      flex: 0 0 auto;
+    }
+    .brand-mark:before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border-radius: 7px;
+      border: 2px solid rgba(255,255,255,.75);
+      transform: rotate(8deg);
+    }
+    .brand-text { display: flex; flex-direction: column; min-width: 0; }
+    .brand-title {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -.01em;
+      color: #203447;
+      line-height: 1.1;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: #5c7388;
+      line-height: 1.1;
+    }
+    .toolbar-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .shell { width: min(1440px, 96vw); margin: 18px auto 60px; position: relative; z-index: 1; }
+    .hero {
+      background:
+        radial-gradient(circle at 88% 12%, rgba(15,157,138,.12), rgba(15,157,138,0) 42%),
+        radial-gradient(circle at 8% 92%, rgba(90,167,255,.09), rgba(90,167,255,0) 45%),
+        linear-gradient(140deg, rgba(255,255,255,.96), rgba(243,250,248,.92));
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .app-grid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.65fr) minmax(320px, .95fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .main-col, .side-col { min-width: 0; }
+    .side-stack {
+      display: grid;
+      gap: 14px;
+      position: sticky;
+      top: 82px;
+    }
+    @media (max-width: 1080px) {
+      .app-grid { grid-template-columns: 1fr; }
+      .side-stack { position: static; }
+    }
+    .section-card {
+      background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(252,254,255,.9));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 10px 22px rgba(20,42,61,.05);
+    }
+    .section-eyebrow {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: #5b7287;
+      margin-bottom: 6px;
+    }
+    .section-title {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: -.02em;
+      color: #21384a;
+    }
+    .section-subtitle {
+      margin: 6px 0 0;
+      color: #5a7287;
+      font-size: 13px;
+    }
+    .steps-grid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      scroll-margin-top: 84px;
+    }
+    @media (max-width: 900px) { .steps-grid { grid-template-columns: 1fr; } }
+    .step-card {
+      border: 1px solid #dce7f0;
+      background: linear-gradient(180deg, #ffffff, #fbfdff);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.92);
+    }
+    .step-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #0f675a;
+      background: #ebf7f4;
+      border: 1px solid #d8ece7;
+      margin-bottom: 8px;
+    }
+    .step-card h3 {
+      margin: 0 0 4px;
+      font-size: 14px;
+      color: #22384a;
+    }
+    .step-card p {
+      margin: 0;
+      font-size: 12px;
+      color: #5d7387;
+      line-height: 1.35;
+    }
+    .hero-cta-row {
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .primary-link {
+      display: inline-block;
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      box-shadow: 0 12px 18px rgba(15,157,138,.2);
+    }
+    .soft-link {
+      display: inline-block;
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #294154;
+      background: rgba(255,255,255,.9);
+      border: 1px solid #cbdbe7;
+    }
+    .mini-metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .mini-metric {
+      border: 1px solid #dce7f0;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #fff, #fbfdff);
+      padding: 10px;
+    }
+    .mini-metric .k {
+      font-size: 11px;
+      color: #5d7287;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: 5px;
+    }
+    .mini-metric .v {
+      font-size: 24px;
+      font-weight: 800;
+      color: #21384a;
+      line-height: 1;
+    }
+    .checklist {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      color: #536b7f;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .brandline {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #4b6277;
+    }
+    .navrow {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .navlink {
+      display: inline-block;
+      text-decoration: none;
+      border: 1px solid #c4d4e1;
+      background: rgba(255,255,255,.92);
+      color: #284051;
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+    .navlink:hover {
+      transform: translateY(-1px);
+      border-color: #bdd0df;
+      box-shadow: 0 8px 14px rgba(20,42,61,.06);
+    }
+    .userpill {
+      display: inline-block;
+      border-radius: 999px;
+      background: #eef7f4;
+      color: #0f675a;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid #d8ece7;
+    }
+    .hero:before {
+      content: "";
+      position: absolute;
+      width: 360px;
+      height: 360px;
+      right: -120px;
+      top: -160px;
+      background: radial-gradient(circle, rgba(15,157,138,0.16), rgba(15,157,138,0));
+      pointer-events: none;
+    }
+    .hero:after {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: 27px;
+      border: 1px solid rgba(255,255,255,.7);
+      pointer-events: none;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(30px, 4.3vw, 44px);
+      line-height: 1.03;
+      letter-spacing: -0.02em;
+    }
+    .lead {
+      margin: 0;
+      color: var(--muted);
+      max-width: 68ch;
+      font-size: 15px;
+    }
+    .panel {
+      margin-top: 22px;
+      background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(252,254,255,.9));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 10px 22px rgba(20,42,61,.05);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 8px;
+      color: #3b4f62;
+    }
+    .drop {
+      border: 1.5px dashed #8ba4b9;
+      border-radius: 14px;
+      background: #ffffff;
+      padding: 18px 14px;
+      text-align: center;
+      transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+    }
+    .drop.drag {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(15,157,138,.14);
+    }
+    .drop input { width: 100%; }
+    .drop-meta {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #2f4558;
+      min-height: 16px;
+    }
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 7px;
+    }
+    .rule {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #3f556a;
+      background: #f6fbff;
+      border: 1px solid #d8e6f2;
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    @media (max-width: 760px) { .row { grid-template-columns: 1fr; } }
+    .row input, .row select {
+      width: 100%;
+      border: 1px solid #b8c7d3;
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-size: 14px;
+      background: #fff;
+      color: var(--ink);
+    }
+    .submit {
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      cursor: pointer;
+      transition: transform .1s ease, filter .1s ease;
+      box-shadow: 0 10px 18px rgba(15,157,138,.18);
+    }
+    button:hover { transform: translateY(-1px); filter: brightness(1.03); }
+    button:active { transform: translateY(0); }
+    .err {
+      margin-top: 12px;
+      border-radius: 10px;
+      padding: 10px 12px;
+      border: 1px solid rgba(178,58,72,.35);
+      background: rgba(178,58,72,.07);
+      color: var(--danger);
+      font-size: 13px;
+    }
+    .jobs {
+      margin-top: 18px;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+    .jobs h2 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+    .jobs ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 13px;
+      color: #304557;
+    }
+    .chiprow {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #ebf7f4;
+      color: #0d675a;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 14px;
+      margin-top: 16px;
+    }
+    @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
+    .metric-card {
+      border: 1px solid #dce7f0;
+      background: linear-gradient(180deg, #ffffff, #fbfdff);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+    }
+    .metric-title {
+      font-size: 12px;
+      color: #5c7286;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 6px;
+    }
+    .metric-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: #1c2f40;
+      line-height: 1;
+    }
+    .metric-value.small {
+      font-size: 18px;
+      line-height: 1.15;
+    }
+    .meter {
+      margin-top: 10px;
+      height: 9px;
+      border-radius: 999px;
+      background: #edf3f8;
+      border: 1px solid #dae6ef;
+      overflow: hidden;
+    }
+    .meter > div {
+      height: 100%;
+      background: linear-gradient(90deg, #0f9d8a, #0a7b6d);
+      width: {{ account.usage_ratio if account else 0 }}%;
+      position: relative;
+    }
+    .meter > div:after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, rgba(255,255,255,0) 22%, rgba(255,255,255,.33) 48%, rgba(255,255,255,0) 74%);
+      transform: translateX(-120%);
+      animation: sweep 2.4s linear infinite;
+    }
+    .cta-row {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .linkbtn {
+      display: inline-block;
+      border: 1px solid #bfd0dc;
+      background: #fff;
+      color: #274153;
+      text-decoration: none;
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .paywall {
+      margin-top: 12px;
+      border-radius: 12px;
+      border: 1px solid #efcfb7;
+      background: #fff7ef;
+      padding: 10px 12px;
+      color: #7a4f1f;
+      font-size: 13px;
+    }
+    .signin-gate {
+      margin-top: 12px;
+      border-radius: 12px;
+      border: 1px solid #d8e6f2;
+      background: #f7fbff;
+      padding: 12px;
+      color: #335269;
+      font-size: 13px;
+    }
+    .onboarding-note {
+      margin-top: 14px;
+      border-radius: 14px;
+      border: 1px solid #d8e6f2;
+      background: linear-gradient(180deg, #f8fbff, #f1f8ff);
+      padding: 14px 16px;
+      color: #2f4d64;
+    }
+    .onboarding-note strong {
+      display: block;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #204156;
+      margin-bottom: 6px;
+    }
+    .support-note {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #587084;
+      line-height: 1.5;
+    }
+    .support-note a {
+      color: #0a7b6d;
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .recent-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 8px;
+    }
+    .recent-item {
+      border: 1px solid #dde7f0;
+      background: #fff;
+      border-radius: 14px;
+      padding: 10px 12px;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+    .recent-item:hover {
+      transform: translateY(-1px);
+      border-color: #cfdfec;
+      box-shadow: 0 8px 16px rgba(21,47,73,.06);
+    }
+    .recent-item a {
+      text-decoration: none;
+      color: #16314a;
+      font-weight: 700;
+    }
+    .recent-meta {
+      margin-top: 4px;
+      font-size: 12px;
+      color: #5f7488;
+    }
+    .ghost {
+      border: 1px solid #b7c6d3;
+      background: #fff;
+      color: #294052;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .ghost:disabled { opacity: .5; cursor: not-allowed; }
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+      transform: none !important;
+      filter: none !important;
+    }
+    .preview {
+      margin-top: 14px;
+      border: 1px solid #d8e3ed;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #fbfdff, #f9fcff);
+      overflow: hidden;
+    }
+    .preview-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border-bottom: 1px solid #e4edf5;
+      font-size: 12px;
+      color: #395064;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .preview-meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .statusdot {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #eef7f4;
+      color: #0f675a;
+      border: 1px solid #d9ece7;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .statusdot.warn {
+      background: #fff3f1;
+      color: #a53a47;
+      border-color: #f0d1d6;
+    }
+    .preview table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .preview thead th {
+      position: sticky;
+      top: 0;
+      background: #f6fbff;
+      z-index: 1;
+    }
+    .preview th, .preview td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid #edf2f7;
+      vertical-align: top;
+    }
+    .preview tbody tr:hover { background: rgba(15,157,138,.03); }
+    .preview tbody tr:last-child td { border-bottom: 0; }
+    .preview .ok { color: #176c60; }
+    .preview .warn { color: #a13a46; font-weight: 700; }
+    .thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid #d6e2ec;
+      background: #f6f9fc;
+      display: block;
+      flex: 0 0 auto;
+    }
+    .filecell {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      min-width: 220px;
+    }
+    .filemeta {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .filename {
+      font-size: 12px;
+      color: #263b4d;
+      line-height: 1.2;
+      word-break: break-word;
+      margin-bottom: 6px;
+    }
+    .movebar {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .mini {
+      border: 1px solid #c7d4df;
+      background: #fff;
+      color: #30475a;
+      border-radius: 7px;
+      padding: 2px 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .mini:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+    .pairname {
+      width: 100%;
+      border: 1px solid #c4d3df;
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-size: 12px;
+      color: #24384a;
+      background: #fff;
+    }
+    .preview-empty {
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #5c7084;
+    }
+    .actionbar {
+      margin-top: 14px;
+      position: sticky;
+      bottom: 10px;
+      z-index: 3;
+      border: 1px solid #d9e6f0;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(10px);
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      box-shadow: 0 12px 24px rgba(20,42,61,.08);
+    }
+    .actionmeta {
+      font-size: 12px;
+      color: #425a6e;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .subtle-pill {
+      border-radius: 999px;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #f2f7fc;
+      color: #416078;
+      border: 1px solid #dde8f2;
+    }
+    .client-err {
+      margin-top: 10px;
+      border-radius: 10px;
+      padding: 10px 12px;
+      border: 1px solid rgba(178,58,72,.35);
+      background: rgba(178,58,72,.07);
+      color: var(--danger);
+      font-size: 13px;
+      display: none;
+    }
+    .lift {
+      animation: riseIn .28s ease;
+    }
+    @keyframes riseIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes sweep {
+      to { transform: translateX(125%); }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-toolbar">
+    <div class="toolbar-inner">
+      <div class="brand-wrap">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div class="brand-text">
+          <div class="brand-title">card works</div>
+          <div class="brand-sub">seller workspace</div>
+        </div>
+      </div>
+      <div class="toolbar-actions">
+        {% if auth and auth.is_authenticated %}
+          <span class="userpill">{{ auth.user.email }}</span>
+          <a class="navlink" href="{{ url_for('workspace') }}">Workspace</a>
+          <a class="navlink" href="{{ url_for('batches_page') }}">Batches</a>
+          <a class="navlink" href="{{ url_for('account_page') }}">Account</a>
+          <a class="navlink" href="{{ url_for('logout') }}">Sign Out</a>
+        {% else %}
+          <a class="navlink" href="{{ url_for('login') }}">Sign In</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+  <main class="shell">
+    <section class="hero lift">
+      <div class="brandline">card works</div>
+      <h1>card works</h1>
+      <p class="lead">Prepare eBay-ready card photos fast. Upload full front and back images, confirm the pairing visually, then export one ZIP with the full images plus quadrant detail shots.</p>
+      <div class="chiprow">
+        <span class="badge">Full front + full back preserved</span>
+        <span class="badge">4 front quadrants + 4 back quadrants</span>
+        <span class="badge">10 photos per card</span>
+      </div>
+      {% if not (auth and auth.is_authenticated) %}
+      <div class="hero-cta-row">
+        <a class="primary-link" href="{{ url_for('login') }}">Enter License Key</a>
+        <a class="soft-link" href="#how-it-works" id="how-it-works-link">See How It Works</a>
+      </div>
+      <div class="signin-gate">
+        Paid access is required. Enter the Gumroad purchase email and license key, then upload fronts and backs in matching order, review the pair preview, and start the batch.
+      </div>
+      <div class="steps-grid" id="how-it-works">
+        <article class="step-card">
+          <div class="step-num">1</div>
+          <h3>Upload fronts and backs</h3>
+          <p>Drag one or many front images and the matching back images in the same order.</p>
+        </article>
+        <article class="step-card">
+          <div class="step-num">2</div>
+          <h3>Review pairing</h3>
+          <p>Check thumbnails, rename each pair, and fix ordering before processing.</p>
+        </article>
+        <article class="step-card">
+          <div class="step-num">3</div>
+          <h3>Download your batch ZIP</h3>
+          <p>Each card gets full front/back plus 8 overlapping quadrant detail photos.</p>
+        </article>
+      </div>
+      {% else %}
+      <div class="app-grid">
+        <section class="main-col">
+          {% if show_onboarding_notice %}
+          <div class="onboarding-note">
+            <strong>First batch</strong>
+            Photograph all card fronts in one shot, then all card backs in another. Upload both sets here, confirm the pairings in order, and start processing before you export the ZIP.
+          </div>
+          {% endif %}
+          {% if account and not account.can_process %}
+          <div class="paywall">
+            Processing is currently locked for this account. Visit <a href="{{ url_for('account_page') }}">Account</a> to update your plan or billing status.
+          </div>
+          {% endif %}
+          {% if account and account.is_trial_user %}
+          <div class="signin-gate" style="margin-top:12px;">
+            {% if account.trial_exhausted %}
+              Your free trial is used up ({{ account.trial_used_cards_total }}/{{ account.trial_cards_total_limit }} cards). Upgrade to continue processing.
+            {% else %}
+              Free trial: {{ account.trial_remaining_cards }} card{{ "" if account.trial_remaining_cards == 1 else "s" }} remaining ({{ account.trial_used_cards_total }}/{{ account.trial_cards_total_limit }} used).
+            {% endif %}
+          </div>
+          {% endif %}
+          <div class="section-card lift">
+            <div class="section-eyebrow">New Batch</div>
+            <h2 class="section-title">Upload and Pair Scans</h2>
+            <p class="section-subtitle">Work left to right: upload fronts and backs, review the pair preview, then start processing. The batch keeps running even if you leave this page.</p>
+            <form id="queue-form" class="workspace-wrap" method="post" action="{{ url_for('enqueue_job') }}" enctype="multipart/form-data">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <div class="grid">
+                <div class="field">
+                  <label>Front Scans</label>
+                  <div class="drop" data-drop>
+                    <input name="front_files" type="file" accept=".jpg,.jpeg,.heic,image/jpeg,image/heic" multiple />
+                    <div class="hint">Drag one or many front scans.</div>
+                    <div class="drop-meta" data-meta>No files selected</div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Back Scans</label>
+                  <div class="drop" data-drop>
+                    <input name="back_files" type="file" accept=".jpg,.jpeg,.heic,image/jpeg,image/heic" multiple />
+                    <div class="hint">Drag matching back scans in the same order.</div>
+                    <div class="drop-meta" data-meta>No files selected</div>
+                  </div>
+                </div>
+              </div>
+              <div class="rule" style="margin-top:14px;">
+                Pairing rule: front #1 pairs with back #1, front #2 with back #2, and so on. No filename convention required.
+              </div>
+              <div class="support-note">
+                Need help with access or exports? Contact <a href="mailto:{{ support_email }}">{{ support_email }}</a>. Launch details: <a href="{{ url_for('privacy_page') }}">Privacy</a> and <a href="{{ url_for('terms_page') }}">Terms</a>.
+              </div>
+              <div class="preview" id="pair-preview">
+                <div class="preview-head">
+                  <div class="preview-meta">
+                    <span>Pair Preview</span>
+                    <span class="statusdot" id="pair-preview-summary">0 pairs ready</span>
+                  </div>
+                  <div style="display:flex; gap:8px;">
+                    <button type="button" class="ghost" id="clear-fronts">Clear Fronts</button>
+                    <button type="button" class="ghost" id="clear-backs">Clear Backs</button>
+                  </div>
+                </div>
+                <div id="pair-preview-body" class="preview-empty">Add front and back scans to preview pairing by upload order.</div>
+              </div>
+              <div class="row">
+                <div class="field">
+                  <label>Batch Name (Optional)</label>
+                  <input name="batch_name" type="text" placeholder="example: weekend-batch" />
+                </div>
+                <div class="field">
+                  <label>Photo Set</label>
+                  <input type="text" value="eBay Photo Prep (10 photos per card)" disabled />
+                </div>
+              </div>
+              <div class="actionbar">
+                <div class="actionmeta">
+                  <span class="subtle-pill" id="action-ready-pill">0 ready pairs</span>
+                  <span class="hint" style="margin:0;">After you click Start, open the batch page to review previews and download the ZIP.</span>
+                </div>
+                <button type="submit" id="submit-btn" {% if account and not account.can_process %}disabled{% endif %}>Start Batch Processing</button>
+              </div>
+              <div id="client-error" class="client-err"></div>
+              {% if error %}
+                <div class="err">{{ error }}</div>
+              {% endif %}
+            </form>
+          </div>
+        </section>
+
+        <aside class="side-col">
+          <div class="side-stack">
+            <div class="section-card lift">
+              <div class="section-eyebrow">Overview</div>
+              <div class="dashboard-grid" style="margin-top:0; grid-template-columns:1fr;">
+                <div class="metric-card">
+                  <div class="metric-title">Processed Cards</div>
+                  <div class="metric-value">{{ session_cards }}</div>
+                  <div class="recent-meta">Across completed batches on your account</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-title">Plan</div>
+                  <div class="metric-value small">{{ account.plan_name if account else "Photo Prep" }}</div>
+                  <div class="recent-meta">
+                    {{ account.status_label if account else "Trial" }} •
+                    {% if account and account.is_master_user %}
+                      Unlimited access (owner bypass)
+                    {% else %}
+                      {{ (account.used_cards if account else 0) }}/{{ (account.cards_limit if account else 0) }} cards this month
+                    {% endif %}
+                  </div>
+                  <div class="meter"><div></div></div>
+                  <div class="cta-row">
+                    <a class="linkbtn" href="{{ url_for('account_page') }}">View Plan & Billing</a>
+                    {% if purchase_url %}
+                    <a class="linkbtn" href="{{ purchase_url }}" target="_blank" rel="noopener noreferrer">Buy Another License</a>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-card lift">
+              <div class="section-eyebrow">Quick Start</div>
+              <h3 style="margin:0; font-size:16px; color:#21384a;">What to do next</h3>
+              <div class="mini-metric-grid">
+                <div class="mini-metric">
+                  <div class="k">Fronts</div>
+                  <div class="v" id="front-count-side">0</div>
+                </div>
+                <div class="mini-metric">
+                  <div class="k">Backs</div>
+                  <div class="v" id="back-count-side">0</div>
+                </div>
+              </div>
+              <ol class="checklist">
+                <li>Drop all front images in the left upload area.</li>
+                <li>Drop all back images in the right upload area in matching order.</li>
+                <li>Use Pair Preview to rename or reorder, then click Start Batch Processing.</li>
+              </ol>
+              <div class="support-note">
+                Keep your Gumroad receipt for the license key. If access or billing looks wrong, email <a href="mailto:{{ support_email }}">{{ support_email }}</a>.
+              </div>
+            </div>
+
+            <div class="section-card lift">
+              <div class="section-eyebrow">Recent Activity</div>
+              <h3 style="margin:0; font-size:16px; color:#21384a;">Latest Batches</h3>
+              <div class="stack-note">For full history and downloads, use the Batches page.</div>
+              <div class="jobs" style="margin-top:10px; border-top:0; padding-top:0;">
+                {% if recent_jobs %}
+                <ul class="recent-list">
+                  {% for j in recent_jobs %}
+                    <li class="recent-item">
+                      <a href="{{ url_for('job_status', job_id=j.id) }}">{{ j.batch_name or ('Batch ' ~ loop.index) }}</a>
+                      <div class="recent-meta">{{ j.status_label }} • {{ j.pair_count }} pairs • {{ j.total_cards }} cards</div>
+                    </li>
+                  {% endfor %}
+                </ul>
+                {% else %}
+                <div class="recent-item">
+                  <div style="font-weight:700; color:#22384a;">No batches yet</div>
+                  <div class="recent-meta">Your processed batches will show up here after you run your first upload.</div>
+                </div>
+                {% endif %}
+              </div>
+              <div class="cta-row" style="margin-top:10px;">
+                <a class="linkbtn" href="{{ url_for('batches_page') }}">Open Batches Page</a>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+      {% endif %}
+    </section>
+  </main>
+  <script>
+    const dropped = { front_files: [], back_files: [] };
+    const pairLabels = [];
+    let previewObjectUrls = [];
+    const previewUrlCache = new WeakMap();
+    const fileCellCache = new WeakMap();
+    let renderPreviewRaf = 0;
+    const form = document.getElementById("queue-form");
+    const submitBtn = document.getElementById("submit-btn");
+    const previewBody = document.getElementById("pair-preview-body");
+    const previewSummary = document.getElementById("pair-preview-summary");
+    const actionReadyPill = document.getElementById("action-ready-pill");
+    const frontCountSide = document.getElementById("front-count-side");
+    const backCountSide = document.getElementById("back-count-side");
+    const clientError = document.getElementById("client-error");
+    const clearFrontsBtn = document.getElementById("clear-fronts");
+    const clearBacksBtn = document.getElementById("clear-backs");
+
+    const setClientError = (msg) => {
+      if (!clientError) return;
+      if (!msg) {
+        clientError.style.display = "none";
+        clientError.textContent = "";
+        return;
+      }
+      clientError.textContent = msg;
+      clientError.style.display = "block";
+    };
+
+    const escapeHtml = (s) => String(s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+
+    const setMeta = (input, meta, files) => {
+      if (!meta) return;
+      const count = files ? files.length : 0;
+      if (!count) {
+        meta.textContent = "No files selected";
+        return;
+      }
+      if (count === 1) {
+        meta.textContent = files[0].name;
+        return;
+      }
+      meta.textContent = count + " files selected";
+    };
+
+    const mergeFiles = (existing, incoming) => {
+      const out = Array.isArray(existing) ? existing.slice() : [];
+      for (const f of (incoming || [])) out.push(f);
+      return out;
+    };
+
+    const makeThumbUrl = (file) => {
+      if (!file) return "";
+      const cached = previewUrlCache.get(file);
+      if (cached) return cached;
+      const url = URL.createObjectURL(file);
+      previewUrlCache.set(file, url);
+      previewObjectUrls.push(url);
+      return url;
+    };
+
+    const clearPreviewObjectUrls = () => {
+      for (const url of previewObjectUrls) {
+        try { URL.revokeObjectURL(url); } catch (_) {}
+      }
+      previewObjectUrls = [];
+    };
+
+    const scheduleRenderPairPreview = () => {
+      if (renderPreviewRaf) return;
+      renderPreviewRaf = window.requestAnimationFrame(() => {
+        renderPreviewRaf = 0;
+        renderPairPreview();
+      });
+    };
+
+    const fileCellNode = (file, side, idx, total) => {
+      if (!file) {
+        const missing = document.createElement("span");
+        missing.className = "warn";
+        missing.textContent = "Missing";
+        return missing;
+      }
+      let entry = fileCellCache.get(file);
+      if (!entry) {
+        const root = document.createElement("div");
+        root.className = "filecell";
+
+        const img = document.createElement("img");
+        img.className = "thumb";
+        img.loading = "lazy";
+        img.decoding = "async";
+        img.src = makeThumbUrl(file);
+        img.alt = file.name || "Thumbnail";
+
+        const filemeta = document.createElement("div");
+        filemeta.className = "filemeta";
+
+        const filename = document.createElement("div");
+        filename.className = "filename";
+        filename.textContent = file.name || "";
+
+        const movebar = document.createElement("div");
+        movebar.className = "movebar";
+
+        const upBtn = document.createElement("button");
+        upBtn.type = "button";
+        upBtn.className = "mini";
+        upBtn.dataset.action = "up";
+        upBtn.textContent = "Up";
+
+        const downBtn = document.createElement("button");
+        downBtn.type = "button";
+        downBtn.className = "mini";
+        downBtn.dataset.action = "down";
+        downBtn.textContent = "Down";
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "mini";
+        removeBtn.dataset.action = "remove";
+        removeBtn.textContent = "Remove";
+
+        movebar.append(upBtn, downBtn, removeBtn);
+        filemeta.append(filename, movebar);
+        root.append(img, filemeta);
+
+        entry = { root, img, filename, upBtn, downBtn, removeBtn };
+        fileCellCache.set(file, entry);
+      }
+
+      entry.img.alt = file.name || "Thumbnail";
+      entry.filename.textContent = file.name || "";
+      for (const btn of [entry.upBtn, entry.downBtn, entry.removeBtn]) {
+        btn.dataset.side = side;
+        btn.dataset.index = String(idx);
+      }
+      entry.upBtn.disabled = idx === 0;
+      entry.downBtn.disabled = idx >= total - 1;
+      return entry.root;
+    };
+
+    const renderPairPreview = () => {
+      const fronts = dropped.front_files || [];
+      const backs = dropped.back_files || [];
+      if (frontCountSide) frontCountSide.textContent = String(fronts.length);
+      if (backCountSide) backCountSide.textContent = String(backs.length);
+      if (!previewBody) return;
+      const rows = Math.max(fronts.length, backs.length);
+      const readyPairs = Math.min(fronts.length, backs.length);
+      const mismatch = fronts.length !== backs.length;
+      if (previewSummary) {
+        previewSummary.textContent = mismatch
+          ? (readyPairs + " ready · count mismatch")
+          : (readyPairs + " pair" + (readyPairs === 1 ? "" : "s") + " ready");
+        previewSummary.classList.toggle("warn", mismatch);
+      }
+      if (actionReadyPill) {
+        actionReadyPill.textContent = readyPairs + " ready pair" + (readyPairs === 1 ? "" : "s");
+      }
+      if (!rows) {
+        previewBody.className = "preview-empty";
+        previewBody.innerHTML = "Add front and back scans to preview pairing by upload order.";
+        setClientError("");
+        return;
+      }
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+      for (const label of ["#", "Pair Name", "Front", "Back", "Status"]) {
+        const th = document.createElement("th");
+        th.textContent = label;
+        headRow.appendChild(th);
+      }
+      thead.appendChild(headRow);
+      const tbody = document.createElement("tbody");
+      for (let i = 0; i < rows; i++) {
+        const f = fronts[i];
+        const b = backs[i];
+        const ok = !!(f && b);
+        const label = pairLabels[i] || "";
+        const tr = document.createElement("tr");
+
+        const tdNum = document.createElement("td");
+        tdNum.textContent = String(i + 1);
+
+        const tdName = document.createElement("td");
+        const input = document.createElement("input");
+        input.className = "pairname";
+        input.type = "text";
+        input.dataset.pairLabelIndex = String(i);
+        input.placeholder = "Optional name (e.g. Charizard holo)";
+        input.value = label;
+        tdName.appendChild(input);
+
+        const tdFront = document.createElement("td");
+        tdFront.appendChild(fileCellNode(f, "front_files", i, fronts.length));
+
+        const tdBack = document.createElement("td");
+        tdBack.appendChild(fileCellNode(b, "back_files", i, backs.length));
+
+        const tdStatus = document.createElement("td");
+        tdStatus.className = ok ? "ok" : "warn";
+        tdStatus.textContent = ok ? "Ready" : "Fix counts";
+
+        tr.append(tdNum, tdName, tdFront, tdBack, tdStatus);
+        tbody.appendChild(tr);
+      }
+      table.append(thead, tbody);
+      previewBody.className = "";
+      previewBody.replaceChildren(table);
+    };
+
+    // Prevent browser navigation when dropping files outside targets.
+    for (const evt of ["dragenter", "dragover", "dragleave", "drop"]) {
+      window.addEventListener(evt, (e) => e.preventDefault());
+    }
+
+    if (previewBody) {
+      previewBody.addEventListener("input", (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+        const idxAttr = t.getAttribute("data-pair-label-index");
+        if (idxAttr == null) return;
+        const idx = Number(idxAttr);
+        if (!Number.isFinite(idx)) return;
+        pairLabels[idx] = t.value;
+      });
+
+      previewBody.addEventListener("click", (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+        const btn = t.closest("button[data-action]");
+        if (!btn) return;
+        const action = btn.getAttribute("data-action");
+        const side = btn.getAttribute("data-side");
+        const idx = Number(btn.getAttribute("data-index"));
+        if (!side || !Array.isArray(dropped[side]) || !Number.isFinite(idx)) return;
+        const arr = dropped[side];
+        if (action === "remove") {
+          if (idx >= 0 && idx < arr.length) arr.splice(idx, 1);
+        } else if (action === "up") {
+          if (idx > 0 && idx < arr.length) [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+        } else if (action === "down") {
+          if (idx >= 0 && idx < arr.length - 1) [arr[idx + 1], arr[idx]] = [arr[idx], arr[idx + 1]];
+        }
+        const input = form ? form.querySelector("[name='" + side + "']") : null;
+        const meta = input ? input.closest("[data-drop]")?.querySelector("[data-meta]") : null;
+        setMeta(input, meta, arr);
+        scheduleRenderPairPreview();
+      });
+    }
+
+    for (const el of document.querySelectorAll("[data-drop]")) {
+      const input = el.querySelector("input[type='file']");
+      const meta = el.querySelector("[data-meta]");
+      const field = input ? input.name : null;
+      const updateMeta = () => {
+        const files = field ? dropped[field] : [];
+        setMeta(input, meta, files);
+      };
+
+      for (const eventName of ["dragenter", "dragover"]) {
+        el.addEventListener(eventName, (e) => { e.preventDefault(); el.classList.add("drag"); });
+      }
+      for (const eventName of ["dragleave", "drop"]) {
+        el.addEventListener(eventName, (e) => { e.preventDefault(); el.classList.remove("drag"); });
+      }
+      el.addEventListener("drop", (e) => {
+        if (!input || !field) return;
+        const dt = e.dataTransfer;
+        if (!dt || !dt.files || !dt.files.length) return;
+        dropped[field] = mergeFiles(dropped[field], Array.from(dt.files));
+        updateMeta();
+        scheduleRenderPairPreview();
+      });
+      if (input) {
+        input.addEventListener("change", () => {
+          dropped[input.name] = mergeFiles(dropped[input.name], Array.from(input.files || []));
+          // Clear native input so selecting the same file again still fires change.
+          input.value = "";
+          updateMeta();
+          scheduleRenderPairPreview();
+        });
+        updateMeta();
+      }
+    }
+
+    const clearField = (fieldName) => {
+      dropped[fieldName] = [];
+      const input = form ? form.querySelector("[name='" + fieldName + "']") : null;
+      const meta = input ? input.closest("[data-drop]")?.querySelector("[data-meta]") : null;
+      if (input) input.value = "";
+      setMeta(input, meta, []);
+      scheduleRenderPairPreview();
+    };
+    if (clearFrontsBtn) clearFrontsBtn.addEventListener("click", () => clearField("front_files"));
+    if (clearBacksBtn) clearBacksBtn.addEventListener("click", () => clearField("back_files"));
+    renderPairPreview();
+    window.addEventListener("beforeunload", clearPreviewObjectUrls);
+
+    if (form) {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fronts = dropped.front_files || [];
+        const backs = dropped.back_files || [];
+        setClientError("");
+        if (!fronts.length || !backs.length) {
+          setClientError("Add at least one front scan and one back scan to start a batch.");
+          return;
+        }
+        if (fronts.length !== backs.length) {
+          setClientError("Front and back counts must match before you can start processing.");
+          return;
+        }
+
+        const payload = new FormData();
+        payload.append("csrf_token", "{{ csrf_token }}");
+        for (const f of fronts) payload.append("front_files", f, f.name);
+        for (const f of backs) payload.append("back_files", f, f.name);
+        payload.append("mode", "fast");
+        payload.append("batch_name", form.querySelector("[name='batch_name']").value || "");
+        for (let i = 0; i < fronts.length; i++) {
+          payload.append("pair_names", (pairLabels[i] || "").trim());
+        }
+
+        try {
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Uploading...";
+          }
+          const res = await fetch(form.action, {
+            method: "POST",
+            body: payload,
+            headers: { "X-CSRF-Token": "{{ csrf_token }}" },
+            redirect: "follow",
+          });
+          const contentType = (res.headers.get("content-type") || "").toLowerCase();
+          if (res.redirected && res.url) {
+            window.location.href = res.url;
+            return;
+          }
+          if (contentType.includes("text/html")) {
+            const html = await res.text();
+            document.open();
+            document.write(html);
+            document.close();
+            return;
+          }
+          if (!res.ok) {
+            setClientError("Upload failed (" + res.status + "). Please retry.");
+            return;
+          }
+          window.location.reload();
+        } catch (err) {
+          setClientError("Upload failed. Please retry.");
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Start Batch Processing";
+          }
+        }
+      });
+    }
+
+    const howItWorksLink = document.getElementById("how-it-works-link");
+    const howItWorksTarget = document.getElementById("how-it-works");
+    if (howItWorksLink && howItWorksTarget) {
+      howItWorksLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        howItWorksTarget.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  </script>
+</body>
+</html>

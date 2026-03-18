@@ -1,11 +1,13 @@
 import cv2
 import os
+import argparse
 import pytesseract
 from pytesseract import Output
 import re
 import math
 import json
 import shutil
+import time
 from datetime import date
 try:
     import pillow_heif
@@ -42,6 +44,10 @@ ROTATION_CANDIDATES = (0, 90, 180, 270)
 # When True, also save the warped (perspective-corrected) image for debugging.
 # Listing images will always use the original photo crop to avoid squishing.
 SAVE_WARPED_DEBUG = os.environ.get("POKEMON_SAVE_WARPED", "").lower() in {"1", "true", "yes", "on"}
+
+# Quadrant crop ratios. Higher means a looser crop with more overlap.
+FRONT_QUADRANT_RATIO = 0.60
+BACK_QUADRANT_RATIO = 0.63
 
 def score_ocr_candidate(text):
     """Scores an OCR candidate string for likelihood of being a card name."""
@@ -120,11 +126,27 @@ DEBUG = os.environ.get("POKEMON_DEBUG", "").lower() in {"1", "true", "yes", "on"
 
 # --- Helper Functions ---
 def find_scan_file(basename):
-    """To locate the first valid image file for a given basename."""
-    for ext in SUPPORTED_EXTENSIONS:
-        filename = f"{basename}{ext}"
-        if os.path.exists(filename):
-            return filename
+    """Locates the first valid image file for a given basename (case-insensitive)."""
+    basename_lower = basename.lower()
+    ext_priority = {ext: idx for idx, ext in enumerate(SUPPORTED_EXTENSIONS)}
+
+    try:
+        entries = os.listdir(".")
+    except OSError:
+        return None
+
+    candidates = []
+    for filename in entries:
+        name, ext = os.path.splitext(filename)
+        if name.lower() != basename_lower:
+            continue
+        ext_lower = ext.lower()
+        if ext_lower in SUPPORTED_EXTENSIONS:
+            candidates.append((ext_priority.get(ext_lower, 99), filename.lower(), filename))
+
+    if candidates:
+        candidates.sort()
+        return candidates[0][2]
     return None
 
 def read_image_universal(filepath):
@@ -1175,13 +1197,14 @@ def order_points(pts):
     rect[3] = pts[np.argmax(diff)]
     return rect
 
-def create_quadrant_crops(image, folder_path, base_name):
-    """Creates four overlapping 60% quadrant crops."""
+def create_quadrant_crops(image, folder_path, base_name, crop_ratio=FRONT_QUADRANT_RATIO):
+    """Creates four overlapping quadrant crops."""
     try:
         H, W, _ = image.shape
         # Define the regions for the four quadrants (top-left, top-right, bottom-left, bottom-right)
-        # Each crop is 60% of the width and height
-        crop_w, crop_h = int(W * 0.6), int(H * 0.6)
+        # Each crop uses a configurable ratio of width/height.
+        ratio = max(0.5, min(0.9, float(crop_ratio)))
+        crop_w, crop_h = int(W * ratio), int(H * ratio)
 
         quadrants = {
             "TL": (0, 0, crop_w, crop_h),
@@ -1199,168 +1222,212 @@ def create_quadrant_crops(image, folder_path, base_name):
     except Exception as e:
         print(f"  - Could not create quadrant crops: {e}")
 
-if __name__ == "__main__":
-    front_filename = find_scan_file("fronts")
-    back_filename = find_scan_file("backs")
+def resolve_scan_path(scan_arg):
+    """Resolves a scan arg as either an existing filepath or a basename."""
+    if not scan_arg:
+        return None
+    if os.path.exists(scan_arg):
+        return scan_arg
+    basename = os.path.splitext(scan_arg)[0]
+    return find_scan_file(basename)
 
-    if not front_filename or not back_filename:
-        error_message = "Error: Cannot find required scan files. "
-        if not front_filename:
-            error_message += "Missing 'fronts' file. "
-        if not back_filename:
-            error_message += "Missing 'backs' file. "
-        error_message += f"Supported extensions are {SUPPORTED_EXTENSIONS}."
-        print(error_message)
-        raise SystemExit(1)
+def expected_image_names(prefix):
+    names = [
+        f"{prefix}_FRONT.jpg",
+        f"{prefix}_BACK.jpg",
+    ]
+    for side in ("FRONT", "BACK"):
+        for quad in ("TL", "TR", "BL", "BR"):
+            names.append(f"{prefix}_{side}_{quad}.jpg")
+    return names
+
+def validate_card_outputs(folder_path, prefix):
+    names = expected_image_names(prefix)
+    missing = [name for name in names if not os.path.exists(os.path.join(folder_path, name))]
+    return (len(missing) == 0), missing
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Split multi-card front/back scans into per-card image sets."
+    )
+    parser.add_argument(
+        "--mode",
+        choices=("fast", "quality"),
+        default="fast",
+        help="fast: split/export only (max throughput). quality: include OCR + API naming.",
+    )
+    parser.add_argument(
+        "--front",
+        default="fronts",
+        help="Front scan basename or file path (default: fronts).",
+    )
+    parser.add_argument(
+        "--back",
+        default="backs",
+        help="Back scan basename or file path (default: backs).",
+    )
+    parser.add_argument(
+        "--output-root",
+        default=".",
+        help="Directory where per-card folders are written (default: current directory).",
+    )
+    parser.add_argument(
+        "--archive-root",
+        default="_Processed_Scans",
+        help="Directory for archived source scans by date (default: _Processed_Scans).",
+    )
+    parser.add_argument(
+        "--no-archive",
+        action="store_true",
+        help="Do not move source scans into the archive directory after processing.",
+    )
+    return parser.parse_args()
+
+def process_scans(
+    front_filename,
+    back_filename,
+    mode="fast",
+    output_root=".",
+    archive_root="_Processed_Scans",
+    archive=True,
+    use_full_frame=False,
+):
+    started = time.perf_counter()
 
     front_image = read_image_universal(front_filename)
     back_image = read_image_universal(back_filename)
 
     if front_image is None or back_image is None:
         print("Error: One or both images could not be read. Check file integrity.")
-        raise SystemExit(1)
+        return 1
 
-    reference_data = ensure_reference_index()
-    if reference_data and DEBUG:
-        print(f"[DEBUG] Loaded {len(reference_data['entries'])} reference cards for visual search.")
+    os.makedirs(output_root, exist_ok=True)
+
+    reference_data = None
+    if mode == "quality":
+        reference_data = ensure_reference_index()
+        if reference_data and DEBUG:
+            print(f"[DEBUG] Loaded {len(reference_data['entries'])} reference cards for visual search.")
 
     H_front, W_front, _ = front_image.shape
     H_back, W_back, _ = back_image.shape
 
-    front_contours = sort_contours_tltr(get_contours_robust(front_image))
-    back_contours = sort_contours_tltr(get_contours_robust(back_image))
+    if use_full_frame:
+        front_contours = []
+        back_contours = []
+    else:
+        front_contours = sort_contours_tltr(get_contours_robust(front_image))
+        back_contours = sort_contours_tltr(get_contours_robust(back_image))
 
-    print(f"Fronts detected: {len(front_contours)} | Backs detected: {len(back_contours)}")
+    print(f"Fronts detected: {len(front_contours)} | Backs detected: {len(back_contours)} | Mode: {mode}")
 
     if DEBUG:
         east_present = bool(EAST_MODEL_PATH) and os.path.exists(EAST_MODEL_PATH)
         print(f"[DEBUG] Detector: EAST={'yes' if east_present else 'no'} EasyOCR={'yes' if USE_EASY_OCR else 'no'} PaddleOCR={'yes' if USE_PADDLE_OCR else 'no'}")
 
     identified_cards = []
-    
+
     # Define the dimensions for the warped, top-down image of the card.
     # A standard playing card ratio is 2.5" x 3.5", which is 1:1.4.
-    # We'll use a higher resolution for better OCR quality.
     WARPED_WIDTH = 900
     WARPED_HEIGHT = int(WARPED_WIDTH * 1.4)
 
-    print(f"--- Processing {len(front_contours)} card fronts... ---")
-    for i, contour in enumerate(front_contours):
-        # Approximate the contour to a polygon
-        peri = cv2.arcLength(contour, True)
-        approx = cv2.approxPolyDP(contour, 0.02 * peri, True)
-
-        # If the contour approximation has more than 4 points, fall back to a minimum-area rectangle.
-        if len(approx) < 4:
-            print(f"  - Skipping contour {i+1} (too few points for a card).")
-            continue
-        if len(approx) > 4:
-            print(f"  - Contour {i+1}: using minAreaRect fallback (points={len(approx)}).")
-            rect_points = cv2.boxPoints(cv2.minAreaRect(contour))
-            rect = order_points(rect_points)
-        else:
-            rect = order_points(approx.reshape(4, 2))
-        (tl, tr, br, bl) = rect
-
-        # Compute the destination points for the perspective transform
-        dst = np.array([
-            [0, 0],
-            [WARPED_WIDTH - 1, 0],
-            [WARPED_WIDTH - 1, WARPED_HEIGHT - 1],
-            [0, WARPED_HEIGHT - 1]], dtype="float32")
-
-        # Compute the perspective transform matrix and then apply it
-        M = cv2.getPerspectiveTransform(rect, dst)
-        warped_card_img = cv2.warpPerspective(front_image, M, (WARPED_WIDTH, WARPED_HEIGHT))
-
-        normalized_card_img, card_name_raw, ocr_text_raw, rotation_used = orient_and_ocr_card(warped_card_img)
-        if rotation_used:
-            print(f"  - Contour {i+1}: rotated {rotation_used}° to align text.")
-
-        visual_candidates = find_visual_candidates(normalized_card_img)
+    if use_full_frame:
+        print("--- Full-frame mode enabled: no front/back auto-cropping will be applied. ---")
+        card_name = "Unknown"
+        collector_number = None
+        set_hint = None
+        cn_info = {"value": None, "source": None, "raw": None}
         visual_hint = None
-        if visual_candidates:
-            top_candidate = visual_candidates[0]
-            print(
-                f"    • Visual shortlist: {top_candidate.get('name','?')} "
-                f"(#{top_candidate.get('number','?')} | {top_candidate.get('set_id','?')}) "
-                f"score={top_candidate['score']:.3f}"
-            )
-            if top_candidate["score"] >= REFERENCE_ACCEPT_SCORE:
-                visual_hint = top_candidate
+        final_conf = 0.0
+        auto_accept = True
 
-        cn_info = ocr_collector_number(normalized_card_img)
-        collector_number = cn_info.get("value") if isinstance(cn_info, dict) else None
-        resolved_name = None
-        set_hint = visual_hint.get("set_id") if visual_hint and visual_hint.get("set_id") else None
+        if mode == "quality":
+            normalized_card_img, card_name_raw, ocr_text_raw, rotation_used = orient_and_ocr_card(front_image)
+            if rotation_used:
+                print(f"  - Rotated {rotation_used} degrees for OCR only (saved front remains original upload).")
 
-        if not collector_number and visual_hint and visual_hint.get("number"):
-            collector_number = visual_hint["number"]
-            print(f"    • Using visual match number {collector_number} (score {visual_hint['score']:.3f}).")
+            visual_candidates = find_visual_candidates(normalized_card_img)
+            if visual_candidates:
+                top_candidate = visual_candidates[0]
+                print(
+                    f"  - Visual shortlist: {top_candidate.get('name','?')} "
+                    f"(#{top_candidate.get('number','?')} | {top_candidate.get('set_id','?')}) "
+                    f"score={top_candidate['score']:.3f}"
+                )
+                if top_candidate["score"] >= REFERENCE_ACCEPT_SCORE:
+                    visual_hint = top_candidate
 
-        api_hit = False
-        if collector_number:
-            lookup = lookup_card_title(collector_number, set_hint)
-            if lookup:
-                resolved_name, api_set_id = lookup
-                api_hit = True
-                if api_set_id:
-                    set_hint = api_set_id
-                print(f"    • Matched collector number {collector_number} -> {resolved_name} (set {set_hint}).")
+            cn_info = ocr_collector_number(normalized_card_img)
+            collector_number = cn_info.get("value") if isinstance(cn_info, dict) else None
+            resolved_name = None
+            set_hint = visual_hint.get("set_id") if visual_hint and visual_hint.get("set_id") else None
 
-        if not resolved_name and visual_hint and visual_hint.get("name"):
-            resolved_name = visual_hint["name"]
+            if not collector_number and visual_hint and visual_hint.get("number"):
+                collector_number = visual_hint["number"]
+                print(f"  - Using visual match number {collector_number} (score {visual_hint['score']:.3f}).")
 
-        # Phase 3 fallback: try text fragments via API if still unresolved
-        if not resolved_name:
-            name_frag = None
-            if card_name_raw:
-                # Find all alphabetic tokens, prefer longer ones to avoid short, common words.
-                name_tokens = sorted(re.findall(r"[A-Za-z]{5,}", card_name_raw), key=len, reverse=True)
-                if name_tokens:
-                    name_frag = name_tokens[0]
-            
-            abil_frag = None
-            if ocr_text_raw:
-                tokens = [t for t in re.findall(r"[A-Za-z]{4,}", ocr_text_raw) if t.lower() not in {"and","the","with","from","this","that"}]
-                if tokens:
-                    abil_frag = tokens[0]
-            
-            if name_frag or abil_frag:
-                text_lookup = lookup_card_by_text(name_frag, abil_frag, set_hint)
-                if text_lookup:
-                    resolved_name, api_set_id = text_lookup
+            api_hit = False
+            if collector_number:
+                lookup = lookup_card_title(collector_number, set_hint)
+                if lookup:
+                    resolved_name, api_set_id = lookup
                     api_hit = True
                     if api_set_id:
                         set_hint = api_set_id
-                    print(f"    • Resolved by text query -> {resolved_name} (set {set_hint}).")
+                    print(f"  - Matched collector number {collector_number} -> {resolved_name} (set {set_hint}).")
 
-        # Final candidate selection
-        card_name_candidates = [
-            resolved_name,
-            card_name_raw.strip() if card_name_raw else "",
-            visual_hint.get("name") if visual_hint else "",
-            "Unknown",
-        ]
-        card_name = next(name for name in card_name_candidates if name)
-        collector_number_formatted = collector_number.replace('/', '_') if collector_number else ""
+            if not resolved_name and visual_hint and visual_hint.get("name"):
+                resolved_name = visual_hint["name"]
 
-        # Confidence gating (Phase 4)
-        visual_score = visual_hint['score'] if visual_hint else None
-        has_number = bool(collector_number)
-        final_conf = compute_final_confidence(visual_score, has_number, api_hit)
-        auto_accept = final_conf >= AUTO_ACCEPT_THRESHOLD
+            if not resolved_name:
+                name_frag = None
+                if card_name_raw:
+                    name_tokens = sorted(re.findall(r"[A-Za-z]{5,}", card_name_raw), key=len, reverse=True)
+                    if name_tokens:
+                        name_frag = name_tokens[0]
 
-        folder_name_base = sanitize_filename(f"{card_name}_{collector_number_formatted}" if collector_number_formatted else card_name)
-        if not auto_accept:
-            folder_name_base = sanitize_filename(f"Uncertain_{card_name}")
+                abil_frag = None
+                if ocr_text_raw:
+                    tokens = [t for t in re.findall(r"[A-Za-z]{4,}", ocr_text_raw) if t.lower() not in {"and", "the", "with", "from", "this", "that"}]
+                    if tokens:
+                        abil_frag = tokens[0]
 
-        final_folder_name = f"{folder_name_base}_{i+1}"
-        os.makedirs(final_folder_name, exist_ok=True)
-        print(f"  -> Created folder: {final_folder_name} (confidence={final_conf:.2f}{'' if auto_accept else ' • routed to Uncertain'})")
+                if name_frag or abil_frag:
+                    text_lookup = lookup_card_by_text(name_frag, abil_frag, set_hint)
+                    if text_lookup:
+                        resolved_name, api_set_id = text_lookup
+                        api_hit = True
+                        if api_set_id:
+                            set_hint = api_set_id
+                        print(f"  - Resolved by text query -> {resolved_name} (set {set_hint}).")
 
-        # Persist manifest for audit
+            card_name_candidates = [
+                resolved_name,
+                card_name_raw.strip() if card_name_raw else "",
+                visual_hint.get("name") if visual_hint else "",
+                "Unknown",
+            ]
+            card_name = next(name for name in card_name_candidates if name)
+            visual_score = visual_hint["score"] if visual_hint else None
+            has_number = bool(collector_number)
+            final_conf = compute_final_confidence(visual_score, has_number, api_hit)
+            auto_accept = final_conf >= AUTO_ACCEPT_THRESHOLD
+
+        collector_number_formatted = collector_number.replace("/", "_") if collector_number else ""
+        if mode == "quality":
+            folder_name_base = sanitize_filename(f"{card_name}_{collector_number_formatted}" if collector_number_formatted else card_name)
+            if not auto_accept:
+                folder_name_base = sanitize_filename(f"Uncertain_{card_name}")
+            final_folder_name = f"{folder_name_base}_1"
+        else:
+            final_folder_name = "Card_0001"
+        final_folder_path = os.path.join(output_root, final_folder_name)
+        os.makedirs(final_folder_path, exist_ok=True)
+
         manifest = {
+            "mode": mode,
+            "full_frame": True,
             "chosen_name": card_name,
             "collector_number": collector_number,
             "set_hint": set_hint,
@@ -1368,68 +1435,230 @@ if __name__ == "__main__":
             "confidence": final_conf,
             "auto_accept": auto_accept,
             "cn_info": cn_info,
-            "ocr_name_raw": card_name_raw,
+            "front_contour_index": 1,
         }
-        write_manifest(final_folder_name, manifest)
+        write_manifest(final_folder_path, manifest)
 
-        # Save a listing-friendly front (no perspective warp). This preserves the original photo geometry.
-        fx, fy, fw, fh = cv2.boundingRect(contour)
-        fx0, fy0 = max(0, fx - PADDING), max(0, fy - PADDING)
-        fx1, fy1 = min(W_front, fx + fw + PADDING), min(H_front, fy + fh + PADDING)
-        if fx1 > fx0 and fy1 > fy0:
-            front_crop = front_image[fy0:fy1, fx0:fx1]
-        else:
-            front_crop = normalized_card_img
+        cv2.imwrite(os.path.join(final_folder_path, f"{final_folder_name}_FRONT.jpg"), front_image)
+        create_quadrant_crops(front_image, final_folder_path, f"{final_folder_name}_FRONT", crop_ratio=FRONT_QUADRANT_RATIO)
 
-        cv2.imwrite(os.path.join(final_folder_name, f"{final_folder_name}_FRONT.jpg"), front_crop)
-        create_quadrant_crops(normalized_card_img, final_folder_name, f"{final_folder_name}_FRONT")
+        cv2.imwrite(os.path.join(final_folder_path, f"{final_folder_name}_BACK.jpg"), back_image)
+        create_quadrant_crops(back_image, final_folder_path, f"{final_folder_name}_BACK", crop_ratio=BACK_QUADRANT_RATIO)
 
-        # Optionally save the warped, normalized card for debugging/QA
-        if DEBUG or SAVE_WARPED_DEBUG:
-            cv2.imwrite(os.path.join(final_folder_name, f"{final_folder_name}_FRONT_WARPED.jpg"), normalized_card_img)
+        identified_cards.append({
+            "folder_name": final_folder_name,
+            "folder_path": final_folder_path,
+            "center_norm": (0.5, 0.5),
+        })
+    else:
+        print(f"--- Processing {len(front_contours)} card fronts... ---")
+        for i, contour in enumerate(front_contours):
+            card_idx = i + 1
+            print(f"  [{card_idx}/{len(front_contours)}] Front contour")
 
-        # Use the original contour center for matching with the back
-        cx, cy = get_contour_center(contour)
-        identified_cards.append({"folder": final_folder_name, "center_norm": (cx / W_front, cy / H_front)})
-    
+            # Approximate the contour to a polygon
+            peri = cv2.arcLength(contour, True)
+            approx = cv2.approxPolyDP(contour, 0.02 * peri, True)
+
+            # If the contour approximation has more than 4 points, fall back to a minimum-area rectangle.
+            if len(approx) < 4:
+                print(f"    - Skipping contour {card_idx} (too few points for a card).")
+                continue
+            if len(approx) > 4:
+                rect_points = cv2.boxPoints(cv2.minAreaRect(contour))
+                rect = order_points(rect_points)
+            else:
+                rect = order_points(approx.reshape(4, 2))
+
+            normalized_card_img = None
+            card_name = "Unknown"
+            collector_number = None
+            set_hint = None
+            cn_info = {"value": None, "source": None, "raw": None}
+            visual_hint = None
+            final_conf = 0.0
+            auto_accept = True
+
+            if mode == "quality":
+                # Compute the destination points for the perspective transform
+                dst = np.array([
+                    [0, 0],
+                    [WARPED_WIDTH - 1, 0],
+                    [WARPED_WIDTH - 1, WARPED_HEIGHT - 1],
+                    [0, WARPED_HEIGHT - 1]], dtype="float32")
+
+                # Compute the perspective transform matrix and then apply it
+                M = cv2.getPerspectiveTransform(rect, dst)
+                warped_card_img = cv2.warpPerspective(front_image, M, (WARPED_WIDTH, WARPED_HEIGHT))
+                normalized_card_img, card_name_raw, ocr_text_raw, rotation_used = orient_and_ocr_card(warped_card_img)
+                if rotation_used:
+                    print(f"    - Rotated {rotation_used} degrees to align text.")
+
+                visual_candidates = find_visual_candidates(normalized_card_img)
+                if visual_candidates:
+                    top_candidate = visual_candidates[0]
+                    print(
+                        f"    - Visual shortlist: {top_candidate.get('name','?')} "
+                        f"(#{top_candidate.get('number','?')} | {top_candidate.get('set_id','?')}) "
+                        f"score={top_candidate['score']:.3f}"
+                    )
+                    if top_candidate["score"] >= REFERENCE_ACCEPT_SCORE:
+                        visual_hint = top_candidate
+
+                cn_info = ocr_collector_number(normalized_card_img)
+                collector_number = cn_info.get("value") if isinstance(cn_info, dict) else None
+                resolved_name = None
+                set_hint = visual_hint.get("set_id") if visual_hint and visual_hint.get("set_id") else None
+
+                if not collector_number and visual_hint and visual_hint.get("number"):
+                    collector_number = visual_hint["number"]
+                    print(f"    - Using visual match number {collector_number} (score {visual_hint['score']:.3f}).")
+
+                api_hit = False
+                if collector_number:
+                    lookup = lookup_card_title(collector_number, set_hint)
+                    if lookup:
+                        resolved_name, api_set_id = lookup
+                        api_hit = True
+                        if api_set_id:
+                            set_hint = api_set_id
+                        print(f"    - Matched collector number {collector_number} -> {resolved_name} (set {set_hint}).")
+
+                if not resolved_name and visual_hint and visual_hint.get("name"):
+                    resolved_name = visual_hint["name"]
+
+                # Fallback: try text fragments via API if still unresolved
+                if not resolved_name:
+                    name_frag = None
+                    if card_name_raw:
+                        # Prefer longer alphabetic tokens to avoid short, common words.
+                        name_tokens = sorted(re.findall(r"[A-Za-z]{5,}", card_name_raw), key=len, reverse=True)
+                        if name_tokens:
+                            name_frag = name_tokens[0]
+
+                    abil_frag = None
+                    if ocr_text_raw:
+                        tokens = [t for t in re.findall(r"[A-Za-z]{4,}", ocr_text_raw) if t.lower() not in {"and", "the", "with", "from", "this", "that"}]
+                        if tokens:
+                            abil_frag = tokens[0]
+
+                    if name_frag or abil_frag:
+                        text_lookup = lookup_card_by_text(name_frag, abil_frag, set_hint)
+                        if text_lookup:
+                            resolved_name, api_set_id = text_lookup
+                            api_hit = True
+                            if api_set_id:
+                                set_hint = api_set_id
+                            print(f"    - Resolved by text query -> {resolved_name} (set {set_hint}).")
+
+                card_name_candidates = [
+                    resolved_name,
+                    card_name_raw.strip() if card_name_raw else "",
+                    visual_hint.get("name") if visual_hint else "",
+                    "Unknown",
+                ]
+                card_name = next(name for name in card_name_candidates if name)
+                visual_score = visual_hint["score"] if visual_hint else None
+                has_number = bool(collector_number)
+                final_conf = compute_final_confidence(visual_score, has_number, api_hit)
+                auto_accept = final_conf >= AUTO_ACCEPT_THRESHOLD
+
+            collector_number_formatted = collector_number.replace("/", "_") if collector_number else ""
+            if mode == "quality":
+                folder_name_base = sanitize_filename(f"{card_name}_{collector_number_formatted}" if collector_number_formatted else card_name)
+                if not auto_accept:
+                    folder_name_base = sanitize_filename(f"Uncertain_{card_name}")
+                final_folder_name = f"{folder_name_base}_{card_idx}"
+            else:
+                final_folder_name = f"Card_{card_idx:04d}"
+
+            final_folder_path = os.path.join(output_root, final_folder_name)
+            os.makedirs(final_folder_path, exist_ok=True)
+            print(f"    -> Output folder: {final_folder_name}")
+
+            # Persist manifest for audit
+            manifest = {
+                "mode": mode,
+                "chosen_name": card_name,
+                "collector_number": collector_number,
+                "set_hint": set_hint,
+                "visual_top": visual_hint,
+                "confidence": final_conf,
+                "auto_accept": auto_accept,
+                "cn_info": cn_info,
+                "front_contour_index": card_idx,
+            }
+            write_manifest(final_folder_path, manifest)
+
+            # Save a listing-friendly front (no perspective warp). This preserves original scan geometry.
+            fx, fy, fw, fh = cv2.boundingRect(contour)
+            fx0, fy0 = max(0, fx - PADDING), max(0, fy - PADDING)
+            fx1, fy1 = min(W_front, fx + fw + PADDING), min(H_front, fy + fh + PADDING)
+            if fx1 > fx0 and fy1 > fy0:
+                front_crop = front_image[fy0:fy1, fx0:fx1]
+            elif normalized_card_img is not None:
+                front_crop = normalized_card_img
+            else:
+                print(f"    - Skipping contour {card_idx}: invalid crop bounds.")
+                continue
+
+            cv2.imwrite(os.path.join(final_folder_path, f"{final_folder_name}_FRONT.jpg"), front_crop)
+            create_quadrant_crops(front_crop, final_folder_path, f"{final_folder_name}_FRONT", crop_ratio=FRONT_QUADRANT_RATIO)
+
+            # Optionally save the warped, normalized card for debugging/QA
+            if (DEBUG or SAVE_WARPED_DEBUG) and normalized_card_img is not None:
+                cv2.imwrite(os.path.join(final_folder_path, f"{final_folder_name}_FRONT_WARPED.jpg"), normalized_card_img)
+
+            cx, cy = get_contour_center(contour)
+            identified_cards.append({
+                "folder_name": final_folder_name,
+                "folder_path": final_folder_path,
+                "center_norm": (cx / W_front, cy / H_front),
+            })
+
     print(f"Fronts processed (usable): {len(identified_cards)}")
-
     print(f"\n--- Processing and matching {len(back_contours)} card backs... ---")
-    if not identified_cards:
+
+    if use_full_frame:
+        pass
+    elif not identified_cards:
         print("No card fronts were processed; skipping back matching.")
-    
     elif len(identified_cards) == len(back_contours):
-        def norm_pts(contours, W, H):
-            return [(get_contour_center(c)[0]/W, get_contour_center(c)[1]/H) for c in contours]
-        
-        fp = [ic['center_norm'] for ic in identified_cards]
+        def norm_pts(contours, width, height):
+            return [(get_contour_center(c)[0] / width, get_contour_center(c)[1] / height) for c in contours]
+
+        fp = [ic["center_norm"] for ic in identified_cards]
         bp = norm_pts(back_contours, W_back, H_back)
         n = len(fp)
 
         d_order = sum(euclidean_distance(fp[i], bp[i]) for i in range(n))
-        d_rev = sum(euclidean_distance(fp[i], bp[n-1-i]) for i in range(n))
+        d_rev = sum(euclidean_distance(fp[i], bp[n - 1 - i]) for i in range(n))
 
         backs_in_order = back_contours if d_order <= d_rev else list(reversed(back_contours))
         if d_order > d_rev:
             print("Reversed back order detected. Adjusting match order.")
 
         for i, contour in enumerate(backs_in_order):
-            folder = identified_cards[i]['folder']
+            card_ref = identified_cards[i]
+            folder_name = card_ref["folder_name"]
+            folder_path = card_ref["folder_path"]
             x, y, w, h = cv2.boundingRect(contour)
-            x0,y0,x1,y1 = max(0,x-PADDING), max(0,y-PADDING), min(W_back,x+w+PADDING), min(H_back,y+h+PADDING)
-            if x1 <= x0 or y1 <= y0: continue
+            x0, y0 = max(0, x - PADDING), max(0, y - PADDING)
+            x1, y1 = min(W_back, x + w + PADDING), min(H_back, y + h + PADDING)
+            if x1 <= x0 or y1 <= y0:
+                continue
             padded_back_img = back_image[y0:y1, x0:x1]
-            cv2.imwrite(os.path.join(folder, f"{folder}_BACK.jpg"), padded_back_img)
-            create_quadrant_crops(padded_back_img, folder, f"{folder}_BACK")
+            cv2.imwrite(os.path.join(folder_path, f"{folder_name}_BACK.jpg"), padded_back_img)
+            create_quadrant_crops(padded_back_img, folder_path, f"{folder_name}_BACK", crop_ratio=BACK_QUADRANT_RATIO)
     else:
         print("Warning: Mismatched counts. Falling back to normalized nearest-neighbor matching.")
         unused_fronts = set(range(len(identified_cards)))
         for contour in back_contours:
             bx, by = get_contour_center(contour)
             b_norm = (bx / W_back, by / H_back)
-            
-            def dist_norm(i):
-                fx, fy = identified_cards[i]['center_norm']
+
+            def dist_norm(idx):
+                fx, fy = identified_cards[idx]["center_norm"]
                 return euclidean_distance((fx, fy), b_norm)
 
             if unused_fronts:
@@ -1437,19 +1666,66 @@ if __name__ == "__main__":
                 unused_fronts.remove(best_match_idx)
             else:
                 best_match_idx = min(range(len(identified_cards)), key=dist_norm)
-            
-            folder = identified_cards[best_match_idx]['folder']
-            x,y,w,h = cv2.boundingRect(contour)
-            x0,y0,x1,y1 = max(0,x-PADDING), max(0,y-PADDING), min(W_back,x+w+PADDING), min(H_back,y+h+PADDING)
-            if x1 <= x0 or y1 <= y0: continue
-            padded_back_img = back_image[y0:y1, x0:x1]
-            cv2.imwrite(os.path.join(folder, f"{folder}_BACK.jpg"), padded_back_img)
-            create_quadrant_crops(padded_back_img, folder, f"{folder}_BACK")
 
-    today_str = date.today().strftime('%Y-%m-%d')
-    archive_dir = os.path.join("_Processed_Scans", today_str)
-    os.makedirs(archive_dir, exist_ok=True)
-    safe_move(front_filename, archive_dir)
-    safe_move(back_filename, archive_dir)
-    print(f"\n--- Archived original scans to {archive_dir} ---")
+            card_ref = identified_cards[best_match_idx]
+            folder_name = card_ref["folder_name"]
+            folder_path = card_ref["folder_path"]
+            x, y, w, h = cv2.boundingRect(contour)
+            x0, y0 = max(0, x - PADDING), max(0, y - PADDING)
+            x1, y1 = min(W_back, x + w + PADDING), min(H_back, y + h + PADDING)
+            if x1 <= x0 or y1 <= y0:
+                continue
+            padded_back_img = back_image[y0:y1, x0:x1]
+            cv2.imwrite(os.path.join(folder_path, f"{folder_name}_BACK.jpg"), padded_back_img)
+            create_quadrant_crops(padded_back_img, folder_path, f"{folder_name}_BACK", crop_ratio=BACK_QUADRANT_RATIO)
+
+    validation_failures = 0
+    for card_ref in identified_cards:
+        ok, missing = validate_card_outputs(card_ref["folder_path"], card_ref["folder_name"])
+        if not ok:
+            validation_failures += 1
+            print(f"  - Missing outputs for {card_ref['folder_name']}: {', '.join(missing)}")
+
+    if archive:
+        today_str = date.today().strftime("%Y-%m-%d")
+        archive_dir = os.path.join(archive_root, today_str)
+        os.makedirs(archive_dir, exist_ok=True)
+        safe_move(front_filename, archive_dir)
+        safe_move(back_filename, archive_dir)
+        print(f"\n--- Archived original scans to {archive_dir} ---")
+
+    elapsed = time.perf_counter() - started
     print("--- All processing complete! ---")
+    print(
+        f"Summary: cards={len(identified_cards)} "
+        f"validation_failures={validation_failures} "
+        f"elapsed={elapsed:.1f}s "
+        f"rate={(len(identified_cards) / elapsed if elapsed > 0 else 0):.2f} cards/s"
+    )
+    return 0 if validation_failures == 0 else 2
+
+if __name__ == "__main__":
+    args = parse_args()
+    front_filename = resolve_scan_path(args.front)
+    back_filename = resolve_scan_path(args.back)
+
+    if not front_filename or not back_filename:
+        error_message = "Error: Cannot find required scan files. "
+        if not front_filename:
+            error_message += f"Missing front scan ({args.front}). "
+        if not back_filename:
+            error_message += f"Missing back scan ({args.back}). "
+        error_message += f"Supported extensions are {SUPPORTED_EXTENSIONS}."
+        print(error_message)
+        raise SystemExit(1)
+
+    raise SystemExit(
+        process_scans(
+            front_filename=front_filename,
+            back_filename=back_filename,
+            mode=args.mode,
+            output_root=args.output_root,
+            archive_root=args.archive_root,
+            archive=(not args.no_archive),
+        )
+    )

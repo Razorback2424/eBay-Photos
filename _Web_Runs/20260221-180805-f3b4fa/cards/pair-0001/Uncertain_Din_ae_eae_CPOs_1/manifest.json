@@ -1,0 +1,17 @@
+{
+  "mode": "quality",
+  "chosen_name": "Din ae eae CPOs",
+  "collector_number": "SS88",
+  "set_hint": null,
+  "visual_top": null,
+  "confidence": 0.3,
+  "auto_accept": false,
+  "cn_info": {
+    "value": "SS88",
+    "source": "tesseract_line",
+    "raw": "PPT MM T F\nT\nSS 88 L\nS F\nNELESSYSSS\nYN\n",
+    "angle": 0,
+    "config": "--psm 6 -l eng -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ/"
+  },
+  "front_contour_index": 1
+}

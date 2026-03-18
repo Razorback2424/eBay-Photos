@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Account & Billing</title>
+  {% if plausible_domain %}
+  <script defer data-domain="{{ plausible_domain }}" src="{{ plausible_script_src }}"></script>
+  {% endif %}
+  <style>
+    :root {
+      --ink: #1e3041;
+      --muted: #5b7186;
+      --line: rgba(18, 40, 62, .14);
+      --panel: #fff;
+      --bg: #edf3f8;
+      --accent: #0a7b6d;
+      --shadow: 0 14px 28px rgba(20, 42, 61, .08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+      color: var(--ink);
+      background: linear-gradient(160deg, #f8fbff, var(--bg));
+      position: relative;
+      min-height: 100vh;
+    }
+    body:before, body:after {
+      content: "";
+      position: fixed;
+      border-radius: 999px;
+      filter: blur(42px);
+      opacity: .14;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body:before { width: 34vw; height: 34vw; right: -10vw; top: -12vw; background: rgba(15,157,138,.9); }
+    body:after { width: 38vw; height: 38vw; left: -12vw; bottom: -14vw; background: rgba(90,167,255,.7); }
+    .shell { width: min(1040px, 94vw); margin: 28px auto 56px; position: relative; z-index: 1; }
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(251,253,255,.93));
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+      backdrop-filter: blur(8px);
+    }
+    h1, h2 { margin: 0 0 8px; letter-spacing: -0.01em; }
+    p { margin: 0; color: var(--muted); }
+    .grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 14px; }
+    @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+    .metric {
+      border: 1px solid #dde8f1;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #fbfdff, #f8fbff);
+      padding: 12px;
+      margin-top: 12px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.92);
+    }
+    .k { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #607689; }
+    .v { margin-top: 4px; font-size: 24px; font-weight: 800; }
+    .pill {
+      display: inline-block; margin-top: 8px;
+      border-radius: 999px; padding: 6px 10px;
+      background: #ebf7f4; color: #0f675b; font-size: 12px; font-weight: 700;
+    }
+    .pill.warn { background: #fff1f0; color: #a83144; }
+    .meter { margin-top: 10px; height: 10px; border-radius: 999px; background: #edf3f8; border: 1px solid #dbe7ef; overflow: hidden; }
+    .meter > div { height: 100%; width: {{ account.usage_ratio }}%; background: linear-gradient(90deg, #0f9d8a, #0a7b6d); position: relative; }
+    .meter > div:after {
+      content:""; position:absolute; inset:0;
+      background: linear-gradient(112deg, rgba(255,255,255,0) 25%, rgba(255,255,255,.3) 50%, rgba(255,255,255,0) 75%);
+      transform: translateX(-115%);
+      animation: sweep 2.2s linear infinite;
+    }
+    .btnrow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .btn {
+      display: inline-block;
+      text-decoration: none;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .btn.primary { background: var(--accent); color: #fff; }
+    .btn.ghost { border: 1px solid #bfd0dc; background: #fff; color: #2a4354; }
+    .btn { transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 16px rgba(20,42,61,.07); }
+    .demo-list { margin: 12px 0 0; padding-left: 18px; color: #4f667a; font-size: 13px; }
+    .toplink { color: #0a7b6d; text-decoration: none; font-weight: 700; }
+    .toprow { display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap; }
+    .navrow { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .navpill {
+      display:inline-block; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:700;
+      background:#eef7f4; color:#0f675a; border:1px solid #d9ece7;
+    }
+    code {
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      background: #f4f9fd;
+      border: 1px solid #dce8f2;
+      border-radius: 8px;
+      padding: 1px 6px;
+      color: #29495f;
+      font-size: 12px;
+    }
+    .codepill {
+      display:inline-block;
+      border-radius:10px;
+      border:1px solid #d7e4ef;
+      background:#f7fbff;
+      color:#29495f;
+      padding:6px 8px;
+      font-size:12px;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      margin-top: 6px;
+    }
+    .plan-grid {
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    @media (max-width: 760px) { .plan-grid { grid-template-columns: 1fr; } }
+    .plan-card {
+      border: 1px solid #dbe7f0;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #fbfdff, #f8fbff);
+      padding: 12px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.92);
+    }
+    .plan-card.featured {
+      border-color: rgba(15,157,138,.35);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.92), 0 10px 18px rgba(15,157,138,.08);
+    }
+    .price {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      margin-top: 4px;
+    }
+    .plan-list {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      color: #51687b;
+      font-size: 13px;
+    }
+    .lift { animation: riseIn .28s ease; }
+    .notice {
+      margin-top: 12px;
+      border-radius: 12px;
+      border: 1px solid #dbe7f0;
+      background: #f7fbff;
+      color: #335269;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+    details.disclosure {
+      border: 1px solid #dbe7f0;
+      border-radius: 14px;
+      background: #fff;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    details.disclosure > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 12px 14px;
+      font-weight: 700;
+      color: #284052;
+      background: #f8fbff;
+      border-bottom: 1px solid #e5edf4;
+    }
+    details.disclosure > summary::-webkit-details-marker { display: none; }
+    details.disclosure > summary:after {
+      content: "Expand";
+      float: right;
+      color: #5a7186;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    details.disclosure[open] > summary:after { content: "Collapse"; }
+    details.disclosure .body { padding: 12px; }
+    @keyframes riseIn {
+      from { opacity:0; transform: translateY(6px); }
+      to { opacity:1; transform: translateY(0); }
+    }
+    @keyframes sweep { to { transform: translateX(125%); } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="panel lift">
+      <div class="toprow">
+        <a class="toplink" href="{{ url_for('dashboard') }}">← Home</a>
+        <div class="navrow">
+          {% if auth and auth.is_authenticated %}
+            <span class="navpill">{{ auth.user.email }}</span>
+            <a class="toplink" href="{{ url_for('logout') }}">Sign Out</a>
+          {% endif %}
+        </div>
+      </div>
+      <h1 style="margin-top:8px;">Account & Billing</h1>
+      <p>Check your access status, usage, and support details for the current launch setup.</p>
+      {% if billing_message %}
+      <div class="notice">{{ billing_message }}</div>
+      {% endif %}
+    </section>
+
+    <section class="grid">
+      <section class="panel lift">
+        <h2>Subscription</h2>
+        <p style="margin-bottom:10px;">This is the page to check whether you can start new batches right now.</p>
+        <div class="metric">
+          <div class="k">Plan</div>
+          <div class="v" style="font-size:20px;">{{ account.plan_name }}</div>
+          <span class="pill {% if not account.can_process %}warn{% endif %}">{{ account.status_label }}</span>
+          <div class="k" style="margin-top:12px;">
+            {% if account.is_trial_user %}Free Trial Usage (Lifetime){% else %}Monthly Card Usage ({{ account.month_key }}){% endif %}
+          </div>
+          <div class="v">
+            {% if account.is_master_user %}
+              {{ account.used_cards }} / Unlimited
+            {% elif account.is_trial_user %}
+              {{ account.trial_used_cards_total }} / {{ account.trial_cards_total_limit }}
+            {% else %}
+              {{ account.used_cards }} / {{ account.cards_limit }}
+            {% endif %}
+          </div>
+          <div class="meter"><div></div></div>
+          <p style="margin-top:8px;">
+            {% if account.is_master_user %}
+              Owner bypass is active for this account. Billing gates are bypassed and processing remains enabled.
+            {% elif account.is_trial_user and account.trial_exhausted %}
+              Your free trial is exhausted. Upgrade to continue processing.
+            {% elif account.is_trial_user %}
+              {{ account.trial_remaining_cards }} free trial cards remaining.
+            {% elif account.can_process %}
+              {{ account.remaining_cards }} cards remaining this month.
+            {% else %}
+              Processing is currently locked. Update billing to start new batches again.
+            {% endif %}
+          </p>
+          <div class="btnrow">
+            {% if launch_mode %}
+            {% if purchase_url %}
+            <a class="btn primary" href="{{ purchase_url }}" target="_blank" rel="noopener noreferrer">Buy or Manage via Gumroad</a>
+            {% endif %}
+            <a class="btn ghost" href="mailto:{{ support_email }}">Contact Support</a>
+            {% else %}
+            <a class="btn primary" href="{{ url_for('billing_checkout') }}">{{ "Upgrade" if stripe_checkout_ready else "Upgrade (Demo/Unconfigured)" }}</a>
+            <a class="btn ghost" href="{{ url_for('billing_portal') }}">{{ "Manage Billing" if stripe_portal_ready else "Manage Billing (Demo/Unconfigured)" }}</a>
+            {% endif %}
+            <a class="btn ghost" href="{{ url_for('dashboard') }}">Back to Workspace</a>
+          </div>
+        </div>
+      </section>
+
+      {% if launch_mode %}
+      <section class="panel lift">
+        <h2>Access & Support</h2>
+        <p>Your Gumroad purchase email and license key control access during launch. Keep the receipt available if you sign in from another device.</p>
+        <div class="metric">
+          <div class="k">Support</div>
+          <div class="v" style="font-size:20px;">{{ support_email }}</div>
+          <p style="margin-top:8px;">For billing, license, or export issues, email support and include the purchase email from Gumroad.</p>
+          <div class="btnrow">
+            <a class="btn ghost" href="{{ url_for('privacy_page') }}">Privacy</a>
+            <a class="btn ghost" href="{{ url_for('terms_page') }}">Terms</a>
+          </div>
+        </div>
+      </section>
+      {% endif %}
+
+      {% if not launch_mode and demo_billing_controls_enabled %}
+      <section class="panel lift">
+        <h2>Local Testing Controls</h2>
+        <p>Use these only in the local demo build to test paywall behavior and usage gating. Real customers will not see these controls.</p>
+        <div class="btnrow">
+          <a class="btn ghost" href="{{ url_for('billing_checkout', demo='trial') }}">Trial</a>
+          <a class="btn ghost" href="{{ url_for('billing_checkout', demo='activate') }}">Active</a>
+          <a class="btn ghost" href="{{ url_for('billing_checkout', demo='no_subscription') }}">No Subscription</a>
+          <a class="btn ghost" href="{{ url_for('billing_checkout', demo='incomplete') }}">Incomplete</a>
+          <a class="btn ghost" href="{{ url_for('billing_portal', demo='past_due') }}">Past Due</a>
+          <a class="btn ghost" href="{{ url_for('billing_portal', demo='canceled') }}">Canceled</a>
+        </div>
+        <ul class="demo-list">
+          <li><code>Trial</code> and <code>Active</code> allow processing (subject to monthly card limit).</li>
+          <li><code>No Subscription</code>, <code>Incomplete</code>, <code>Past Due</code>, and <code>Canceled</code> block <code>Start Batch Processing</code>.</li>
+          <li>Usage is recorded when a batch completes.</li>
+        </ul>
+      </section>
+      {% endif %}
+    </section>
+
+    {% if not launch_mode %}
+    <section class="panel lift">
+      <h2>Plans</h2>
+      <p>Choose a plan here and manage billing above. Technical launch setup is available below only if you need it.</p>
+      <div class="plan-grid">
+        <div class="plan-card">
+          <div class="k">Starter Trial</div>
+          <div class="price">$0</div>
+          <p>Local testing plan for validating onboarding, paywall, and batch flow.</p>
+          <ul class="plan-list">
+            <li>Monthly usage meter enabled</li>
+            <li>Processing allowed until limit is reached</li>
+            <li>Good for end-to-end UI testing</li>
+          </ul>
+        </div>
+        <div class="plan-card featured">
+          <div class="k">Photo Prep Pro</div>
+          <div class="price">$29<span style="font-size:13px; font-weight:700; color:#607689;"> / month</span></div>
+          <p>Example paid plan card for Stripe checkout wiring and conversion UX.</p>
+          <ul class="plan-list">
+            <li>Higher monthly card limit</li>
+            <li>Billing portal support</li>
+            <li>Webhook-driven subscription state updates</li>
+          </ul>
+        </div>
+      </div>
+      <details class="disclosure">
+        <summary>Admin / Launch Setup (Stripe + Auth)</summary>
+        <div class="body">
+      <div class="metric">
+        <div class="k">Stripe Webhook Endpoint</div>
+        <div class="codepill">/webhooks/stripe</div>
+        <div style="margin-top:8px;">
+          <span class="pill {% if not stripe_checkout_ready %}warn{% endif %}">Checkout {{ "Ready" if stripe_checkout_ready else "Not Configured" }}</span>
+          <span class="pill {% if not stripe_portal_ready %}warn{% endif %}" style="margin-left:6px;">Portal {{ "Ready" if stripe_portal_ready else "Not Configured" }}</span>
+          <span class="pill {% if auth_mode != 'auth0' %}warn{% endif %}" style="margin-left:6px;">Auth {{ "Auth0" if auth_mode == "auth0" else "Demo" }}</span>
+        </div>
+        <p style="margin-top:8px;">
+          Configure <code>STRIPE_WEBHOOK_SECRET</code> before production use so webhook signatures are verified. The endpoint currently maps Stripe subscription statuses to the app's subscription gate states.
+        </p>
+      </div>
+        </div>
+      </details>
+    </section>
+    {% endif %}
+  </main>
+</body>
+</html>

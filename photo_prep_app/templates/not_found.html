@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title }}</title>
+  <style>
+    body {
+      margin:0;
+      font-family:"Avenir Next","Segoe UI",sans-serif;
+      background: radial-gradient(circle at 18% 12%, #fff 0%, #f3f8fd 46%, #e8f0f8 100%);
+      color:#1f3040;
+      min-height:100vh;
+      position:relative;
+      overflow:hidden;
+    }
+    body:before, body:after {
+      content:"";
+      position:fixed;
+      border-radius:999px;
+      filter: blur(42px);
+      opacity:.14;
+      pointer-events:none;
+    }
+    body:before { width:34vw; height:34vw; right:-10vw; top:-12vw; background: rgba(15,157,138,.95); }
+    body:after { width:38vw; height:38vw; left:-12vw; bottom:-15vw; background: rgba(90,167,255,.7); }
+    main { width:min(760px,92vw); margin:48px auto; position:relative; z-index:1; }
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(251,253,255,.93));
+      border:1px solid #d9e5ef;
+      border-radius:22px;
+      padding:22px;
+      box-shadow:0 16px 30px rgba(20,40,60,.09);
+      backdrop-filter: blur(8px);
+      animation: riseIn .28s ease;
+    }
+    h1 { margin:0 0 8px; font-size:28px; letter-spacing:-.02em; }
+    p { margin:0 0 14px; color:#556b7f; }
+    a { color:#0a7b6d; font-weight:700; text-decoration:none; }
+    .navrow { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+    .navpill {
+      display:inline-block; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:700;
+      background:#eef7f4; color:#0f675a; border:1px solid #d8ece7;
+    }
+    @keyframes riseIn {
+      from { opacity:0; transform: translateY(6px); }
+      to { opacity:1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="panel">
+      <div class="navrow">
+        <a href="{{ url_for('index') }}">← Home</a>
+        {% if auth and auth.is_authenticated %}
+        <span class="navpill">{{ auth.user.email }}</span>
+        {% endif %}
+      </div>
+      <h1>{{ title }}</h1>
+      <p>{{ message }}</p>
+      <p style="margin-top:-4px;">Next step: go back to your workspace to start a new batch or open a recent batch from history.</p>
+      <a href="{{ url_for('index') }}">Go to Workspace</a>
+    </section>
+  </main>
+</body>
+</html>

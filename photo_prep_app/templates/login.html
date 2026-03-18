@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Access card works</title>
+  {% if plausible_domain %}
+  <script defer data-domain="{{ plausible_domain }}" src="{{ plausible_script_src }}"></script>
+  {% endif %}
+  <script>
+    function trackAccessEvent(name) {
+      if (window.plausible) {
+        window.plausible(name);
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --ink: #1d2f40;
+      --muted: #5c7388;
+      --line: rgba(18, 40, 62, .14);
+      --panel: rgba(255,255,255,.95);
+      --bg1: #f6f9fc;
+      --bg2: #e5eef8;
+      --accent: #0f9d8a;
+      --accent2: #0a7b6d;
+      --shadow: 0 18px 36px rgba(20, 42, 61, .12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 15% 10%, #fff 0%, var(--bg1) 42%, var(--bg2) 100%);
+      color: var(--ink);
+      font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+      padding: 20px;
+    }
+    .card {
+      width: min(560px, 94vw);
+      background: linear-gradient(180deg, rgba(255,255,255,.97), rgba(249,252,255,.93));
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+    h1 { margin: 0 0 10px; font-size: 30px; letter-spacing: -.02em; }
+    p { margin: 0; color: var(--muted); line-height: 1.65; }
+    .chiprow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .chip {
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #ebf7f4;
+      color: #0e6559;
+    }
+    form { margin-top: 18px; }
+    label {
+      display:block;
+      font-size:12px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:#3d5367;
+      margin-bottom:8px;
+    }
+    input[type="email"], input[type="text"] {
+      width: 100%;
+      border: 1px solid #bfd0dc;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 14px;
+      color: var(--ink);
+      background: #fff;
+      margin-bottom: 12px;
+    }
+    button, .secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 12px;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      width: 100%;
+      color: #fff;
+      font-weight: 800;
+      font-size: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      cursor: pointer;
+      box-shadow: 0 12px 20px rgba(15,157,138,.2);
+      text-decoration: none;
+    }
+    .secondary {
+      background: #fff;
+      color: #254153;
+      border: 1px solid #bfd0dc;
+      box-shadow: none;
+    }
+    .tiny { margin-top: 12px; font-size: 12px; color: var(--muted); }
+    .toplink { display: inline-block; margin-top: 16px; color: #0a7b6d; text-decoration: none; font-weight: 700; }
+    .error {
+      margin-top: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(178,58,72,.35);
+      background: rgba(178,58,72,.07);
+      color: #b23a48;
+      padding: 9px 10px;
+      font-size: 13px;
+    }
+    .note {
+      margin-top: 16px;
+      border-radius: 14px;
+      border: 1px solid #dbe7f0;
+      background: #f7fbff;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #355067;
+      line-height: 1.65;
+    }
+    .footer {
+      margin-top: 18px;
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .footer a { color: #0a7b6d; text-decoration: none; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Enter your license key</h1>
+    <p>Use the purchase email and Gumroad license key from your receipt to unlock the workspace. After access opens, start by photographing all card fronts in one shot and all card backs in another before confirming the pairings.</p>
+    <div class="chiprow">
+      <span class="chip">Paid access required</span>
+      <span class="chip">Gumroad license verification</span>
+      <span class="chip">Browser-based workspace</span>
+    </div>
+
+    <form method="post" action="{{ url_for('login') }}" onsubmit="trackAccessEvent('Access Form Submit')">
+      <input type="hidden" name="next" value="{{ next_url }}" />
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      <label>Purchase Email</label>
+      <input type="email" name="email" placeholder="you@example.com" required />
+      <label>License Key</label>
+      <input type="text" name="license_key" placeholder="XXXX-XXXX-XXXX" required />
+      <button type="submit">Unlock Workspace</button>
+      {% if error %}
+      <div class="error">{{ error }}</div>
+      {% endif %}
+      <div class="tiny">After purchase, Gumroad should email your license key immediately. Keep that email and paste the key here whenever you sign in on a new device.</div>
+    </form>
+
+    {% if purchase_url %}
+    <a class="secondary" href="{{ purchase_url }}" target="_blank" rel="noopener noreferrer" onclick="trackAccessEvent('Access Purchase Click')">Buy Access on Gumroad</a>
+    {% endif %}
+
+    <div class="note">
+      The confirmation message customers receive should be explicit: here is your license key, here is where to enter it, and here is the first step once access opens. This page mirrors that same first-session guidance in-app so it appears at the exact moment it is needed.
+    </div>
+
+    <div class="footer">
+      <a href="{{ url_for('privacy_page') }}">Privacy</a>
+      <a href="{{ url_for('terms_page') }}">Terms</a>
+      <a href="mailto:{{ support_email }}">{{ support_email }}</a>
+    </div>
+
+    <a class="toplink" href="{{ url_for('dashboard') }}">← Back to Home</a>
+  </main>
+</body>
+</html>

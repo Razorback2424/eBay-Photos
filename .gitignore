@@ -2,3 +2,7 @@
 /Uncertain_mr_luccer_Mane_Prada_AON_1
 /_Processed_Scans
 .DS_Store
+.env
+.env.*
+!.env.example
+_Web_Runs/**/cards_bundle.zip

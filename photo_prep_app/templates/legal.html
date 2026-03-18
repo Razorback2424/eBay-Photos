@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title }} · card works</title>
+  {% if plausible_domain %}
+  <script defer data-domain="{{ plausible_domain }}" src="{{ plausible_script_src }}"></script>
+  {% endif %}
+  <style>
+    :root {
+      --ink: #1f2f3f;
+      --muted: #5e7387;
+      --line: rgba(18, 40, 62, .14);
+      --panel: rgba(255,255,255,.96);
+      --bg: linear-gradient(160deg, #f8fbff, #edf3f8);
+      --shadow: 0 14px 28px rgba(20,42,61,.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .shell { width: min(920px, 94vw); margin: 0 auto; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+    h1, h2 { margin: 0; letter-spacing: -.02em; }
+    p { color: var(--muted); line-height: 1.7; }
+    .toprow { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom: 16px; }
+    .toplink, .footer a { color: #0a7b6d; text-decoration: none; font-weight: 700; }
+    .section { padding-top: 18px; border-top: 1px solid #e6edf4; margin-top: 18px; }
+    .footer { margin-top: 18px; font-size: 13px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="panel">
+      <div class="toprow">
+        <a class="toplink" href="{{ url_for('index') }}">← Home</a>
+        <a class="toplink" href="mailto:{{ support_email }}">{{ support_email }}</a>
+      </div>
+      <h1>{{ title }}</h1>
+      <p style="margin-top:10px;">{{ intro }}</p>
+      {% for heading, body in sections %}
+      <section class="section">
+        <h2 style="font-size:20px;">{{ heading }}</h2>
+        <p style="margin-top:8px;">{{ body }}</p>
+      </section>
+      {% endfor %}
+      <div class="footer">
+        Questions: <a href="mailto:{{ support_email }}">{{ support_email }}</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

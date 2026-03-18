@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Batches · card works</title>
+  <style>
+    :root {
+      --ink: #1d2b38;
+      --muted: #5f7185;
+      --line: rgba(18, 40, 62, 0.14);
+      --accent: #0a7b6d;
+      --bg: #edf3f8;
+      --shadow: 0 14px 30px rgba(24, 46, 66, 0.10);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+      color: var(--ink);
+      background: linear-gradient(160deg, #f8fbff, var(--bg));
+      min-height: 100vh;
+      position: relative;
+    }
+    body:before, body:after {
+      content: "";
+      position: fixed;
+      border-radius: 999px;
+      filter: blur(40px);
+      opacity: .14;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body:before { width: 34vw; height: 34vw; top: -10vw; right: -8vw; background: rgba(15,157,138,.95); }
+    body:after { width: 36vw; height: 36vw; bottom: -12vw; left: -10vw; background: rgba(90,167,255,.75); }
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      backdrop-filter: blur(14px);
+      background: rgba(246,250,254,.78);
+      border-bottom: 1px solid rgba(18,40,62,.08);
+    }
+    .topbar-inner {
+      width: min(1440px, 96vw); margin: 0 auto; min-height: 64px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .brand { display:flex; align-items:center; gap:10px; }
+    .mark {
+      width: 34px; height: 34px; border-radius: 11px;
+      background: linear-gradient(145deg, #0f9d8a, #0a7b6d);
+      box-shadow: 0 10px 18px rgba(15,157,138,.22);
+      position: relative;
+    }
+    .mark:before {
+      content: ""; position: absolute; inset: 8px; border-radius: 7px;
+      border: 2px solid rgba(255,255,255,.75); transform: rotate(8deg);
+    }
+    .brand strong { display:block; font-size:14px; letter-spacing:-.01em; }
+    .brand span { display:block; font-size:11px; color: var(--muted); }
+    .navrow { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .navlink {
+      display:inline-block; text-decoration:none; border:1px solid #c5d5e1;
+      background: linear-gradient(180deg, #fff, #fbfdff); color:#274152;
+      border-radius:10px; padding:7px 10px; font-size:12px; font-weight:700;
+    }
+    .navlink.active { border-color: rgba(15,157,138,.35); color: #0f675a; background: #eef7f4; }
+    .userpill {
+      display:inline-block; border-radius:999px; background:#eef7f4; color:#0f675a;
+      border:1px solid #d9ece7; padding:7px 10px; font-size:12px; font-weight:700;
+    }
+    .shell { width: min(1440px, 96vw); margin: 18px auto 56px; position: relative; z-index: 1; }
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(251,253,255,.94));
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin-bottom: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .hero h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: -.02em; }
+    .hero p { margin: 0; color: var(--muted); }
+    .cta-row { margin-top: 12px; display:flex; gap:8px; flex-wrap:wrap; }
+    .btn {
+      display:inline-block; text-decoration:none; border-radius:10px; padding:10px 12px;
+      font-weight:700; font-size:13px;
+    }
+    .btn.primary { background: var(--accent); color: #fff; box-shadow: 0 10px 18px rgba(10,123,109,.18); }
+    .btn.ghost { border:1px solid #bfd0dc; background:#fff; color:#2a4354; }
+    .list { display:grid; gap:10px; }
+    .batch {
+      border:1px solid #dfe9f1; border-radius:14px; background:#fff;
+      padding: 12px; display:grid; grid-template-columns: minmax(0, 1.4fr) auto auto auto; gap:12px; align-items:center;
+    }
+    .batch:hover { border-color:#cfdfec; box-shadow: 0 8px 16px rgba(21,47,73,.06); }
+    @media (max-width: 900px) {
+      .batch { grid-template-columns: 1fr; gap:8px; }
+    }
+    .batch-title a { text-decoration:none; color:#16314a; font-weight:800; }
+    .batch-meta { margin-top:4px; color:var(--muted); font-size:12px; }
+    .stat { font-size: 12px; color: var(--muted); }
+    .stat strong { display:block; font-size: 17px; color: var(--ink); }
+    .pill {
+      display:inline-block; border-radius:999px; padding:6px 10px; font-size:11px; font-weight:700;
+      background:#ebf7f4; color:#0d675a;
+    }
+    .pill.warn { background:#fff1f0; color:#a83144; }
+    .empty {
+      border:1px dashed #cbdbe7; border-radius:14px; background:#fbfdff;
+      padding:16px; color:#4e667a;
+    }
+    .subhead { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="mark" aria-hidden="true"></div>
+        <div>
+          <strong>card works</strong>
+          <span>seller workspace</span>
+        </div>
+      </div>
+      <div class="navrow">
+        <a class="navlink" href="{{ url_for('workspace') }}">Workspace</a>
+        <a class="navlink active" href="{{ url_for('batches_page') }}">Batches</a>
+        <a class="navlink" href="{{ url_for('account_page') }}">Account</a>
+        {% if auth and auth.is_authenticated %}
+        <span class="userpill">{{ auth.user.email }}</span>
+        <a class="navlink" href="{{ url_for('logout') }}">Sign Out</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="panel hero">
+      <h1>Batches</h1>
+      <p>Review completed and in-progress batches, open previews, and download ZIP exports.</p>
+      <div class="cta-row">
+        <a class="btn primary" href="{{ url_for('workspace') }}">Start New Batch</a>
+        <a class="btn ghost" href="{{ url_for('account_page') }}">View Plan & Billing</a>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="subhead">
+        <h2 style="margin:0; font-size:20px;">Recent Batches</h2>
+        <div style="color: var(--muted); font-size: 12px;">Newest first</div>
+      </div>
+      {% if batches %}
+      <div class="list">
+        {% for b in batches %}
+        <article class="batch">
+          <div class="batch-title">
+            <a href="{{ url_for('job_status', job_id=b.id) }}">{{ b.batch_name or ('Batch ' ~ loop.index) }}</a>
+            <div class="batch-meta">{{ b.created_at or "" }}</div>
+          </div>
+          <div>
+            <span class="pill {{ 'warn' if b.status in ('failed', 'completed_with_warnings', 'expired') else '' }}">{{ b.status_label }}</span>
+          </div>
+          <div class="stat">
+            <strong>{{ b.total_cards or 0 }}</strong>
+            cards
+          </div>
+          <div class="stat">
+            <strong>{{ b.pair_count or 0 }}</strong>
+            pairs
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty">
+        <div style="font-weight: 700; color: #22384a;">No batches yet</div>
+        <div style="margin-top:4px;">Next step: go to Workspace, upload fronts and backs, then start your first batch.</div>
+      </div>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>
