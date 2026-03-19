@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>card works — Everything but the listing</title>
+<title>CardWorks — Everything but the listing</title>
 {% if plausible_domain %}
 <script defer data-domain="{{ plausible_domain }}" src="{{ plausible_script_src }}"></script>
 {% endif %}
@@ -393,6 +393,155 @@ a { color: inherit; }
   color: var(--text-3);
 }
 
+.proof-flow {
+  margin-top: 42px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.flow-card,
+.folder-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, #fffdf9, #f7f2ea);
+  overflow: hidden;
+}
+
+.flow-card {
+  padding: 24px;
+}
+
+.flow-step {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.flow-card h3 {
+  margin-top: 10px;
+  font-size: 26px;
+  line-height: 1.1;
+  font-family: var(--font-display);
+}
+
+.flow-card p {
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--text-2);
+  line-height: 1.75;
+}
+
+.scan-stack,
+.export-strip {
+  margin-top: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.scan-stack {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.scan-shot,
+.export-thumb {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #201d1a;
+}
+
+.scan-shot img,
+.export-thumb img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+
+.scan-shot span,
+.export-thumb span {
+  display: block;
+  padding: 10px 12px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,253,249,0.62);
+}
+
+.review-board {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--dark);
+  color: var(--white);
+}
+
+.review-board-title {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,253,249,0.44);
+}
+
+.review-list {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.review-item {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 13px;
+  color: rgba(255,253,249,0.78);
+}
+
+.review-item strong {
+  display: block;
+  color: var(--white);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.folder-card {
+  margin-top: 18px;
+  background: #161310;
+  color: rgba(255,253,249,0.8);
+}
+
+.folder-head {
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,253,249,0.44);
+}
+
+.folder-files {
+  padding: 16px 18px 18px;
+  display: grid;
+  gap: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.folder-files div {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+}
+
+.export-strip {
+  grid-template-columns: repeat(3, 1fr);
+}
+
 .problem {
   background: var(--bg-2);
 }
@@ -677,7 +826,10 @@ code {
   .proof-grid,
   .problem-grid,
   .pricing-grid,
-  .how-steps {
+  .how-steps,
+  .proof-flow,
+  .scan-stack,
+  .export-strip {
     grid-template-columns: 1fr;
   }
 
@@ -709,7 +861,7 @@ function trackLandingEvent(name) {
 <body>
 
 <nav class="nav">
-  <a href="{{ url_for('index') }}" class="nav-logo">card works</a>
+  <a href="{{ url_for('index') }}" class="nav-logo">CardWorks</a>
   <div class="nav-right">
     <a href="#proof" class="nav-link">Proof</a>
     <a href="#pricing" class="nav-link">Pricing</a>
@@ -779,44 +931,73 @@ function trackLandingEvent(name) {
         <div class="section-label">Proof</div>
         <h2 class="section-headline">Real output.<br>Concrete value.</h2>
       </div>
-      <p class="section-sub">This page now uses actual exported images already present in the repo instead of asking visitors to trust copy alone. The workflow value is simple: get from front and back scans to organized listing assets without hand-sorting or manual recropping.</p>
     </div>
-    <div class="proof-grid">
-      <article class="proof-card">
-        <div class="proof-media">
-          <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="Actual front export">
-        </div>
-        <div class="proof-copy">
-          <div class="proof-kicker">Actual export</div>
-          <h3>Your lead listing image is already cropped.</h3>
-          <p>The app generates a ready-to-use front image so you are not cleaning up each card before it even reaches eBay.</p>
-          <div class="proof-meta"><code>Card_0001_FRONT.jpg</code></div>
-        </div>
-      </article>
-      <article class="proof-card">
-        <div class="proof-media">
-          <img src="{{ url_for('static', filename='landing/proof-back.jpg') }}" alt="Actual back export">
-        </div>
-        <div class="proof-copy">
-          <div class="proof-kicker">Actual export</div>
-          <h3>The back stays paired with the right card.</h3>
-          <p>That matters when the slow part is no longer taking photos, but figuring out which reverse belongs with which listing after the session.</p>
-          <div class="proof-meta"><code>Card_0001_BACK.jpg</code></div>
+    <div class="proof-flow">
+      <article class="flow-card">
+        <div class="flow-step">Step 01</div>
+        <h3>Drop in two bulk scans.</h3>
+        <p>You photograph a sheet of fronts and a sheet of backs. The app starts from those two source images instead of expecting you to crop and name every card by hand first.</p>
+        <div class="scan-stack">
+          <div class="scan-shot">
+            <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="Source front scan example">
+            <span>Front scan in</span>
+          </div>
+          <div class="scan-shot">
+            <img src="{{ url_for('static', filename='landing/proof-back.jpg') }}" alt="Source back scan example">
+            <span>Back scan in</span>
+          </div>
         </div>
       </article>
-      <article class="proof-card">
-        <div class="proof-media">
-          <img src="{{ url_for('static', filename='landing/proof-corner.jpg') }}" alt="Actual corner crop export">
+      <article class="flow-card">
+        <div class="flow-step">Step 02</div>
+        <h3>Review detections and pairings.</h3>
+        <p>CardWorks finds the cards, lets you check what it detected, and makes you confirm the pairing before export. The point is faster organization, not fake one-click magic.</p>
+        <div class="review-board">
+          <div class="review-board-title">What happens in the workspace</div>
+          <div class="review-list">
+            <div class="review-item"><strong>Detect</strong> Find each card in the front and back scans.</div>
+            <div class="review-item"><strong>Review</strong> Fix misses before anything is exported.</div>
+            <div class="review-item"><strong>Pair</strong> Keep the right back attached to the right front.</div>
+            <div class="review-item"><strong>Name</strong> Export one organized folder per card instead of a pile of loose files.</div>
+          </div>
         </div>
-        <div class="proof-copy">
-          <div class="proof-kicker">Actual export</div>
-          <h3>Higher-value singles get the detail buyers ask for.</h3>
-          <p>Corner crops are especially useful for serious singles, but they also help any seller show condition clearly before the card ships.</p>
-          <div class="proof-meta"><code>Card_0001_FRONT_TL.jpg</code></div>
+      </article>
+      <article class="flow-card">
+        <div class="flow-step">Step 03</div>
+        <h3>Export one listing-ready card folder.</h3>
+        <p>The result is not just a few example JPGs. It is a repeatable folder per card with the front, back, and corner details already named so you can list instead of reorganize.</p>
+        <div class="folder-card">
+          <div class="folder-head">Card_0001/</div>
+          <div class="folder-files">
+            <div>Card_0001_FRONT.jpg</div>
+            <div>Card_0001_BACK.jpg</div>
+            <div>Card_0001_FRONT_TL.jpg</div>
+            <div>Card_0001_FRONT_TR.jpg</div>
+            <div>Card_0001_FRONT_BL.jpg</div>
+            <div>Card_0001_FRONT_BR.jpg</div>
+            <div>Card_0001_BACK_TL.jpg</div>
+            <div>Card_0001_BACK_TR.jpg</div>
+            <div>Card_0001_BACK_BL.jpg</div>
+            <div>Card_0001_BACK_BR.jpg</div>
+          </div>
+        </div>
+        <div class="export-strip">
+          <div class="export-thumb">
+            <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="Full front export example">
+            <span>Front export</span>
+          </div>
+          <div class="export-thumb">
+            <img src="{{ url_for('static', filename='landing/proof-back.jpg') }}" alt="Full back export example">
+            <span>Back export</span>
+          </div>
+          <div class="export-thumb">
+            <img src="{{ url_for('static', filename='landing/proof-corner.jpg') }}" alt="Corner export example">
+            <span>Corner export</span>
+          </div>
         </div>
       </article>
     </div>
-    <p class="proof-foot">This repo does not contain stored UI screenshots, so the proof layer is output-first. The flow remains: upload scans, review what was detected, confirm pairings, and export organized card folders from the workspace.</p>
+    <p class="proof-foot">From two bulk scans to one organized card folder: that is the part CardWorks is built to speed up.</p>
   </div>
 </section>
 
@@ -833,7 +1014,7 @@ function trackLandingEvent(name) {
       <article class="problem-card">
         <div class="proof-kicker">Pain 01</div>
         <div class="problem-quote">Sorting the right front and back takes longer than taking the photos.</div>
-        <p class="problem-answer">card works is aimed at keeping output organized so you can move through a batch without hand-renaming or manually rebuilding every card folder.</p>
+        <p class="problem-answer">CardWorks is aimed at keeping output organized so you can move through a batch without hand-renaming or manually rebuilding every card folder.</p>
       </article>
       <article class="problem-card">
         <div class="proof-kicker">Pain 02</div>
@@ -895,7 +1076,7 @@ function trackLandingEvent(name) {
         </ul>
       </div>
       <div class="output-visual">
-        <div class="hero-visual-label">Actual generated output example</div>
+        <div class="hero-visual-label">What one finished card export contains</div>
         <div class="output-showcase">
           <div class="output-main">
             <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="Full front export">
@@ -914,7 +1095,7 @@ function trackLandingEvent(name) {
         </div>
         <div class="corner-why">
           <strong>Why this matters</strong>
-          <p>A small edge issue on a valuable single changes buyer confidence immediately. Showing those details up front reduces ambiguity and helps you avoid condition disputes later.</p>
+          <p>A small edge issue on a valuable single changes buyer confidence immediately. CardWorks is meant to take you from two scans to this complete card folder so those details are already ready when you build the listing.</p>
         </div>
       </div>
     </div>
@@ -936,7 +1117,7 @@ function trackLandingEvent(name) {
         <div class="price-amount"><sup>$</sup>5</div>
         <p class="price-period">per month</p>
         <ul class="price-features">
-          <li>Full access to card works</li>
+          <li>Full access to CardWorks</li>
           <li>Unlimited cards and batches</li>
           <li>Best fit if you want the lowest recurring price</li>
           <li>Useful if card processing is part of your regular seller workflow</li>
@@ -949,7 +1130,7 @@ function trackLandingEvent(name) {
         <div class="price-amount"><sup>$</sup>9</div>
         <p class="price-period">per month</p>
         <ul class="price-features">
-          <li>Full access to card works</li>
+          <li>Full access to CardWorks</li>
           <li>Unlimited cards and batches</li>
           <li>Browser-based workflow</li>
           <li>Good if you want flexibility before committing longer term</li>
@@ -961,7 +1142,7 @@ function trackLandingEvent(name) {
         <div class="price-amount"><sup>$</sup>79</div>
         <p class="price-period">per year</p>
         <ul class="price-features">
-          <li>Full access to card works</li>
+          <li>Full access to CardWorks</li>
           <li>Unlimited cards and batches</li>
           <li>Best value if card listing is a steady part of your month</li>
           <li>Priced for repeat use, not one-off gimmick urgency</li>
@@ -1006,7 +1187,7 @@ function trackLandingEvent(name) {
 
 <section class="footer-cta">
   <div class="footer-inner">
-    <div class="footer-logo">card works</div>
+    <div class="footer-logo">CardWorks</div>
     <h2 class="footer-headline">Everything but<br><em>the listing.</em></h2>
     <p class="footer-sub">Focused on the part sellers usually do by hand: matching, organizing, and exporting card images after the photos are already taken.</p>
     <a href="{{ url_for('workspace') if auth.is_authenticated else url_for('login', next=url_for('workspace')) }}" class="primary-btn" onclick="trackLandingEvent('Footer CTA Click')">

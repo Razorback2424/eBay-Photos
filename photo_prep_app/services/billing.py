@@ -277,7 +277,7 @@ def apply_stripe_event_to_subscription(models_module, db_path, event):
             ((data_object.get("items") or {}).get("data") or [{}])[0]
             .get("price", {})
             .get("nickname")
-            or "Photo Prep Pro"
+            or "CardWorks Pro"
         )
         limit = None
         metadata = data_object.get("metadata") or {}

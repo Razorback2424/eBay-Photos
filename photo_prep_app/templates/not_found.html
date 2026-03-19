@@ -52,7 +52,7 @@
   <main>
     <section class="panel">
       <div class="navrow">
-        <a href="{{ url_for('index') }}">← Home</a>
+        <a href="{{ url_for('workspace') if auth and auth.is_authenticated else url_for('index') }}">← Home</a>
         {% if auth and auth.is_authenticated %}
         <span class="navpill">{{ auth.user.email }}</span>
         {% endif %}
@@ -60,7 +60,7 @@
       <h1>{{ title }}</h1>
       <p>{{ message }}</p>
       <p style="margin-top:-4px;">Next step: go back to your workspace to start a new batch or open a recent batch from history.</p>
-      <a href="{{ url_for('index') }}">Go to Workspace</a>
+      <a href="{{ url_for('workspace') }}">Go to Workspace</a>
     </section>
   </main>
 </body>

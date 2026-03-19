@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{{ title }} · card works</title>
+  <title>{{ title }} · CardWorks</title>
   {% if plausible_domain %}
   <script defer data-domain="{{ plausible_domain }}" src="{{ plausible_script_src }}"></script>
   {% endif %}
@@ -45,7 +45,7 @@
   <main class="shell">
     <section class="panel">
       <div class="toprow">
-        <a class="toplink" href="{{ url_for('index') }}">← Home</a>
+        <a class="toplink" href="{{ url_for('workspace') if auth and auth.is_authenticated else url_for('index') }}">← Home</a>
         <a class="toplink" href="mailto:{{ support_email }}">{{ support_email }}</a>
       </div>
       <h1>{{ title }}</h1>

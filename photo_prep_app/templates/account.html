@@ -193,7 +193,7 @@
   <main class="shell">
     <section class="panel lift">
       <div class="toprow">
-        <a class="toplink" href="{{ url_for('dashboard') }}">← Home</a>
+        <a class="toplink" href="{{ url_for('workspace') }}">← Home</a>
         <div class="navrow">
           {% if auth and auth.is_authenticated %}
             <span class="navpill">{{ auth.user.email }}</span>
@@ -202,7 +202,7 @@
         </div>
       </div>
       <h1 style="margin-top:8px;">Account & Billing</h1>
-      <p>Check your access status, usage, and support details for the current launch setup.</p>
+      <p>Check your access status, usage, and support details.</p>
       {% if billing_message %}
       <div class="notice">{{ billing_message }}</div>
       {% endif %}
@@ -211,7 +211,7 @@
     <section class="grid">
       <section class="panel lift">
         <h2>Subscription</h2>
-        <p style="margin-bottom:10px;">This is the page to check whether you can start new batches right now.</p>
+        <p style="margin-bottom:10px;">Your current plan and usage.</p>
         <div class="metric">
           <div class="k">Plan</div>
           <div class="v" style="font-size:20px;">{{ account.plan_name }}</div>
@@ -245,14 +245,14 @@
           <div class="btnrow">
             {% if launch_mode %}
             {% if purchase_url %}
-            <a class="btn primary" href="{{ purchase_url }}" target="_blank" rel="noopener noreferrer">Buy or Manage via Gumroad</a>
+            <a class="btn primary" href="{{ purchase_url }}" target="_blank" rel="noopener noreferrer">Buy on Gumroad</a>
             {% endif %}
             <a class="btn ghost" href="mailto:{{ support_email }}">Contact Support</a>
             {% else %}
             <a class="btn primary" href="{{ url_for('billing_checkout') }}">{{ "Upgrade" if stripe_checkout_ready else "Upgrade (Demo/Unconfigured)" }}</a>
             <a class="btn ghost" href="{{ url_for('billing_portal') }}">{{ "Manage Billing" if stripe_portal_ready else "Manage Billing (Demo/Unconfigured)" }}</a>
             {% endif %}
-            <a class="btn ghost" href="{{ url_for('dashboard') }}">Back to Workspace</a>
+            <a class="btn ghost" href="{{ url_for('workspace') }}">Back to Workspace</a>
           </div>
         </div>
       </section>
@@ -310,7 +310,7 @@
           </ul>
         </div>
         <div class="plan-card featured">
-          <div class="k">Photo Prep Pro</div>
+          <div class="k">CardWorks Pro</div>
           <div class="price">$29<span style="font-size:13px; font-weight:700; color:#607689;"> / month</span></div>
           <p>Example paid plan card for Stripe checkout wiring and conversion UX.</p>
           <ul class="plan-list">
@@ -320,6 +320,7 @@
           </ul>
         </div>
       </div>
+      {% if not launch_mode %}
       <details class="disclosure">
         <summary>Admin / Launch Setup (Stripe + Auth)</summary>
         <div class="body">
@@ -337,6 +338,7 @@
       </div>
         </div>
       </details>
+      {% endif %}
     </section>
     {% endif %}
   </main>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>card works Workspace</title>
+  <title>CardWorks Workspace</title>
   {% if plausible_domain %}
   <script defer data-domain="{{ plausible_domain }}" src="{{ plausible_script_src }}"></script>
   {% endif %}
@@ -406,6 +406,12 @@
       border-radius: 10px;
       padding: 8px 10px;
     }
+    .rule.warning {
+      margin-top: 14px;
+      background: #fff7ef;
+      border-color: #f0d3b0;
+      color: #6d4b20;
+    }
     .row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -770,6 +776,35 @@
       font-size: 12px;
       color: #5c7084;
     }
+    .output-note {
+      margin-top: 14px;
+      border: 1px solid #dce7f0;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #ffffff, #fbfdff);
+      padding: 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.92);
+    }
+    .output-note strong {
+      display: block;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #3b4f62;
+    }
+    .output-note p {
+      margin: 8px 0 0;
+      font-size: 13px;
+      color: #546b7f;
+      line-height: 1.55;
+    }
+    .output-files {
+      margin-top: 10px;
+      display: grid;
+      gap: 6px;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 12px;
+      color: #29495f;
+    }
     .actionbar {
       margin-top: 14px;
       position: sticky;
@@ -832,7 +867,7 @@
       <div class="brand-wrap">
         <div class="brand-mark" aria-hidden="true"></div>
         <div class="brand-text">
-          <div class="brand-title">card works</div>
+          <div class="brand-title">CardWorks</div>
           <div class="brand-sub">seller workspace</div>
         </div>
       </div>
@@ -851,8 +886,8 @@
   </header>
   <main class="shell">
     <section class="hero lift">
-      <div class="brandline">card works</div>
-      <h1>card works</h1>
+      <div class="brandline">CardWorks</div>
+      <h1>CardWorks</h1>
       <p class="lead">Prepare eBay-ready card photos fast. Upload full front and back images, confirm the pairing visually, then export one ZIP with the full images plus quadrant detail shots.</p>
       <div class="chiprow">
         <span class="badge">Full front + full back preserved</span>
@@ -913,6 +948,9 @@
             <p class="section-subtitle">Work left to right: upload fronts and backs, review the pair preview, then start processing. The batch keeps running even if you leave this page.</p>
             <form id="queue-form" class="workspace-wrap" method="post" action="{{ url_for('enqueue_job') }}" enctype="multipart/form-data">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <div class="rule warning">
+                Upload in matched order: front #1 pairs with back #1, front #2 with back #2, and so on. If the photos are out of order, fix that before you start the batch.
+              </div>
               <div class="grid">
                 <div class="field">
                   <label>Front Scans</label>
@@ -932,7 +970,7 @@
                 </div>
               </div>
               <div class="rule" style="margin-top:14px;">
-                Pairing rule: front #1 pairs with back #1, front #2 with back #2, and so on. No filename convention required.
+                No filename convention required. CardWorks pairs by upload order, then lets you confirm the matches before processing.
               </div>
               <div class="support-note">
                 Need help with access or exports? Contact <a href="mailto:{{ support_email }}">{{ support_email }}</a>. Launch details: <a href="{{ url_for('privacy_page') }}">Privacy</a> and <a href="{{ url_for('terms_page') }}">Terms</a>.
@@ -948,16 +986,21 @@
                     <button type="button" class="ghost" id="clear-backs">Clear Backs</button>
                   </div>
                 </div>
-                <div id="pair-preview-body" class="preview-empty">Add front and back scans to preview pairing by upload order.</div>
+                <div id="pair-preview-body" class="preview-empty">After uploading, you will see front and back thumbnails here so you can confirm each match before processing.</div>
               </div>
               <div class="row">
                 <div class="field">
                   <label>Batch Name (Optional)</label>
                   <input name="batch_name" type="text" placeholder="example: weekend-batch" />
                 </div>
-                <div class="field">
-                  <label>Photo Set</label>
-                  <input type="text" value="eBay Photo Prep (10 photos per card)" disabled />
+              </div>
+              <div class="output-note">
+                <strong>What your batch exports</strong>
+                <p>Each card exports as one organized set: full front, full back, and 8 corner crops. That gives you 10 listing-ready images per card in the ZIP.</p>
+                <div class="output-files">
+                  <div>CARD_NAME_FRONT.jpg</div>
+                  <div>CARD_NAME_BACK.jpg</div>
+                  <div>CARD_NAME_FRONT_TL.jpg ... CARD_NAME_BACK_BR.jpg</div>
                 </div>
               </div>
               <div class="actionbar">
@@ -980,19 +1023,24 @@
             <div class="section-card lift">
               <div class="section-eyebrow">Overview</div>
               <div class="dashboard-grid" style="margin-top:0; grid-template-columns:1fr;">
+                {% if not (account and account.is_trial_user) %}
                 <div class="metric-card">
                   <div class="metric-title">Processed Cards</div>
                   <div class="metric-value">{{ session_cards }}</div>
                   <div class="recent-meta">Across completed batches on your account</div>
                 </div>
+                {% endif %}
                 <div class="metric-card">
                   <div class="metric-title">Plan</div>
-                  <div class="metric-value small">{{ account.plan_name if account else "Photo Prep" }}</div>
+                  <div class="metric-value small">{{ account.plan_name if account else "CardWorks" }}</div>
                   <div class="recent-meta">
-                    {{ account.status_label if account else "Trial" }} •
-                    {% if account and account.is_master_user %}
+                    {% if account and account.is_trial_user %}
+                      {{ account.trial_remaining_cards }} card{{ "" if account.trial_remaining_cards == 1 else "s" }} remaining in trial ({{ account.trial_used_cards_total }}/{{ account.trial_cards_total_limit }} used)
+                    {% elif account and account.is_master_user %}
+                      {{ account.status_label }} •
                       Unlimited access (owner bypass)
                     {% else %}
+                      {{ account.status_label if account else "Trial" }} •
                       {{ (account.used_cards if account else 0) }}/{{ (account.cards_limit if account else 0) }} cards this month
                     {% endif %}
                   </div>

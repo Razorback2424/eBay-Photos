@@ -609,7 +609,7 @@ def billing_checkout():
         _json_log("billing_demo_control_blocked", route="checkout", user_id=user.get("id"))
         return redirect(url_for("account_page", billing_message="Demo billing controls are disabled in production."))
     if demo == "activate":
-        models.set_subscription(DB_PATH, user["id"], account_email=user.get("email"), status="active", plan_name="Photo Prep Pro", cards_per_month_limit=5000)
+        models.set_subscription(DB_PATH, user["id"], account_email=user.get("email"), status="active", plan_name="CardWorks Pro", cards_per_month_limit=5000)
     elif demo == "trial":
         models.set_subscription(DB_PATH, user["id"], account_email=user.get("email"), status="trialing", plan_name="Starter Trial", cards_per_month_limit=200)
     elif demo == "no_subscription":
@@ -645,7 +645,7 @@ def billing_portal():
     elif demo == "canceled":
         models.set_subscription(DB_PATH, user["id"], account_email=user.get("email"), status="canceled")
     elif demo == "active":
-        models.set_subscription(DB_PATH, user["id"], account_email=user.get("email"), status="active", plan_name="Photo Prep Pro", cards_per_month_limit=5000)
+        models.set_subscription(DB_PATH, user["id"], account_email=user.get("email"), status="active", plan_name="CardWorks Pro", cards_per_month_limit=5000)
     elif billing_service.stripe_portal_ready():
         try:
             portal = billing_service.create_billing_portal_session(_account_state())
@@ -882,12 +882,12 @@ def job_status(job_id):
 @app.get("/privacy")
 def privacy_page():
     sections = [
-        ("What We Process", "card works processes the card images you upload in the browser-based workflow described on the site. The product is positioned around keeping those images out of a remote upload pipeline."),
+        ("What We Process", "CardWorks processes the card images you upload in the browser-based workflow described on the site. The product is positioned around keeping those images out of a remote upload pipeline."),
         ("Account Access", "We store the minimum account information needed to let you sign in, keep access gated, and associate batches with your account."),
         ("Billing and Purchase", "Purchase and license delivery are handled through Gumroad for launch. Payment details are not collected directly by this app."),
         ("Support", f"For privacy questions or deletion requests, contact {auth_service.support_email()}."),
     ]
-    return render_template("legal.html", title="Privacy Policy", intro="This is the launch privacy policy for card works.", sections=sections)
+    return render_template("legal.html", title="Privacy Policy", intro="This is the launch privacy policy for CardWorks.", sections=sections)
 
 
 @app.get("/terms")
@@ -898,7 +898,7 @@ def terms_page():
         ("Billing", "Launch billing and license fulfillment are handled through Gumroad. Refunds and billing issues follow the terms provided at purchase unless otherwise stated."),
         ("Support", f"If you need help with access or batch processing, contact {auth_service.support_email()}."),
     ]
-    return render_template("legal.html", title="Terms of Service", intro="These launch terms govern access to card works.", sections=sections)
+    return render_template("legal.html", title="Terms of Service", intro="These launch terms govern access to CardWorks.", sections=sections)
 
 
 @app.get("/batches/<job_id>")
