@@ -895,7 +895,7 @@ function trackLandingEvent(name) {
       </div>
     </div>
     <div class="hero-visual">
-      <div class="hero-visual-label">Real exported files from this repo</div>
+      <div class="hero-visual-label">Real exported files from CardWorks</div>
       <div class="visual-grid">
         <div class="visual-card">
           <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="Front export example">
@@ -1024,7 +1024,7 @@ function trackLandingEvent(name) {
       <article class="problem-card">
         <div class="proof-kicker">Pain 03</div>
         <div class="problem-quote">I want output that stays on-device and is ready to list.</div>
-        <p class="problem-answer">The current positioning is local-in-browser processing with no server uploads, so the emphasis stays on getting assets out without pushing your card photos through a remote queue.</p>
+        <p class="problem-answer">CardWorks keeps processing in the browser with no server uploads, so the focus stays on getting your listing assets out without sending card photos through a remote queue.</p>
       </article>
     </div>
   </div>
@@ -1034,7 +1034,7 @@ function trackLandingEvent(name) {
   <div class="section-inner">
     <div class="section-label">How it works</div>
     <h2 class="section-headline">Four steps.<br>Ten images.<br>Less manual cleanup.</h2>
-    <p class="section-sub">The current product promise is not magic detection with zero review. It is a tighter workflow: you upload scans, review what was found, confirm pairings, and export organized listing assets.</p>
+    <p class="section-sub">This is not blind one-click automation. You upload scans, review what was found, confirm pairings, and export organized listing assets with control over the batch.</p>
     <div class="how-steps">
       <article class="how-step">
         <div class="how-step-num">01</div>
@@ -1044,7 +1044,7 @@ function trackLandingEvent(name) {
       <article class="how-step">
         <div class="how-step-num">02</div>
         <div class="how-step-title">Review what the app found</div>
-        <p class="how-step-desc">The flow is framed around user review, not blind automation. That makes the promise more credible and keeps you in control of the batch.</p>
+        <p class="how-step-desc">You review what was found before export, which keeps the batch accurate and leaves you in control instead of trusting blind automation.</p>
       </article>
       <article class="how-step">
         <div class="how-step-num">03</div>
@@ -1123,7 +1123,7 @@ function trackLandingEvent(name) {
           <li>Useful if card processing is part of your regular seller workflow</li>
         </ul>
         <a href="{{ purchase_url or url_for('login', next=url_for('workspace')) }}" class="price-btn-solid" {% if purchase_url %}target="_blank" rel="noopener noreferrer"{% endif %} onclick="trackLandingEvent('Pricing Founding Click')">{{ "Buy founding access on Gumroad →" if purchase_url else "Enter license key →" }}</a>
-        <p class="price-note">You are paying to skip hand-sorting and recropping after the photo session, not for a placeholder waitlist.</p>
+        <p class="price-note">You are paying to skip hand-sorting and recropping after the photo session, not to join a waitlist.</p>
       </article>
       <article class="price-card">
         <div class="price-tier">Monthly</div>
@@ -1163,7 +1163,7 @@ function trackLandingEvent(name) {
     <div class="faq-list">
       <article class="faq-item">
         <h3>Do my photos upload to your server?</h3>
-        <p>No. The current product positioning and landing-page copy both frame image processing as local in the browser, so this page keeps that claim only where it is explained directly and repeated consistently.</p>
+        <p>No. Processing runs entirely in your browser. Your card photos never leave your device.</p>
       </article>
       <article class="faq-item">
         <h3>Which browsers work best?</h3>

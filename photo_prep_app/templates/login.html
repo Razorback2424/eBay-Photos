@@ -170,7 +170,7 @@
       <a href="mailto:{{ support_email }}">{{ support_email }}</a>
     </div>
 
-    <a class="toplink" href="{{ url_for('dashboard') }}">← Back to Home</a>
+    <a class="toplink" href="{{ url_for('workspace') if auth and auth.is_authenticated else url_for('dashboard') }}">← Back to Home</a>
   </main>
 </body>
 </html>

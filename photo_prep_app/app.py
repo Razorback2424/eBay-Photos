@@ -544,13 +544,13 @@ def login():
 @app.get("/auth/callback")
 def auth_callback():
     if auth_service.auth_mode() != "auth0":
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("workspace"))
     expected_state = session.get("auth0_state")
     received_state = request.args.get("state")
     code = request.args.get("code")
     if not expected_state or not received_state or expected_state != received_state or not code:
         _json_log("auth_callback_validation_failed", remote_addr=request.remote_addr)
-        return render_template("login.html", error="Authentication callback validation failed.", next_url=url_for("dashboard")), 400
+        return render_template("login.html", error="Authentication callback validation failed.", next_url=url_for("workspace")), 400
     try:
         token_data = auth_service.exchange_auth0_code(code)
         access_token = token_data.get("access_token")
@@ -559,7 +559,7 @@ def auth_callback():
         userinfo = auth_service.fetch_auth0_userinfo(access_token)
     except Exception as exc:
         _json_log("auth_callback_failed", error=str(exc))
-        return render_template("login.html", error=f"Authentication failed: {exc}", next_url=url_for("dashboard")), 400
+        return render_template("login.html", error=f"Authentication failed: {exc}", next_url=url_for("workspace")), 400
 
     user = {
         "id": userinfo.get("sub") or userinfo.get("email") or "auth0-user",
@@ -569,7 +569,7 @@ def auth_callback():
     }
     auth_service.sign_in_user(user)
     _json_log("auth_login_auth0_success", user_id=user.get("id"), email=user.get("email"))
-    next_url = session.pop("auth_next", None) or url_for("dashboard")
+    next_url = session.pop("auth_next", None) or url_for("workspace")
     session.pop("auth0_state", None)
     return redirect(next_url)
 
@@ -580,8 +580,8 @@ def logout():
     _json_log("auth_logout", user_id=((auth.get("user") or {}).get("id")), email=((auth.get("user") or {}).get("email")))
     auth_service.sign_out()
     if auth.get("mode") == "auth0" and auth_service.auth0_ready():
-        return redirect(auth_service.auth0_logout_url(APP_BASE_URL.rstrip("/") + url_for("dashboard")))
-    return redirect(url_for("dashboard"))
+        return redirect(auth_service.auth0_logout_url(APP_BASE_URL.rstrip("/") + url_for("workspace")))
+    return redirect(url_for("workspace"))
 
 
 @app.get("/account")
@@ -728,7 +728,7 @@ def enqueue_job():
     mode = "fast"
     user = _current_user()
     if not user:
-        return redirect(url_for("login", next=url_for("dashboard")))
+        return redirect(url_for("login", next=url_for("workspace")))
     if not _validate_csrf():
         _json_log("enqueue_csrf_failed", user_id=user.get("id"), email=user.get("email"))
         return _render_workspace(error="Security check failed. Refresh the page and try again."), 400
