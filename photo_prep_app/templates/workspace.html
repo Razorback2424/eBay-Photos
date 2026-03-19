@@ -603,6 +603,49 @@
       text-decoration: none;
       font-weight: 700;
     }
+    details.tips-disclosure {
+      margin-top: 14px;
+      border: 1px solid #dbe7f0;
+      border-radius: 14px;
+      background: #fff;
+      overflow: hidden;
+    }
+    details.tips-disclosure > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 12px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #284052;
+      background: #f8fbff;
+      border-bottom: 1px solid #e5edf4;
+    }
+    details.tips-disclosure > summary::-webkit-details-marker { display: none; }
+    details.tips-disclosure > summary:after {
+      content: "Expand";
+      float: right;
+      color: #5a7186;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    details.tips-disclosure[open] > summary:after { content: "Collapse"; }
+    .tips-body {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .tips-item strong {
+      display: block;
+      font-size: 12px;
+      color: #21384a;
+      margin-bottom: 4px;
+    }
+    .tips-item p {
+      margin: 0;
+      font-size: 13px;
+      color: #587084;
+      line-height: 1.6;
+    }
     .recent-list {
       margin: 0;
       padding: 0;
@@ -972,6 +1015,23 @@
               <div class="rule" style="margin-top:14px;">
                 No filename convention required. CardWorks pairs by upload order, then lets you confirm the matches before processing.
               </div>
+              <details class="tips-disclosure">
+                <summary>Tips for sharper exports</summary>
+                <div class="tips-body">
+                  <div class="tips-item">
+                    <strong>Shoot at the highest resolution your phone supports.</strong>
+                    <p>Corner crops are zoomed-in sections of your original photo. The more detail in the source image, the more detail in the crop. On iPhone, use the native camera at full resolution. Avoid screenshot imports or resized images.</p>
+                  </div>
+                  <div class="tips-item">
+                    <strong>Lay cards flat on a plain, contrasting background.</strong>
+                    <p>The app finds card edges automatically. A dark or neutral surface with no strong patterns makes detection more reliable, especially in batch shots with multiple cards.</p>
+                  </div>
+                  <div class="tips-item">
+                    <strong>Good light, no flash.</strong>
+                    <p>Flat, even lighting near a window or under a softbox gives you clean surface detail in the corner crops. Direct flash creates glare on holos and foils that obscures exactly what buyers are trying to evaluate.</p>
+                  </div>
+                </div>
+              </details>
               <div class="support-note">
                 Need help with access or exports? Contact <a href="mailto:{{ support_email }}">{{ support_email }}</a>. Launch details: <a href="{{ url_for('privacy_page') }}">Privacy</a> and <a href="{{ url_for('terms_page') }}">Terms</a>.
               </div>

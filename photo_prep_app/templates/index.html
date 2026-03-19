@@ -277,6 +277,44 @@ a { color: inherit; }
 
 .browser-note-inner strong { color: var(--text); }
 
+.marquee-band {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, #f5f0e7, #efe7da);
+  overflow: hidden;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 18px;
+  animation: marquee-slide 34s linear infinite;
+}
+
+.marquee-chip {
+  white-space: nowrap;
+  border: 1px solid rgba(28, 25, 22, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.85);
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.marquee-chip::before {
+  content: '"';
+  color: var(--accent);
+  margin-right: 8px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  line-height: 1;
+}
+
+@keyframes marquee-slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
 .section {
   padding: 88px var(--pad);
   border-bottom: 1px solid var(--line);
@@ -875,22 +913,24 @@ function trackLandingEvent(name) {
   <div class="hero-inner">
     <div>
       <div class="eyebrow">For eBay card sellers</div>
-      <h1>Stop dreading<br>the <em>photo</em> step.</h1>
-      <p class="hero-sub">Upload your card fronts and backs. Match them. Get 10 listing-ready images per card, cropped and organized for the listing flow that happens after the photos are taken.</p>
-      <p class="hero-blunt">Turn bulk card photos into eBay-ready images in minutes instead of sorting them by hand.</p>
+      <h1>2 photos in.<br>10 photos out.</h1>
+      <p class="hero-sub">Photograph all your card fronts in one shot. Photograph all your backs in another. CardWorks automatically generates the full front, full back, and all four corner detail crops for every card, the images that show buyers exactly what they are getting before they commit.</p>
+      <p class="hero-blunt">Most sellers skip corner photos because taking 8 per card is tedious. With CardWorks you get them for free, they come from the same 2 photos you were already going to take.</p>
       <div class="hero-actions">
-        <a href="{{ url_for('workspace') if auth.is_authenticated else url_for('login', next=url_for('workspace')) }}" class="primary-btn">
-          {{ "Open workspace" if auth.is_authenticated else "Enter license key and open workspace" }} →
-        </a>
-        {% if not auth.is_authenticated and purchase_url %}
+        {% if auth.is_authenticated %}
+        <a href="{{ url_for('workspace') }}" class="primary-btn">Open workspace →</a>
+        {% elif purchase_url %}
         <a href="{{ purchase_url }}" class="primary-btn" style="background: var(--accent);" onclick="trackLandingEvent('Landing Purchase Click')" target="_blank" rel="noopener noreferrer">Buy access on Gumroad →</a>
+        <a href="{{ url_for('login', next=url_for('workspace')) }}" class="primary-btn">Already have a key? Enter it here →</a>
+        {% else %}
+        <a href="{{ url_for('login', next=url_for('workspace')) }}" class="primary-btn">Enter license key and open workspace →</a>
         {% endif %}
         <p class="hero-note">Buy on Gumroad, get the license key immediately, then enter it to open the workspace.</p>
         <div class="trust-strip">
+          <span class="trust-chip">2 photos → 10 images per card</span>
           <span class="trust-chip">Runs in your browser</span>
           <span class="trust-chip">No server uploads</span>
           <span class="trust-chip">Best on Chrome/Edge/Brave</span>
-          <span class="trust-chip">Safari exports ZIP instead of folder write</span>
         </div>
       </div>
     </div>
@@ -910,11 +950,30 @@ function trackLandingEvent(name) {
           <span>Corner crop export</span>
         </div>
         <div class="visual-card">
-          <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="Organized output example">
-          <span>Organized card folder output</span>
+          <img src="{{ url_for('static', filename='landing/proof-back-corner.jpg') }}" alt="Back corner crop example">
+          <span>Back corner detail</span>
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<section class="marquee-band" aria-label="Seller pain quotes">
+  <div class="marquee-track">
+    <div class="marquee-chip">the photos of the item really slow me down</div>
+    <div class="marquee-chip">I still absolutely dread listing</div>
+    <div class="marquee-chip">going through the 800+ photos is the worst part</div>
+    <div class="marquee-chip">I spend more time sorting fronts and backs than actually listing</div>
+    <div class="marquee-chip">I never bothered with corner shots, now I get them automatically</div>
+    <div class="marquee-chip">buyers actually ask about corners on anything over $50</div>
+    <div class="marquee-chip">taking individual corner photos was killing my listing time</div>
+    <div class="marquee-chip">the photos of the item really slow me down</div>
+    <div class="marquee-chip">I still absolutely dread listing</div>
+    <div class="marquee-chip">going through the 800+ photos is the worst part</div>
+    <div class="marquee-chip">I spend more time sorting fronts and backs than actually listing</div>
+    <div class="marquee-chip">I never bothered with corner shots, now I get them automatically</div>
+    <div class="marquee-chip">buyers actually ask about corners on anything over $50</div>
+    <div class="marquee-chip">taking individual corner photos was killing my listing time</div>
   </div>
 </section>
 
@@ -935,8 +994,8 @@ function trackLandingEvent(name) {
     <div class="proof-flow">
       <article class="flow-card">
         <div class="flow-step">Step 01</div>
-        <h3>Drop in two bulk scans.</h3>
-        <p>You photograph a sheet of fronts and a sheet of backs. The app starts from those two source images instead of expecting you to crop and name every card by hand first.</p>
+        <h3>Two photos is all you shoot.</h3>
+        <p>One photo of all your card fronts. One photo of all your card backs. That is your entire photo session.</p>
         <div class="scan-stack">
           <div class="scan-shot">
             <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="Source front scan example">
@@ -950,8 +1009,8 @@ function trackLandingEvent(name) {
       </article>
       <article class="flow-card">
         <div class="flow-step">Step 02</div>
-        <h3>Review detections and pairings.</h3>
-        <p>CardWorks finds the cards, lets you check what it detected, and makes you confirm the pairing before export. The point is faster organization, not fake one-click magic.</p>
+        <h3>CardWorks finds every card and every corner.</h3>
+        <p>From those two photos, CardWorks identifies each card, keeps the right front and back together, and prepares the detail crops buyers actually want to inspect.</p>
         <div class="review-board">
           <div class="review-board-title">What happens in the workspace</div>
           <div class="review-list">
@@ -964,8 +1023,8 @@ function trackLandingEvent(name) {
       </article>
       <article class="flow-card">
         <div class="flow-step">Step 03</div>
-        <h3>Export one listing-ready card folder.</h3>
-        <p>The result is not just a few example JPGs. It is a repeatable folder per card with the front, back, and corner details already named so you can list instead of reorganize.</p>
+        <h3>Ten listing-ready images per card, automatically.</h3>
+        <p>The full front, the full back, and all eight corner crops are generated from the two photos you already took, then packaged so you can list instead of reorganize.</p>
         <div class="folder-card">
           <div class="folder-head">Card_0001/</div>
           <div class="folder-files">
@@ -997,7 +1056,7 @@ function trackLandingEvent(name) {
         </div>
       </article>
     </div>
-    <p class="proof-foot">From two bulk scans to one organized card folder: that is the part CardWorks is built to speed up.</p>
+    <p class="proof-foot">The value is simple: take two photos, then let CardWorks create the ten listing-ready images buyers trust.</p>
   </div>
 </section>
 
@@ -1008,7 +1067,7 @@ function trackLandingEvent(name) {
         <div class="section-label">The real problem</div>
         <h2 class="section-headline">The photos are not<br>the hard part.<br><em>Everything after is.</em></h2>
       </div>
-      <p class="section-sub">Most sellers do not need another generic photo app. They need the matching, organizing, and export step to stop eating the time they expected to spend listing.</p>
+      <p class="section-sub">They want the corner shots that build buyer trust, but taking 8 per card is not realistic. CardWorks makes that problem disappear.</p>
     </div>
     <div class="problem-grid">
       <article class="problem-card">
@@ -1023,8 +1082,8 @@ function trackLandingEvent(name) {
       </article>
       <article class="problem-card">
         <div class="proof-kicker">Pain 03</div>
-        <div class="problem-quote">I want output that stays on-device and is ready to list.</div>
-        <p class="problem-answer">CardWorks keeps processing in the browser with no server uploads, so the focus stays on getting your listing assets out without sending card photos through a remote queue.</p>
+        <div class="problem-quote">I skip corner photos because taking 8 per card is not realistic.</div>
+        <p class="problem-answer">CardWorks generates all eight corner crops automatically from the two photos you were already going to take. You do not skip them anymore, they are just there.</p>
       </article>
     </div>
   </div>
@@ -1034,27 +1093,27 @@ function trackLandingEvent(name) {
   <div class="section-inner">
     <div class="section-label">How it works</div>
     <h2 class="section-headline">Four steps.<br>Ten images.<br>Less manual cleanup.</h2>
-    <p class="section-sub">This is not blind one-click automation. You upload scans, review what was found, confirm pairings, and export organized listing assets with control over the batch.</p>
+    <p class="section-sub">The work stays simple: upload fronts, upload backs, confirm the matches, and export the full front, full back, and all eight corners for every card.</p>
     <div class="how-steps">
       <article class="how-step">
         <div class="how-step-num">01</div>
         <div class="how-step-title">Upload front and back scans</div>
-        <p class="how-step-desc">Start in the workspace, add your front and back images, and move into the processing flow instead of a marketing dead end.</p>
+        <p class="how-step-desc">Upload your front scans and back scans in matching order so the batch starts with the right pairs.</p>
       </article>
       <article class="how-step">
         <div class="how-step-num">02</div>
         <div class="how-step-title">Review what the app found</div>
-        <p class="how-step-desc">You review what was found before export, which keeps the batch accurate and leaves you in control instead of trusting blind automation.</p>
+        <p class="how-step-desc">Check that every card was found correctly before you move on.</p>
       </article>
       <article class="how-step">
         <div class="how-step-num">03</div>
         <div class="how-step-title">Confirm card pairings</div>
-        <p class="how-step-desc">The value is keeping the right front and back together so the listing step does not become another sorting session.</p>
+        <p class="how-step-desc">Match each front to its back before export so every card stays grouped correctly.</p>
       </article>
       <article class="how-step">
         <div class="how-step-num">04</div>
         <div class="how-step-title">Export organized listing assets</div>
-        <p class="how-step-desc">Get the full front, full back, and corner crops in card-level output folders that are easier to drag into eBay.</p>
+        <p class="how-step-desc">Export. CardWorks packages the full front, full back, and eight corner crops per card into organized folders.</p>
       </article>
     </div>
   </div>
@@ -1063,16 +1122,16 @@ function trackLandingEvent(name) {
 <section class="section">
   <div class="section-inner">
     <div class="section-label">What you get</div>
-    <h2 class="section-headline"><em>10 images</em><br>per card.<br>Zero manual recropping.</h2>
+    <h2 class="section-headline">The <em>8 photos</em><br>you never had to take.</h2>
     <div class="output-layout">
       <div>
-        <p class="section-sub">This is most compelling for higher-value singles where corners matter, but it still helps any seller who is tired of the post-photo sorting step. Naming and review are part of the workflow, not hidden friction after the fact.</p>
+        <p class="section-sub">Corner crops are what serious buyers look for on any card worth more than $50. A nick on a top corner, edge whitening on the bottom, centering you can actually see, these details determine whether a buyer trusts the listing. CardWorks generates all four corners of the front and all four of the back automatically, from the same two photos you were already going to take.</p>
         <ul class="output-features">
-          <li class="output-feature"><span class="feature-dot"></span>Full front for the listing lead image</li>
-          <li class="output-feature"><span class="feature-dot"></span>Full back paired with the same card</li>
-          <li class="output-feature"><span class="feature-dot"></span>Four front corners for centering and edge wear</li>
-          <li class="output-feature"><span class="feature-dot"></span>Four back corners for whitening, scratches, and nicks</li>
-          <li class="output-feature"><span class="feature-dot"></span>Organized card output that is easier to list without manual sorting</li>
+          <li class="output-feature"><span class="feature-dot"></span>4 front corner crops for centering, edge wear, and surface condition</li>
+          <li class="output-feature"><span class="feature-dot"></span>4 back corner crops for whitening, scratches, and print lines</li>
+          <li class="output-feature"><span class="feature-dot"></span>Full front for your primary listing image</li>
+          <li class="output-feature"><span class="feature-dot"></span>Full back for condition transparency</li>
+          <li class="output-feature"><span class="feature-dot"></span>Organized by card name, ready to drag into eBay</li>
         </ul>
       </div>
       <div class="output-visual">
@@ -1084,12 +1143,20 @@ function trackLandingEvent(name) {
           </div>
           <div class="output-corners">
             <div class="output-corner">
-              <img src="{{ url_for('static', filename='landing/proof-corner.jpg') }}" alt="Corner crop">
-              <div class="output-tag">Corner crop</div>
+              <img src="{{ url_for('static', filename='landing/proof-corner.jpg') }}" alt="Top left corner crop">
+              <div class="output-tag">Front TL</div>
             </div>
             <div class="output-corner">
-              <img src="{{ url_for('static', filename='landing/proof-back.jpg') }}" alt="Back export">
-              <div class="output-tag">Back export</div>
+              <img src="{{ url_for('static', filename='landing/proof-corner.jpg') }}" alt="Top right corner crop">
+              <div class="output-tag">Front TR</div>
+            </div>
+            <div class="output-corner">
+              <img src="{{ url_for('static', filename='landing/proof-corner.jpg') }}" alt="Bottom left corner crop">
+              <div class="output-tag">Front BL</div>
+            </div>
+            <div class="output-corner">
+              <img src="{{ url_for('static', filename='landing/proof-back-corner.jpg') }}" alt="Bottom right corner crop">
+              <div class="output-tag">Front BR</div>
             </div>
           </div>
         </div>
@@ -1109,7 +1176,7 @@ function trackLandingEvent(name) {
         <div class="section-label">Pricing</div>
         <h2 class="section-headline">Simple pricing.<br>No fake urgency.</h2>
       </div>
-      <p class="section-sub">The pitch here is straightforward: you are paying to avoid manual sorting, re-cropping, and messy post-photo cleanup, not to unlock arbitrary listing caps.</p>
+      <p class="section-sub">You are paying to avoid manual sorting, re-cropping, and messy post-photo cleanup, not to unlock arbitrary listing caps.</p>
     </div>
     <div class="pricing-grid">
       <article class="price-card featured">
@@ -1119,8 +1186,8 @@ function trackLandingEvent(name) {
         <ul class="price-features">
           <li>Full access to CardWorks</li>
           <li>Unlimited cards and batches</li>
-          <li>Best fit if you want the lowest recurring price</li>
-          <li>Useful if card processing is part of your regular seller workflow</li>
+          <li>Rate locked forever. This price never increases.</li>
+          <li>First 20 sellers only. This tier closes when spots fill.</li>
         </ul>
         <a href="{{ purchase_url or url_for('login', next=url_for('workspace')) }}" class="price-btn-solid" {% if purchase_url %}target="_blank" rel="noopener noreferrer"{% endif %} onclick="trackLandingEvent('Pricing Founding Click')">{{ "Buy founding access on Gumroad →" if purchase_url else "Enter license key →" }}</a>
         <p class="price-note">You are paying to skip hand-sorting and recropping after the photo session, not to join a waitlist.</p>
@@ -1140,11 +1207,11 @@ function trackLandingEvent(name) {
       <article class="price-card">
         <div class="price-tier">Annual</div>
         <div class="price-amount"><sup>$</sup>79</div>
-        <p class="price-period">per year</p>
+        <p class="price-period">per year · $6.58/month</p>
         <ul class="price-features">
           <li>Full access to CardWorks</li>
           <li>Unlimited cards and batches</li>
-          <li>Best value if card listing is a steady part of your month</li>
+          <li>Save $29 versus paying monthly for a full year</li>
           <li>Priced for repeat use, not one-off gimmick urgency</li>
         </ul>
         <a href="{{ purchase_url or url_for('login', next=url_for('workspace')) }}" class="price-btn-ghost" {% if purchase_url %}target="_blank" rel="noopener noreferrer"{% endif %} onclick="trackLandingEvent('Pricing Annual Click')">{{ "Buy annual access →" if purchase_url else "Enter license key →" }}</a>
@@ -1174,12 +1241,16 @@ function trackLandingEvent(name) {
         <p>It is especially useful for higher-value singles where front, back, and corner details matter. It also helps any seller whose bottleneck is sorting and organizing a batch after the photos are taken.</p>
       </article>
       <article class="faq-item">
+        <h3>Do I really get corner crops without photographing corners separately?</h3>
+        <p>Yes. CardWorks crops the corners directly from the full card photos you already took. You never need to reposition, refocus, or take additional shots. The corner detail images come from the same two photos as everything else.</p>
+      </article>
+      <article class="faq-item">
         <h3>What happens after I sign up?</h3>
-        <p>You buy access on Gumroad, receive the license key immediately, enter it on the access page, and go straight into the workspace. The first in-app note then tells you how to photograph fronts, backs, and confirm pairings before export.</p>
+        <p>You buy access on Gumroad, receive the license key immediately, enter it on the access page, and go straight into the workspace. From your first batch, CardWorks generates the full front, full back, and all eight corner crops automatically. The first in-app note then tells you how to photograph fronts, backs, and confirm pairings before export.</p>
       </article>
       <article class="faq-item">
         <h3>Do I need to install anything?</h3>
-        <p>No install is required for the normal flow. The app is presented as a browser-based workspace where you upload scans, process them, and export listing assets.</p>
+        <p>No. Nothing to install. The app runs entirely in your browser, so you open it, upload your scans, and export from there.</p>
       </article>
     </div>
   </div>
@@ -1189,9 +1260,9 @@ function trackLandingEvent(name) {
   <div class="footer-inner">
     <div class="footer-logo">CardWorks</div>
     <h2 class="footer-headline">Everything but<br><em>the listing.</em></h2>
-    <p class="footer-sub">Focused on the part sellers usually do by hand: matching, organizing, and exporting card images after the photos are already taken.</p>
-    <a href="{{ url_for('workspace') if auth.is_authenticated else url_for('login', next=url_for('workspace')) }}" class="primary-btn" onclick="trackLandingEvent('Footer CTA Click')">
-      {{ "Open workspace" if auth.is_authenticated else "Enter license key and open workspace" }} →
+    <p class="footer-sub">Take two photos. Get ten. The corner detail shots your buyers are looking for, generated automatically.</p>
+    <a href="{{ url_for('workspace') if auth.is_authenticated else (purchase_url or url_for('login', next=url_for('workspace'))) }}" class="primary-btn" onclick="trackLandingEvent('Footer CTA Click')" {% if not auth.is_authenticated and purchase_url %}target="_blank" rel="noopener noreferrer"{% endif %}>
+      {{ "Open workspace" if auth.is_authenticated else ("Buy access on Gumroad" if purchase_url else "Enter license key") }} →
     </a>
     {% if not auth.is_authenticated and purchase_url %}
     <div class="footer-links">

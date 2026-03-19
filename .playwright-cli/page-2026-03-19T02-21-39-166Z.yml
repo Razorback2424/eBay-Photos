@@ -1,0 +1,281 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "CardWorks" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e4]:
+      - link "Proof" [ref=e5] [cursor=pointer]:
+        - /url: "#proof"
+      - link "Pricing" [ref=e6] [cursor=pointer]:
+        - /url: "#pricing"
+      - link "Buy access →" [ref=e7] [cursor=pointer]:
+        - /url: /login?next=/workspace
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]: For eBay card sellers
+      - heading "Stop dreading the photo step." [level=1] [ref=e12]:
+        - text: Stop dreading
+        - text: the
+        - emphasis [ref=e13]: photo
+        - text: step.
+      - paragraph [ref=e14]: Upload your card fronts and backs. Match them. Get 10 listing-ready images per card, cropped and organized for the listing flow that happens after the photos are taken.
+      - paragraph [ref=e15]: Turn bulk card photos into eBay-ready images in minutes instead of sorting them by hand.
+      - generic [ref=e16]:
+        - link "Enter license key and open workspace →" [ref=e17] [cursor=pointer]:
+          - /url: /login?next=/workspace
+        - paragraph [ref=e18]: Buy on Gumroad, get the license key immediately, then enter it to open the workspace.
+        - generic [ref=e19]:
+          - generic [ref=e20]: Runs in your browser
+          - generic [ref=e21]: No server uploads
+          - generic [ref=e22]: Best on Chrome/Edge/Brave
+          - generic [ref=e23]: Safari exports ZIP instead of folder write
+    - generic [ref=e24]:
+      - generic [ref=e25]: Real exported files from CardWorks
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - img "Front export example" [ref=e28]
+          - generic [ref=e29]: Full front export
+        - generic [ref=e30]:
+          - img "Back export example" [ref=e31]
+          - generic [ref=e32]: Full back export
+        - generic [ref=e33]:
+          - img "Corner crop example" [ref=e34]
+          - generic [ref=e35]: Corner crop export
+        - generic [ref=e36]:
+          - img "Organized output example" [ref=e37]
+          - generic [ref=e38]: Organized card folder output
+  - paragraph [ref=e41]:
+    - strong [ref=e42]: Best on Chrome, Edge, or Brave.
+    - text: Safari still works, but exports as a ZIP download instead of direct folder write.
+  - generic [ref=e44]:
+    - generic [ref=e46]:
+      - generic [ref=e47]: Proof
+      - heading "Real output. Concrete value." [level=2] [ref=e48]:
+        - text: Real output.
+        - text: Concrete value.
+    - generic [ref=e49]:
+      - article [ref=e50]:
+        - generic [ref=e51]: Step 01
+        - heading "Drop in two bulk scans." [level=3] [ref=e52]
+        - paragraph [ref=e53]: You photograph a sheet of fronts and a sheet of backs. The app starts from those two source images instead of expecting you to crop and name every card by hand first.
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - img "Source front scan example" [ref=e56]
+            - generic [ref=e57]: Front scan in
+          - generic [ref=e58]:
+            - img "Source back scan example" [ref=e59]
+            - generic [ref=e60]: Back scan in
+      - article [ref=e61]:
+        - generic [ref=e62]: Step 02
+        - heading "Review detections and pairings." [level=3] [ref=e63]
+        - paragraph [ref=e64]: CardWorks finds the cards, lets you check what it detected, and makes you confirm the pairing before export. The point is faster organization, not fake one-click magic.
+        - generic [ref=e65]:
+          - generic [ref=e66]: What happens in the workspace
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - strong [ref=e69]: Detect
+              - text: Find each card in the front and back scans.
+            - generic [ref=e70]:
+              - strong [ref=e71]: Review
+              - text: Fix misses before anything is exported.
+            - generic [ref=e72]:
+              - strong [ref=e73]: Pair
+              - text: Keep the right back attached to the right front.
+            - generic [ref=e74]:
+              - strong [ref=e75]: Name
+              - text: Export one organized folder per card instead of a pile of loose files.
+      - article [ref=e76]:
+        - generic [ref=e77]: Step 03
+        - heading "Export one listing-ready card folder." [level=3] [ref=e78]
+        - paragraph [ref=e79]: The result is not just a few example JPGs. It is a repeatable folder per card with the front, back, and corner details already named so you can list instead of reorganize.
+        - generic [ref=e80]:
+          - generic [ref=e81]: Card_0001/
+          - generic [ref=e82]:
+            - generic [ref=e83]: Card_0001_FRONT.jpg
+            - generic [ref=e84]: Card_0001_BACK.jpg
+            - generic [ref=e85]: Card_0001_FRONT_TL.jpg
+            - generic [ref=e86]: Card_0001_FRONT_TR.jpg
+            - generic [ref=e87]: Card_0001_FRONT_BL.jpg
+            - generic [ref=e88]: Card_0001_FRONT_BR.jpg
+            - generic [ref=e89]: Card_0001_BACK_TL.jpg
+            - generic [ref=e90]: Card_0001_BACK_TR.jpg
+            - generic [ref=e91]: Card_0001_BACK_BL.jpg
+            - generic [ref=e92]: Card_0001_BACK_BR.jpg
+        - generic [ref=e93]:
+          - generic [ref=e94]:
+            - img "Full front export example" [ref=e95]
+            - generic [ref=e96]: Front export
+          - generic [ref=e97]:
+            - img "Full back export example" [ref=e98]
+            - generic [ref=e99]: Back export
+          - generic [ref=e100]:
+            - img "Corner export example" [ref=e101]
+            - generic [ref=e102]: Corner export
+    - paragraph [ref=e103]: "From two bulk scans to one organized card folder: that is the part CardWorks is built to speed up."
+  - generic [ref=e105]:
+    - generic [ref=e106]:
+      - generic [ref=e107]:
+        - generic [ref=e108]: The real problem
+        - heading "The photos are not the hard part. Everything after is." [level=2] [ref=e109]:
+          - text: The photos are not
+          - text: the hard part.
+          - emphasis [ref=e110]: Everything after is.
+      - paragraph [ref=e111]: Most sellers do not need another generic photo app. They need the matching, organizing, and export step to stop eating the time they expected to spend listing.
+    - generic [ref=e112]:
+      - article [ref=e113]:
+        - generic [ref=e114]: Pain 01
+        - generic [ref=e115]: Sorting the right front and back takes longer than taking the photos.
+        - paragraph [ref=e116]: CardWorks is aimed at keeping output organized so you can move through a batch without hand-renaming or manually rebuilding every card folder.
+      - article [ref=e117]:
+        - generic [ref=e118]: Pain 02
+        - generic [ref=e119]: The phone-to-desktop handoff breaks the flow.
+        - paragraph [ref=e120]: The browser-based workflow reduces device hopping and gives you exported files that are already grouped for listing instead of another cleanup task.
+      - article [ref=e121]:
+        - generic [ref=e122]: Pain 03
+        - generic [ref=e123]: I want output that stays on-device and is ready to list.
+        - paragraph [ref=e124]: CardWorks keeps processing in the browser with no server uploads, so the focus stays on getting your listing assets out without sending card photos through a remote queue.
+  - generic [ref=e126]:
+    - generic [ref=e127]: How it works
+    - heading "Four steps. Ten images. Less manual cleanup." [level=2] [ref=e128]:
+      - text: Four steps.
+      - text: Ten images.
+      - text: Less manual cleanup.
+    - paragraph [ref=e129]: This is not blind one-click automation. You upload scans, review what was found, confirm pairings, and export organized listing assets with control over the batch.
+    - generic [ref=e130]:
+      - article [ref=e131]:
+        - generic [ref=e132]: "01"
+        - generic [ref=e133]: Upload front and back scans
+        - paragraph [ref=e134]: Start in the workspace, add your front and back images, and move into the processing flow instead of a marketing dead end.
+      - article [ref=e135]:
+        - generic [ref=e136]: "02"
+        - generic [ref=e137]: Review what the app found
+        - paragraph [ref=e138]: You review what was found before export, which keeps the batch accurate and leaves you in control instead of trusting blind automation.
+      - article [ref=e139]:
+        - generic [ref=e140]: "03"
+        - generic [ref=e141]: Confirm card pairings
+        - paragraph [ref=e142]: The value is keeping the right front and back together so the listing step does not become another sorting session.
+      - article [ref=e143]:
+        - generic [ref=e144]: "04"
+        - generic [ref=e145]: Export organized listing assets
+        - paragraph [ref=e146]: Get the full front, full back, and corner crops in card-level output folders that are easier to drag into eBay.
+  - generic [ref=e148]:
+    - generic [ref=e149]: What you get
+    - heading "10 images per card. Zero manual recropping." [level=2] [ref=e150]:
+      - emphasis [ref=e151]: 10 images
+      - text: per card.
+      - text: Zero manual recropping.
+    - generic [ref=e152]:
+      - generic [ref=e153]:
+        - paragraph [ref=e154]: This is most compelling for higher-value singles where corners matter, but it still helps any seller who is tired of the post-photo sorting step. Naming and review are part of the workflow, not hidden friction after the fact.
+        - list [ref=e155]:
+          - listitem [ref=e156]: Full front for the listing lead image
+          - listitem [ref=e158]: Full back paired with the same card
+          - listitem [ref=e160]: Four front corners for centering and edge wear
+          - listitem [ref=e162]: Four back corners for whitening, scratches, and nicks
+          - listitem [ref=e164]: Organized card output that is easier to list without manual sorting
+      - generic [ref=e166]:
+        - generic [ref=e167]: What one finished card export contains
+        - generic [ref=e168]:
+          - generic [ref=e169]:
+            - img "Full front export" [ref=e170]
+            - generic [ref=e171]: Full front
+          - generic [ref=e172]:
+            - generic [ref=e173]:
+              - img "Corner crop" [ref=e174]
+              - generic [ref=e175]: Corner crop
+            - generic [ref=e176]:
+              - img "Back export" [ref=e177]
+              - generic [ref=e178]: Back export
+        - generic [ref=e179]:
+          - strong [ref=e180]: Why this matters
+          - paragraph [ref=e181]: A small edge issue on a valuable single changes buyer confidence immediately. CardWorks is meant to take you from two scans to this complete card folder so those details are already ready when you build the listing.
+  - generic [ref=e183]:
+    - generic [ref=e184]:
+      - generic [ref=e185]:
+        - generic [ref=e186]: Pricing
+        - heading "Simple pricing. No fake urgency." [level=2] [ref=e187]:
+          - text: Simple pricing.
+          - text: No fake urgency.
+      - paragraph [ref=e188]: "The pitch here is straightforward: you are paying to avoid manual sorting, re-cropping, and messy post-photo cleanup, not to unlock arbitrary listing caps."
+    - generic [ref=e189]:
+      - article [ref=e190]:
+        - generic [ref=e191]: Founding member
+        - generic [ref=e192]:
+          - superscript [ref=e193]: $
+          - text: "5"
+        - paragraph [ref=e194]: per month
+        - list [ref=e195]:
+          - listitem [ref=e196]: Full access to CardWorks
+          - listitem [ref=e197]: Unlimited cards and batches
+          - listitem [ref=e198]: Best fit if you want the lowest recurring price
+          - listitem [ref=e199]: Useful if card processing is part of your regular seller workflow
+        - link "Enter license key →" [ref=e200] [cursor=pointer]:
+          - /url: /login?next=/workspace
+        - paragraph [ref=e201]: You are paying to skip hand-sorting and recropping after the photo session, not to join a waitlist.
+      - article [ref=e202]:
+        - generic [ref=e203]: Monthly
+        - generic [ref=e204]:
+          - superscript [ref=e205]: $
+          - text: "9"
+        - paragraph [ref=e206]: per month
+        - list [ref=e207]:
+          - listitem [ref=e208]: Full access to CardWorks
+          - listitem [ref=e209]: Unlimited cards and batches
+          - listitem [ref=e210]: Browser-based workflow
+          - listitem [ref=e211]: Good if you want flexibility before committing longer term
+        - link "Enter license key →" [ref=e212] [cursor=pointer]:
+          - /url: /login?next=/workspace
+      - article [ref=e213]:
+        - generic [ref=e214]: Annual
+        - generic [ref=e215]:
+          - superscript [ref=e216]: $
+          - text: "79"
+        - paragraph [ref=e217]: per year
+        - list [ref=e218]:
+          - listitem [ref=e219]: Full access to CardWorks
+          - listitem [ref=e220]: Unlimited cards and batches
+          - listitem [ref=e221]: Best value if card listing is a steady part of your month
+          - listitem [ref=e222]: Priced for repeat use, not one-off gimmick urgency
+        - link "Enter license key →" [ref=e223] [cursor=pointer]:
+          - /url: /login?next=/workspace
+    - paragraph [ref=e224]:
+      - text: Already bought?
+      - link "Enter your license key here" [ref=e225] [cursor=pointer]:
+        - /url: /login?next=/workspace
+      - text: .
+  - generic [ref=e227]:
+    - generic [ref=e228]: FAQ
+    - heading "The practical questions sellers ask first." [level=2] [ref=e229]:
+      - text: The practical questions
+      - text: sellers ask first.
+    - generic [ref=e230]:
+      - article [ref=e231]:
+        - heading "Do my photos upload to your server?" [level=3] [ref=e232]
+        - paragraph [ref=e233]: No. Processing runs entirely in your browser. Your card photos never leave your device.
+      - article [ref=e234]:
+        - heading "Which browsers work best?" [level=3] [ref=e235]
+        - paragraph [ref=e236]: "Chrome, Edge, and Brave are the preferred path. Safari still works, but the current limitation is export behavior: Safari uses a ZIP download instead of direct folder write."
+      - article [ref=e237]:
+        - heading "Who is this best for?" [level=3] [ref=e238]
+        - paragraph [ref=e239]: It is especially useful for higher-value singles where front, back, and corner details matter. It also helps any seller whose bottleneck is sorting and organizing a batch after the photos are taken.
+      - article [ref=e240]:
+        - heading "What happens after I sign up?" [level=3] [ref=e241]
+        - paragraph [ref=e242]: You buy access on Gumroad, receive the license key immediately, enter it on the access page, and go straight into the workspace. The first in-app note then tells you how to photograph fronts, backs, and confirm pairings before export.
+      - article [ref=e243]:
+        - heading "Do I need to install anything?" [level=3] [ref=e244]
+        - paragraph [ref=e245]: No install is required for the normal flow. The app is presented as a browser-based workspace where you upload scans, process them, and export listing assets.
+  - generic [ref=e247]:
+    - generic [ref=e248]: CardWorks
+    - heading "Everything but the listing." [level=2] [ref=e249]:
+      - text: Everything but
+      - emphasis [ref=e250]: the listing.
+    - paragraph [ref=e251]: "Focused on the part sellers usually do by hand: matching, organizing, and exporting card images after the photos are already taken."
+    - link "Enter license key and open workspace →" [ref=e252] [cursor=pointer]:
+      - /url: /login?next=/workspace
+    - generic [ref=e253]:
+      - link "Privacy" [ref=e254] [cursor=pointer]:
+        - /url: /privacy
+      - link "Terms" [ref=e255] [cursor=pointer]:
+        - /url: /terms
+      - link "support@cardworks.app" [ref=e256] [cursor=pointer]:
+        - /url: mailto:support@cardworks.app
+    - generic [ref=e257]: No server uploads · Your photos stay on your device · Cancel any time
