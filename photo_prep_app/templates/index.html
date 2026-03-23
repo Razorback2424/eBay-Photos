@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CardWorks — Everything but the listing</title>
+<title>CardWorks — 2 photos in. 10 listing-ready images out.</title>
 {% if plausible_domain %}
 <script defer data-domain="{{ plausible_domain }}" src="{{ plausible_script_src }}"></script>
 {% endif %}
@@ -110,6 +110,10 @@ a { color: inherit; }
   font-weight: 500;
 }
 
+.nav-cta-buy {
+  background: var(--accent);
+}
+
 .hero {
   padding: 72px var(--pad) 84px;
   border-bottom: 1px solid var(--line);
@@ -119,9 +123,13 @@ a { color: inherit; }
   max-width: var(--max);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
-  gap: 38px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  gap: 28px;
   align-items: center;
+}
+
+.hero-inner > div {
+  min-width: 0;
 }
 
 .eyebrow,
@@ -144,8 +152,8 @@ a { color: inherit; }
 }
 
 .hero h1 {
-  font-size: clamp(56px, 9vw, 104px);
-  margin-bottom: 22px;
+  font-size: clamp(52px, 7vw, 86px);
+  margin-bottom: 18px;
 }
 
 .hero h1 em,
@@ -157,29 +165,19 @@ a { color: inherit; }
 }
 
 .hero-sub {
-  font-size: 18px;
-  font-weight: 300;
+  font-size: 17px;
+  font-weight: 400;
   color: var(--text-2);
   max-width: 560px;
 }
 
-.hero-blunt {
-  margin-top: 18px;
-  max-width: 620px;
-  padding: 14px 18px;
-  border: 1px solid rgba(191, 61, 23, 0.16);
-  background: var(--accent-soft);
-  border-radius: var(--radius);
-  font-size: 15px;
-  font-weight: 500;
-}
-
 .hero-actions {
-  margin-top: 28px;
+  margin-top: 22px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   align-items: flex-start;
+  max-width: 100%;
 }
 
 .primary-btn {
@@ -194,20 +192,28 @@ a { color: inherit; }
 }
 
 .trust-strip {
-  margin-top: 12px;
+  margin-top: 10px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-wrap: nowrap;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding-bottom: 2px;
+  align-self: stretch;
 }
 
 .trust-chip {
-  padding: 8px 12px;
+  padding: 6px 9px;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: rgba(255,255,255,0.75);
   color: var(--text-2);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 500;
+  white-space: nowrap;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .hero-visual {
@@ -215,6 +221,119 @@ a { color: inherit; }
   border-radius: 14px;
   background: var(--dark);
   padding: 22px;
+}
+
+.hero-proof-demo {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.7fr) minmax(110px, 0.35fr) minmax(0, 1.35fr);
+  gap: 18px;
+  align-items: center;
+}
+
+.proof-demo-side {
+  display: grid;
+  gap: 10px;
+}
+
+.proof-demo-side.output {
+  gap: 12px;
+}
+
+.proof-demo-head {
+  display: grid;
+  gap: 6px;
+}
+
+.proof-demo-count {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.proof-demo-copy {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 253, 249, 0.42);
+}
+
+.proof-demo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 12px;
+}
+
+.proof-demo-card {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #201d1a;
+}
+
+.proof-demo-card img {
+  width: 100%;
+  object-fit: cover;
+}
+
+.proof-demo-card.input img {
+  aspect-ratio: 4 / 5;
+}
+
+.proof-demo-card.output img {
+  aspect-ratio: 1 / 1;
+}
+
+.proof-demo-card span {
+  display: block;
+  padding: 8px 10px 9px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,253,249,0.78);
+  background: #171411;
+}
+
+.proof-demo-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  min-height: 100%;
+  justify-items: center;
+  gap: 12px;
+  color: var(--white);
+}
+
+.proof-demo-arrow strong {
+  display: block;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255,253,249,0.18), rgba(255,253,249,0.92));
+  position: relative;
+  font-size: 0;
+}
+
+.proof-demo-arrow strong::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-top: 4px solid rgba(255,253,249,0.92);
+  border-right: 4px solid rgba(255,253,249,0.92);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.proof-demo-arrow span {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255,253,249,0.78);
 }
 
 .hero-visual-label,
@@ -296,18 +415,11 @@ a { color: inherit; }
   border: 1px solid rgba(28, 25, 22, 0.1);
   border-radius: 999px;
   background: rgba(255, 253, 249, 0.85);
-  padding: 10px 16px;
+  padding: 11px 18px;
   font-size: 13px;
+  font-weight: 500;
   color: var(--text-2);
-}
-
-.marquee-chip::before {
-  content: '"';
-  color: var(--accent);
-  margin-right: 8px;
-  font-family: var(--font-display);
-  font-size: 18px;
-  line-height: 1;
+  font-style: italic;
 }
 
 @keyframes marquee-slide {
@@ -434,8 +546,7 @@ a { color: inherit; }
 .proof-flow {
   margin-top: 42px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+  gap: 20px;
 }
 
 .flow-card,
@@ -448,6 +559,18 @@ a { color: inherit; }
 
 .flow-card {
   padding: 24px;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.flow-card-body {
+  max-width: 360px;
+}
+
+.flow-card-visual {
+  min-width: 0;
 }
 
 .flow-step {
@@ -482,6 +605,7 @@ a { color: inherit; }
 
 .scan-stack {
   grid-template-columns: repeat(2, 1fr);
+  margin-top: 0;
 }
 
 .scan-shot,
@@ -506,7 +630,31 @@ a { color: inherit; }
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255,253,249,0.62);
+  color: rgba(255,253,249,0.9);
+  background: #171411;
+  font-weight: 600;
+}
+
+.step-bridge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(191, 61, 23, 0.1);
+  border: 1px solid rgba(191, 61, 23, 0.18);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.step-bridge strong {
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 1;
 }
 
 .review-board {
@@ -545,6 +693,86 @@ a { color: inherit; }
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.match-board {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--dark);
+  color: var(--white);
+}
+
+.match-board-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.match-board-title {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,253,249,0.44);
+}
+
+.match-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(106, 167, 117, 0.14);
+  border: 1px solid rgba(106, 167, 117, 0.22);
+  color: #bfe3c3;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.match-pair {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.match-card {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+}
+
+.match-card img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+
+.match-card span {
+  display: block;
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,253,249,0.88);
+  background: rgba(0,0,0,0.18);
+}
+
+.match-note {
+  margin-top: 14px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(255,253,249,0.7);
+}
+
+.match-note strong {
+  color: var(--white);
 }
 
 .folder-card {
@@ -587,6 +815,24 @@ a { color: inherit; }
 .problem-quote {
   font-family: var(--font-display);
   font-style: italic;
+  position: relative;
+  padding-left: 22px;
+}
+
+.problem-quote::before {
+  content: "“";
+  position: absolute;
+  left: 0;
+  top: -2px;
+  font-size: 34px;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.problem-quote::after {
+  content: "”";
+  margin-left: 4px;
+  color: var(--accent);
 }
 
 .problem-answer {
@@ -598,10 +844,15 @@ a { color: inherit; }
   background: var(--bg);
 }
 
+.how .section-headline {
+  font-size: clamp(34px, 4.8vw, 50px);
+  line-height: 1.02;
+}
+
 .how-steps {
   margin-top: 42px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
@@ -611,6 +862,10 @@ a { color: inherit; }
   padding: 32px 28px;
   background: #fffdf9;
   border-right: 1px solid var(--line);
+}
+
+.how-step:first-child {
+  background: linear-gradient(180deg, #fffdf9, #f5efe5);
 }
 
 .how-step:last-child { border-right: none; }
@@ -684,8 +939,7 @@ a { color: inherit; }
 
 .output-showcase {
   display: grid;
-  grid-template-columns: 1.15fr 1fr;
-  gap: 12px;
+  gap: 14px;
 }
 
 .output-main,
@@ -707,7 +961,7 @@ a { color: inherit; }
 .output-corners {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 12px;
 }
 
 .output-tag {
@@ -717,30 +971,6 @@ a { color: inherit; }
   text-transform: uppercase;
   color: rgba(255,253,249,0.54);
   background: #1d1a17;
-}
-
-.corner-why {
-  margin-top: 18px;
-  padding: 16px 18px;
-  border: 1px solid rgba(191, 61, 23, 0.25);
-  background: rgba(191, 61, 23, 0.1);
-  border-radius: 8px;
-}
-
-.corner-why strong {
-  display: block;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(255,253,249,0.6);
-  margin-bottom: 6px;
-}
-
-.corner-why p {
-  font-size: 13px;
-  font-weight: 300;
-  line-height: 1.7;
-  color: rgba(255,253,249,0.56);
 }
 
 .price-card.featured {
@@ -865,10 +1095,26 @@ code {
   .problem-grid,
   .pricing-grid,
   .how-steps,
-  .proof-flow,
   .scan-stack,
   .export-strip {
     grid-template-columns: 1fr;
+  }
+
+  .flow-card {
+    grid-template-columns: 1fr;
+  }
+
+  .match-pair {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-proof-demo {
+    grid-template-columns: 1fr;
+  }
+
+  .proof-demo-arrow {
+    align-items: stretch;
+    min-height: auto;
   }
 
   .how-step {
@@ -901,9 +1147,9 @@ function trackLandingEvent(name) {
 <nav class="nav">
   <a href="{{ url_for('index') }}" class="nav-logo">CardWorks</a>
   <div class="nav-right">
-    <a href="#proof" class="nav-link">Proof</a>
+    <a href="#proof" class="nav-link">See it work</a>
     <a href="#pricing" class="nav-link">Pricing</a>
-    <a href="{{ url_for('workspace') if auth.is_authenticated else (purchase_url or url_for('login', next=url_for('workspace'))) }}" class="nav-cta" {% if not auth.is_authenticated %}onclick="trackLandingEvent('Landing CTA Click')"{% endif %} {% if purchase_url and not auth.is_authenticated %}target="_blank" rel="noopener noreferrer"{% endif %}>
+    <a href="{{ url_for('workspace') if auth.is_authenticated else (purchase_url or url_for('login', next=url_for('workspace'))) }}" class="nav-cta{% if purchase_url and not auth.is_authenticated %} nav-cta-buy{% endif %}" {% if not auth.is_authenticated %}onclick="trackLandingEvent('Landing CTA Click')"{% endif %} {% if purchase_url and not auth.is_authenticated %}target="_blank" rel="noopener noreferrer"{% endif %}>
       {{ "Open workspace" if auth.is_authenticated else "Buy access" }} →
     </a>
   </div>
@@ -913,9 +1159,8 @@ function trackLandingEvent(name) {
   <div class="hero-inner">
     <div>
       <div class="eyebrow">For eBay card sellers</div>
-      <h1>2 photos in.<br>10 photos out.</h1>
-      <p class="hero-sub">Photograph all your card fronts in one shot. Photograph all your backs in another. CardWorks automatically generates the full front, full back, and all four corner detail crops for every card, the images that show buyers exactly what they are getting before they commit.</p>
-      <p class="hero-blunt">Most sellers skip corner photos because taking 8 per card is tedious. With CardWorks you get them for free, they come from the same 2 photos you were already going to take.</p>
+      <h1>2 photos in.<br>10 images out.</h1>
+      <p class="hero-sub">The 8 extra images are the corner detail buyers check before they trust a higher-value card listing. CardWorks creates them automatically from the same 2 photos you already took.</p>
       <div class="hero-actions">
         {% if auth.is_authenticated %}
         <a href="{{ url_for('workspace') }}" class="primary-btn">Open workspace →</a>
@@ -925,7 +1170,7 @@ function trackLandingEvent(name) {
         {% else %}
         <a href="{{ url_for('login', next=url_for('workspace')) }}" class="primary-btn">Enter license key and open workspace →</a>
         {% endif %}
-        <p class="hero-note">Buy on Gumroad, get the license key immediately, then enter it to open the workspace.</p>
+        <p class="hero-note">Buy on Gumroad, get your license key immediately, and you're in.</p>
         <div class="trust-strip">
           <span class="trust-chip">2 photos → 10 images per card</span>
           <span class="trust-chip">Runs in your browser</span>
@@ -935,23 +1180,71 @@ function trackLandingEvent(name) {
       </div>
     </div>
     <div class="hero-visual">
-      <div class="hero-visual-label">Real exported files from CardWorks</div>
-      <div class="visual-grid">
-        <div class="visual-card">
-          <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="Front export example">
-          <span>Full front export</span>
+      <div class="hero-visual-label">Exactly what this means</div>
+      <div class="hero-proof-demo">
+        <div class="proof-demo-side">
+          <div class="proof-demo-head">
+            <div class="proof-demo-count">2 in</div>
+          </div>
+          <div class="proof-demo-card input">
+            <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="One photo of all card fronts">
+            <span>Front photo</span>
+          </div>
+          <div class="proof-demo-card input">
+            <img src="{{ url_for('static', filename='landing/proof-back.jpg') }}" alt="One photo of all card backs">
+            <span>Back photo</span>
+          </div>
         </div>
-        <div class="visual-card">
-          <img src="{{ url_for('static', filename='landing/proof-back.jpg') }}" alt="Back export example">
-          <span>Full back export</span>
+        <div class="proof-demo-arrow" aria-hidden="true">
+          <strong></strong>
+          <span>CardWorks</span>
         </div>
-        <div class="visual-card">
-          <img src="{{ url_for('static', filename='landing/proof-corner.jpg') }}" alt="Corner crop example">
-          <span>Corner crop export</span>
-        </div>
-        <div class="visual-card">
-          <img src="{{ url_for('static', filename='landing/proof-back-corner.jpg') }}" alt="Back corner crop example">
-          <span>Back corner detail</span>
+        <div class="proof-demo-side output">
+          <div class="proof-demo-head">
+            <div class="proof-demo-count">10 out</div>
+          </div>
+          <div class="proof-demo-grid">
+            <div class="proof-demo-card output">
+              <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="Full front export">
+              <span>Front</span>
+            </div>
+            <div class="proof-demo-card output">
+              <img src="{{ url_for('static', filename='landing/proof-back.jpg') }}" alt="Full back export">
+              <span>Back</span>
+            </div>
+            <div class="proof-demo-card output">
+              <img src="{{ url_for('static', filename='landing/proof-corner-front-tl.jpg') }}" alt="Front top-left corner crop">
+              <span>Front TL</span>
+            </div>
+            <div class="proof-demo-card output">
+              <img src="{{ url_for('static', filename='landing/proof-corner-front-br.jpg') }}" alt="Front bottom-right corner crop">
+              <span>Front BR</span>
+            </div>
+            <div class="proof-demo-card output">
+              <img src="{{ url_for('static', filename='landing/proof-corner-front-tl.jpg') }}" alt="Front top-right corner crop">
+              <span>Front TR</span>
+            </div>
+            <div class="proof-demo-card output">
+              <img src="{{ url_for('static', filename='landing/proof-corner-front-br.jpg') }}" alt="Front bottom-left corner crop">
+              <span>Front BL</span>
+            </div>
+            <div class="proof-demo-card output">
+              <img src="{{ url_for('static', filename='landing/proof-corner-back-tl.jpg') }}" alt="Back top-left corner crop">
+              <span>Back TL</span>
+            </div>
+            <div class="proof-demo-card output">
+              <img src="{{ url_for('static', filename='landing/proof-corner-back-br.jpg') }}" alt="Back bottom-right corner crop">
+              <span>Back BR</span>
+            </div>
+            <div class="proof-demo-card output">
+              <img src="{{ url_for('static', filename='landing/proof-corner-back-tl.jpg') }}" alt="Back top-right corner crop">
+              <span>Back TR</span>
+            </div>
+            <div class="proof-demo-card output">
+              <img src="{{ url_for('static', filename='landing/proof-corner-back-br.jpg') }}" alt="Back bottom-left corner crop">
+              <span>Back BL</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -960,20 +1253,20 @@ function trackLandingEvent(name) {
 
 <section class="marquee-band" aria-label="Seller pain quotes">
   <div class="marquee-track">
-    <div class="marquee-chip">the photos of the item really slow me down</div>
-    <div class="marquee-chip">I still absolutely dread listing</div>
-    <div class="marquee-chip">going through the 800+ photos is the worst part</div>
-    <div class="marquee-chip">I spend more time sorting fronts and backs than actually listing</div>
-    <div class="marquee-chip">I never bothered with corner shots, now I get them automatically</div>
-    <div class="marquee-chip">buyers actually ask about corners on anything over $50</div>
-    <div class="marquee-chip">taking individual corner photos was killing my listing time</div>
-    <div class="marquee-chip">the photos of the item really slow me down</div>
-    <div class="marquee-chip">I still absolutely dread listing</div>
-    <div class="marquee-chip">going through the 800+ photos is the worst part</div>
-    <div class="marquee-chip">I spend more time sorting fronts and backs than actually listing</div>
-    <div class="marquee-chip">I never bothered with corner shots, now I get them automatically</div>
-    <div class="marquee-chip">buyers actually ask about corners on anything over $50</div>
-    <div class="marquee-chip">taking individual corner photos was killing my listing time</div>
+    <div class="marquee-chip">“The photos of the item really slow me down.”</div>
+    <div class="marquee-chip">“I still absolutely dread listing.”</div>
+    <div class="marquee-chip">“Going through the 800+ photos is the worst part.”</div>
+    <div class="marquee-chip">“I spend more time sorting fronts and backs than actually listing.”</div>
+    <div class="marquee-chip">“I never bothered with corner shots, now I get them automatically.”</div>
+    <div class="marquee-chip">“Buyers actually ask about corners on anything over $50.”</div>
+    <div class="marquee-chip">“Taking individual corner photos was killing my listing time.”</div>
+    <div class="marquee-chip">“The photos of the item really slow me down.”</div>
+    <div class="marquee-chip">“I still absolutely dread listing.”</div>
+    <div class="marquee-chip">“Going through the 800+ photos is the worst part.”</div>
+    <div class="marquee-chip">“I spend more time sorting fronts and backs than actually listing.”</div>
+    <div class="marquee-chip">“I never bothered with corner shots, now I get them automatically.”</div>
+    <div class="marquee-chip">“Buyers actually ask about corners on anything over $50.”</div>
+    <div class="marquee-chip">“Taking individual corner photos was killing my listing time.”</div>
   </div>
 </section>
 
@@ -983,137 +1276,129 @@ function trackLandingEvent(name) {
   </div>
 </div>
 
-<section class="section" id="proof">
-  <div class="section-inner">
-    <div class="proof-intro">
-      <div>
-        <div class="section-label">Proof</div>
-        <h2 class="section-headline">Real output.<br>Concrete value.</h2>
-      </div>
-    </div>
-    <div class="proof-flow">
-      <article class="flow-card">
-        <div class="flow-step">Step 01</div>
-        <h3>Two photos is all you shoot.</h3>
-        <p>One photo of all your card fronts. One photo of all your card backs. That is your entire photo session.</p>
-        <div class="scan-stack">
-          <div class="scan-shot">
-            <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="Source front scan example">
-            <span>Front scan in</span>
-          </div>
-          <div class="scan-shot">
-            <img src="{{ url_for('static', filename='landing/proof-back.jpg') }}" alt="Source back scan example">
-            <span>Back scan in</span>
-          </div>
-        </div>
-      </article>
-      <article class="flow-card">
-        <div class="flow-step">Step 02</div>
-        <h3>CardWorks finds every card and every corner.</h3>
-        <p>From those two photos, CardWorks identifies each card, keeps the right front and back together, and prepares the detail crops buyers actually want to inspect.</p>
-        <div class="review-board">
-          <div class="review-board-title">What happens in the workspace</div>
-          <div class="review-list">
-            <div class="review-item"><strong>Detect</strong> Find each card in the front and back scans.</div>
-            <div class="review-item"><strong>Review</strong> Fix misses before anything is exported.</div>
-            <div class="review-item"><strong>Pair</strong> Keep the right back attached to the right front.</div>
-            <div class="review-item"><strong>Name</strong> Export one organized folder per card instead of a pile of loose files.</div>
-          </div>
-        </div>
-      </article>
-      <article class="flow-card">
-        <div class="flow-step">Step 03</div>
-        <h3>Ten listing-ready images per card, automatically.</h3>
-        <p>The full front, the full back, and all eight corner crops are generated from the two photos you already took, then packaged so you can list instead of reorganize.</p>
-        <div class="folder-card">
-          <div class="folder-head">Card_0001/</div>
-          <div class="folder-files">
-            <div>Card_0001_FRONT.jpg</div>
-            <div>Card_0001_BACK.jpg</div>
-            <div>Card_0001_FRONT_TL.jpg</div>
-            <div>Card_0001_FRONT_TR.jpg</div>
-            <div>Card_0001_FRONT_BL.jpg</div>
-            <div>Card_0001_FRONT_BR.jpg</div>
-            <div>Card_0001_BACK_TL.jpg</div>
-            <div>Card_0001_BACK_TR.jpg</div>
-            <div>Card_0001_BACK_BL.jpg</div>
-            <div>Card_0001_BACK_BR.jpg</div>
-          </div>
-        </div>
-        <div class="export-strip">
-          <div class="export-thumb">
-            <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="Full front export example">
-            <span>Front export</span>
-          </div>
-          <div class="export-thumb">
-            <img src="{{ url_for('static', filename='landing/proof-back.jpg') }}" alt="Full back export example">
-            <span>Back export</span>
-          </div>
-          <div class="export-thumb">
-            <img src="{{ url_for('static', filename='landing/proof-corner.jpg') }}" alt="Corner export example">
-            <span>Corner export</span>
-          </div>
-        </div>
-      </article>
-    </div>
-    <p class="proof-foot">The value is simple: take two photos, then let CardWorks create the ten listing-ready images buyers trust.</p>
-  </div>
-</section>
-
 <section class="section problem">
   <div class="section-inner">
     <div class="problem-intro">
       <div>
         <div class="section-label">The real problem</div>
-        <h2 class="section-headline">The photos are not<br>the hard part.<br><em>Everything after is.</em></h2>
+        <h2 class="section-headline">The photos are<br>easy. The <em>corner detail</em><br>is the part sellers skip.</h2>
       </div>
-      <p class="section-sub">They want the corner shots that build buyer trust, but taking 8 per card is not realistic. CardWorks makes that problem disappear.</p>
+      <p class="section-sub">Most sellers want the corner shots that build buyer trust, but taking all those extra detail photos on top of the front and back is time-consuming. CardWorks makes that problem disappear — for every card in your batch.</p>
     </div>
     <div class="problem-grid">
       <article class="problem-card">
         <div class="proof-kicker">Pain 01</div>
-        <div class="problem-quote">Sorting the right front and back takes longer than taking the photos.</div>
-        <p class="problem-answer">CardWorks is aimed at keeping output organized so you can move through a batch without hand-renaming or manually rebuilding every card folder.</p>
+        <div class="problem-quote">Taking individual corner photos for every card I want to sell is not realistic.</div>
+        <p class="problem-answer">CardWorks generates the detail buyers care about automatically, so it is included without extra shots.</p>
       </article>
       <article class="problem-card">
         <div class="proof-kicker">Pain 02</div>
         <div class="problem-quote">The phone-to-desktop handoff breaks the flow.</div>
-        <p class="problem-answer">The browser-based workflow reduces device hopping and gives you exported files that are already grouped for listing instead of another cleanup task.</p>
+        <p class="problem-answer">The browser-based workflow lets you process the batch where you list, then export complete 10-image card folders instead of juggling photos across devices.</p>
       </article>
       <article class="problem-card">
         <div class="proof-kicker">Pain 03</div>
-        <div class="problem-quote">I skip corner photos because taking 8 per card is not realistic.</div>
-        <p class="problem-answer">CardWorks generates all eight corner crops automatically from the two photos you were already going to take. You do not skip them anymore, they are just there.</p>
+        <div class="problem-quote">By the time I've cropped, named, and organized my photos, I've spent more time on admin than listing.</div>
+        <p class="problem-answer">CardWorks keeps every front, back, and corner crop together so each card comes out as one complete 10-image folder instead of a manual cleanup job.</p>
       </article>
     </div>
   </div>
 </section>
 
-<section class="section how">
+<section class="section" id="proof">
   <div class="section-inner">
-    <div class="section-label">How it works</div>
-    <h2 class="section-headline">Four steps.<br>Ten images.<br>Less manual cleanup.</h2>
-    <p class="section-sub">The work stays simple: upload fronts, upload backs, confirm the matches, and export the full front, full back, and all eight corners for every card.</p>
-    <div class="how-steps">
-      <article class="how-step">
-        <div class="how-step-num">01</div>
-        <div class="how-step-title">Upload front and back scans</div>
-        <p class="how-step-desc">Upload your front scans and back scans in matching order so the batch starts with the right pairs.</p>
+    <div class="proof-intro">
+      <div>
+        <div class="section-label">How it works</div>
+        <h2 class="section-headline">Three steps.<br>Ten images.</h2>
+        <p class="section-sub">Upload the photos. Confirm the match. Export one ready-to-list folder per card.</p>
+      </div>
+    </div>
+    <div class="proof-flow">
+      <article class="flow-card">
+        <div class="flow-card-body">
+          <div class="flow-step">Step 01</div>
+          <h3>Two photos per card is all you shoot.</h3>
+          <p>One photo of the front, one photo of the back — for each card in your batch. That is your entire photo session.</p>
+          <div class="step-bridge"><strong>2</strong> Photos in per card</div>
+        </div>
+        <div class="flow-card-visual">
+          <div class="scan-stack">
+            <div class="scan-shot">
+              <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="One photo of all card fronts">
+              <span>1 front photo</span>
+            </div>
+            <div class="scan-shot">
+              <img src="{{ url_for('static', filename='landing/proof-back.jpg') }}" alt="One photo of all card backs">
+              <span>1 back photo</span>
+            </div>
+          </div>
+        </div>
       </article>
-      <article class="how-step">
-        <div class="how-step-num">02</div>
-        <div class="how-step-title">Review what the app found</div>
-        <p class="how-step-desc">Check that every card was found correctly before you move on.</p>
+      <article class="flow-card">
+        <div class="flow-card-body">
+          <div class="flow-step">Step 02</div>
+          <h3>Confirm the front-back match.</h3>
+          <p>Check that each front photo is matched to the right back photo before export. If a pair looks off, fix it here and keep the batch clean.</p>
+        </div>
+        <div class="flow-card-visual">
+          <div class="match-board">
+            <div class="match-board-head">
+              <div class="match-board-title">Confirmation view</div>
+              <div class="match-status">Matched pair</div>
+            </div>
+            <div class="match-pair">
+              <div class="match-card">
+                <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="Front photo in confirmation view">
+                <span>Front photo</span>
+              </div>
+              <div class="match-card">
+                <img src="{{ url_for('static', filename='landing/proof-back.jpg') }}" alt="Back photo in confirmation view">
+                <span>Back photo</span>
+              </div>
+            </div>
+            <div class="match-note"><strong>Looks right?</strong> Keep the pair. If not, swap before export so the right front stays with the right back.</div>
+          </div>
+        </div>
       </article>
-      <article class="how-step">
-        <div class="how-step-num">03</div>
-        <div class="how-step-title">Confirm card pairings</div>
-        <p class="how-step-desc">Match each front to its back before export so every card stays grouped correctly.</p>
-      </article>
-      <article class="how-step">
-        <div class="how-step-num">04</div>
-        <div class="how-step-title">Export organized listing assets</div>
-        <p class="how-step-desc">Export. CardWorks packages the full front, full back, and eight corner crops per card into organized folders.</p>
+      <article class="flow-card">
+        <div class="flow-card-body">
+          <div class="flow-step">Step 03</div>
+          <h3>Ten listing-ready images per card, automatically.</h3>
+          <p>CardWorks generates the full front, full back, and all 8 corner crops, then packages every card in your batch into listing-ready folders.</p>
+          <div class="step-bridge"><strong>10</strong> Images out per card</div>
+        </div>
+        <div class="flow-card-visual">
+          <div class="folder-card">
+            <div class="folder-head">Card_0001/</div>
+            <div class="folder-files">
+              <div>Card_0001_FRONT.jpg</div>
+              <div>Card_0001_BACK.jpg</div>
+              <div>Card_0001_FRONT_TL.jpg</div>
+              <div>Card_0001_FRONT_TR.jpg</div>
+              <div>Card_0001_FRONT_BL.jpg</div>
+              <div>Card_0001_FRONT_BR.jpg</div>
+              <div>Card_0001_BACK_TL.jpg</div>
+              <div>Card_0001_BACK_TR.jpg</div>
+              <div>Card_0001_BACK_BL.jpg</div>
+              <div>Card_0001_BACK_BR.jpg</div>
+            </div>
+          </div>
+          <div class="export-strip">
+            <div class="export-thumb">
+              <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="Full front export">
+              <span>Card_0001_FRONT.jpg</span>
+            </div>
+            <div class="export-thumb">
+              <img src="{{ url_for('static', filename='landing/proof-back.jpg') }}" alt="Full back export">
+              <span>Card_0001_BACK.jpg</span>
+            </div>
+            <div class="export-thumb">
+              <img src="{{ url_for('static', filename='landing/proof-corner-front-br.jpg') }}" alt="Front bottom-right corner crop">
+              <span>Card_0001_FRONT_BR.jpg</span>
+            </div>
+          </div>
+        </div>
       </article>
     </div>
   </div>
@@ -1122,48 +1407,43 @@ function trackLandingEvent(name) {
 <section class="section">
   <div class="section-inner">
     <div class="section-label">What you get</div>
-    <h2 class="section-headline">The <em>8 photos</em><br>you never had to take.</h2>
+    <h2 class="section-headline">10 images per card.<br><em>8 you never had to take.</em></h2>
     <div class="output-layout">
       <div>
-        <p class="section-sub">Corner crops are what serious buyers look for on any card worth more than $50. A nick on a top corner, edge whitening on the bottom, centering you can actually see, these details determine whether a buyer trusts the listing. CardWorks generates all four corners of the front and all four of the back automatically, from the same two photos you were already going to take.</p>
         <ul class="output-features">
           <li class="output-feature"><span class="feature-dot"></span>4 front corner crops for centering, edge wear, and surface condition</li>
           <li class="output-feature"><span class="feature-dot"></span>4 back corner crops for whitening, scratches, and print lines</li>
           <li class="output-feature"><span class="feature-dot"></span>Full front for your primary listing image</li>
-          <li class="output-feature"><span class="feature-dot"></span>Full back for condition transparency</li>
-          <li class="output-feature"><span class="feature-dot"></span>Organized by card name, ready to drag into eBay</li>
+          <li class="output-feature"><span class="feature-dot"></span>Full back so buyers can see the card back before they bid</li>
         </ul>
       </div>
       <div class="output-visual">
         <div class="hero-visual-label">What one finished card export contains</div>
         <div class="output-showcase">
           <div class="output-main">
-            <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="Full front export">
+            <img src="{{ url_for('static', filename='landing/proof-front.jpg') }}" alt="Sylveon ex full front export">
             <div class="output-tag">Full front</div>
           </div>
           <div class="output-corners">
             <div class="output-corner">
-              <img src="{{ url_for('static', filename='landing/proof-corner.jpg') }}" alt="Top left corner crop">
+              <img src="{{ url_for('static', filename='landing/proof-corner-front-tl.jpg') }}" alt="Front top-left corner crop">
               <div class="output-tag">Front TL</div>
             </div>
             <div class="output-corner">
-              <img src="{{ url_for('static', filename='landing/proof-corner.jpg') }}" alt="Top right corner crop">
-              <div class="output-tag">Front TR</div>
-            </div>
-            <div class="output-corner">
-              <img src="{{ url_for('static', filename='landing/proof-corner.jpg') }}" alt="Bottom left corner crop">
-              <div class="output-tag">Front BL</div>
-            </div>
-            <div class="output-corner">
-              <img src="{{ url_for('static', filename='landing/proof-back-corner.jpg') }}" alt="Bottom right corner crop">
+              <img src="{{ url_for('static', filename='landing/proof-corner-front-br.jpg') }}" alt="Front bottom-right corner crop">
               <div class="output-tag">Front BR</div>
+            </div>
+            <div class="output-corner">
+              <img src="{{ url_for('static', filename='landing/proof-corner-back-tl.jpg') }}" alt="Back top-left corner crop">
+              <div class="output-tag">Back TL</div>
+            </div>
+            <div class="output-corner">
+              <img src="{{ url_for('static', filename='landing/proof-corner-back-br.jpg') }}" alt="Back bottom-right corner crop">
+              <div class="output-tag">Back BR</div>
             </div>
           </div>
         </div>
-        <div class="corner-why">
-          <strong>Why this matters</strong>
-          <p>A small edge issue on a valuable single changes buyer confidence immediately. CardWorks is meant to take you from two scans to this complete card folder so those details are already ready when you build the listing.</p>
-        </div>
+        <div class="output-tag" style="margin-top:12px;">4 of 8 corner crops shown here</div>
       </div>
     </div>
   </div>
@@ -1176,7 +1456,7 @@ function trackLandingEvent(name) {
         <div class="section-label">Pricing</div>
         <h2 class="section-headline">Simple pricing.<br>No fake urgency.</h2>
       </div>
-      <p class="section-sub">You are paying to avoid manual sorting, re-cropping, and messy post-photo cleanup, not to unlock arbitrary listing caps.</p>
+      <p class="section-sub">You are paying for ready-to-list card images from the photos you already took — no manual cropping, no sorting, no extra shots.</p>
     </div>
     <div class="pricing-grid">
       <article class="price-card featured">
@@ -1187,10 +1467,9 @@ function trackLandingEvent(name) {
           <li>Full access to CardWorks</li>
           <li>Unlimited cards and batches</li>
           <li>Rate locked forever. This price never increases.</li>
-          <li>First 20 sellers only. This tier closes when spots fill.</li>
+          <li>First 20 sellers only — this tier closes when spots fill</li>
         </ul>
         <a href="{{ purchase_url or url_for('login', next=url_for('workspace')) }}" class="price-btn-solid" {% if purchase_url %}target="_blank" rel="noopener noreferrer"{% endif %} onclick="trackLandingEvent('Pricing Founding Click')">{{ "Buy founding access on Gumroad →" if purchase_url else "Enter license key →" }}</a>
-        <p class="price-note">You are paying to skip hand-sorting and recropping after the photo session, not to join a waitlist.</p>
       </article>
       <article class="price-card">
         <div class="price-tier">Monthly</div>
@@ -1199,8 +1478,7 @@ function trackLandingEvent(name) {
         <ul class="price-features">
           <li>Full access to CardWorks</li>
           <li>Unlimited cards and batches</li>
-          <li>Browser-based workflow</li>
-          <li>Good if you want flexibility before committing longer term</li>
+          <li>Best if you're trying CardWorks before committing to a year</li>
         </ul>
         <a href="{{ purchase_url or url_for('login', next=url_for('workspace')) }}" class="price-btn-ghost" {% if purchase_url %}target="_blank" rel="noopener noreferrer"{% endif %} onclick="trackLandingEvent('Pricing Monthly Click')">{{ "Buy monthly access →" if purchase_url else "Enter license key →" }}</a>
       </article>
@@ -1212,7 +1490,7 @@ function trackLandingEvent(name) {
           <li>Full access to CardWorks</li>
           <li>Unlimited cards and batches</li>
           <li>Save $29 versus paying monthly for a full year</li>
-          <li>Priced for repeat use, not one-off gimmick urgency</li>
+          <li>Best value for regular sellers</li>
         </ul>
         <a href="{{ purchase_url or url_for('login', next=url_for('workspace')) }}" class="price-btn-ghost" {% if purchase_url %}target="_blank" rel="noopener noreferrer"{% endif %} onclick="trackLandingEvent('Pricing Annual Click')">{{ "Buy annual access →" if purchase_url else "Enter license key →" }}</a>
       </article>
@@ -1234,23 +1512,23 @@ function trackLandingEvent(name) {
       </article>
       <article class="faq-item">
         <h3>Which browsers work best?</h3>
-        <p>Chrome, Edge, and Brave are the preferred path. Safari still works, but the current limitation is export behavior: Safari uses a ZIP download instead of direct folder write.</p>
+        <p>Chrome, Edge, and Brave are the preferred path. Safari still works, but exports as a ZIP download rather than writing directly to a folder.</p>
       </article>
       <article class="faq-item">
         <h3>Who is this best for?</h3>
-        <p>It is especially useful for higher-value singles where front, back, and corner details matter. It also helps any seller whose bottleneck is sorting and organizing a batch after the photos are taken.</p>
+        <p>It is especially useful for higher-value singles where corner detail builds buyer confidence. It also helps any seller who wants to process a full batch and come away with complete, listing-ready images for every card — without taking extra shots.</p>
       </article>
       <article class="faq-item">
         <h3>Do I really get corner crops without photographing corners separately?</h3>
-        <p>Yes. CardWorks crops the corners directly from the full card photos you already took. You never need to reposition, refocus, or take additional shots. The corner detail images come from the same two photos as everything else.</p>
+        <p>Yes. CardWorks crops all 8 corners directly from the two photos you took for each card — 4 from the front photo, 4 from the back. You never reposition, refocus, or take additional shots. It works this way for every card in your batch.</p>
       </article>
       <article class="faq-item">
         <h3>What happens after I sign up?</h3>
-        <p>You buy access on Gumroad, receive the license key immediately, enter it on the access page, and go straight into the workspace. From your first batch, CardWorks generates the full front, full back, and all eight corner crops automatically. The first in-app note then tells you how to photograph fronts, backs, and confirm pairings before export.</p>
+        <p>You buy access on Gumroad, receive your license key immediately, enter it on the access page, and you are in the workspace. Every card in your first batch gets the complete image set automatically.</p>
       </article>
       <article class="faq-item">
         <h3>Do I need to install anything?</h3>
-        <p>No. Nothing to install. The app runs entirely in your browser, so you open it, upload your scans, and export from there.</p>
+        <p>No. Nothing to install. The app runs entirely in your browser, so you open it, upload your photos, and export from there.</p>
       </article>
     </div>
   </div>
@@ -1260,7 +1538,7 @@ function trackLandingEvent(name) {
   <div class="footer-inner">
     <div class="footer-logo">CardWorks</div>
     <h2 class="footer-headline">Everything but<br><em>the listing.</em></h2>
-    <p class="footer-sub">Take two photos. Get ten. The corner detail shots your buyers are looking for, generated automatically.</p>
+    <p class="footer-sub">2 photos per card in. 10 images per card out. Full front, full back, and 8 corner crops generated automatically for every card in your batch.</p>
     <a href="{{ url_for('workspace') if auth.is_authenticated else (purchase_url or url_for('login', next=url_for('workspace'))) }}" class="primary-btn" onclick="trackLandingEvent('Footer CTA Click')" {% if not auth.is_authenticated and purchase_url %}target="_blank" rel="noopener noreferrer"{% endif %}>
       {{ "Open workspace" if auth.is_authenticated else ("Buy access on Gumroad" if purchase_url else "Enter license key") }} →
     </a>
@@ -1269,18 +1547,13 @@ function trackLandingEvent(name) {
       <a href="{{ purchase_url }}" target="_blank" rel="noopener noreferrer" onclick="trackLandingEvent('Footer Purchase Click')">Buy access on Gumroad</a>
       <a href="{{ url_for('privacy_page') }}">Privacy</a>
       <a href="{{ url_for('terms_page') }}">Terms</a>
-      <a href="mailto:{{ support_email }}">{{ support_email }}</a>
+      <a href="/cdn-cgi/l/email-protection#463d3d663533363629343219232b272f2a663b3b">{{ support_email }}</a>
     </div>
     {% else %}
     <div class="footer-links">
       <a href="{{ url_for('privacy_page') }}">Privacy</a>
       <a href="{{ url_for('terms_page') }}">Terms</a>
-      <a href="mailto:{{ support_email }}">{{ support_email }}</a>
+      <a href="/cdn-cgi/l/email-protection#99e2e2b9eaece9e9f6ebedc6fcf4f8f0f5b9e4e4">{{ support_email }}</a>
     </div>
     {% endif %}
-    <div class="footer-fine">No server uploads · Your photos stay on your device · Cancel any time</div>
-  </div>
-</section>
-
-</body>
-</html>
+    <div class="footer-fine">No server uploads · Your photos stay on your device</div>

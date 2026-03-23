@@ -32,7 +32,13 @@ def support_email():
 
 
 def gumroad_product_url():
-    return (os.environ.get("GUMROAD_PRODUCT_URL") or "").strip()
+    explicit = (os.environ.get("GUMROAD_PRODUCT_URL") or "").strip()
+    if explicit:
+        return explicit
+    permalink = (os.environ.get("GUMROAD_PRODUCT_PERMALINK") or "").strip()
+    if permalink:
+        return f"https://gumroad.com/l/{permalink}"
+    return ""
 
 
 def plausible_domain():

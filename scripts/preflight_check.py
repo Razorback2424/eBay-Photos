@@ -15,6 +15,7 @@ def main():
     models = importlib.import_module("photo_prep_app.models")
     billing = importlib.import_module("photo_prep_app.services.billing")
     auth_service = importlib.import_module("photo_prep_app.services.auth")
+    gumroad = importlib.import_module("photo_prep_app.services.gumroad")
 
     checks = []
 
@@ -34,9 +35,26 @@ def main():
 
     # Auth / billing readiness
     add_check("auth0_ready_if_enabled", (auth_service.auth_mode() != "auth0") or auth_service.auth0_ready(), "AUTH0_* vars")
-    add_check("stripe_checkout_ready", billing.stripe_checkout_ready(), "STRIPE_SECRET_KEY / STRIPE_PRICE_ID / APP_BASE_URL")
-    add_check("stripe_portal_ready", billing.stripe_portal_ready(), "STRIPE_SECRET_KEY / APP_BASE_URL")
-    add_check("stripe_webhook_secret", bool((os.environ.get("STRIPE_WEBHOOK_SECRET") or "").strip()), "STRIPE_WEBHOOK_SECRET")
+    add_check(
+        "gumroad_launch_ready_if_enabled",
+        (active_auth_mode != "gumroad") or gumroad.launch_ready(),
+        "GUMROAD_PRODUCT_PERMALINK or GUMROAD_PRODUCT_ID",
+    )
+    add_check(
+        "stripe_checkout_ready_if_required",
+        (active_auth_mode == "gumroad") or billing.stripe_checkout_ready(),
+        "STRIPE_SECRET_KEY / STRIPE_PRICE_ID / APP_BASE_URL",
+    )
+    add_check(
+        "stripe_portal_ready_if_required",
+        (active_auth_mode == "gumroad") or billing.stripe_portal_ready(),
+        "STRIPE_SECRET_KEY / APP_BASE_URL",
+    )
+    add_check(
+        "stripe_webhook_secret_if_required",
+        (active_auth_mode == "gumroad") or bool((os.environ.get("STRIPE_WEBHOOK_SECRET") or "").strip()),
+        "STRIPE_WEBHOOK_SECRET",
+    )
 
     # Runtime dependencies
     add_check("tesseract_on_path", shutil.which("tesseract") is not None, shutil.which("tesseract") or "not found")

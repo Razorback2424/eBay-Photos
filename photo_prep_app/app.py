@@ -388,7 +388,7 @@ def _readiness_issues():
         issues.append("PHOTO_PREP_APP_SECRET is using the default development value.")
     if auth_service.auth_mode() == "auth0" and not auth_service.auth0_ready():
         issues.append("Auth0 mode is enabled but AUTH0_* variables are incomplete.")
-    if auth_service.auth_mode() == "gumroad" and not gumroad_service.ready():
+    if auth_service.auth_mode() == "gumroad" and not gumroad_service.launch_ready():
         issues.append("Gumroad launch mode is enabled but GUMROAD_* configuration is incomplete.")
     if auth_service.auth_mode() != "gumroad":
         if not STRIPE_WEBHOOK_SECRET:

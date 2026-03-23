@@ -20,13 +20,23 @@ def config():
     }
 
 
-def ready():
+def ready(*, allow_test_keys=True):
     cfg = config()
-    return bool(cfg["product_permalink"] or cfg["product_id"] or cfg["test_license_keys"])
+    return bool(cfg["product_permalink"] or cfg["product_id"] or (allow_test_keys and cfg["test_license_keys"]))
+
+
+def launch_ready():
+    cfg = config()
+    return bool(cfg["product_permalink"] or cfg["product_id"])
 
 
 def product_url():
-    return config()["product_url"]
+    cfg = config()
+    if cfg["product_url"]:
+        return cfg["product_url"]
+    if cfg["product_permalink"]:
+        return f"https://gumroad.com/l/{cfg['product_permalink']}"
+    return ""
 
 
 def verify_license(email, license_key):
