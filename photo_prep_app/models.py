@@ -471,6 +471,24 @@ def get_subscription_by_stripe_subscription(db_path, stripe_subscription_id):
             conn.close()
 
 
+def get_subscription_by_email(db_path, account_email):
+    email = (account_email or "").strip().lower()
+    if not email:
+        return None
+    with DB_LOCK:
+        conn = _connect(db_path)
+        try:
+            row = conn.execute(
+                "SELECT account_id, account_email, status, plan_name, cards_per_month_limit, trial_cards_total_limit, trial_exhausted_at, "
+                "stripe_customer_id, stripe_subscription_id, updated_at "
+                "FROM subscriptions WHERE lower(account_email) = ? ORDER BY updated_at DESC LIMIT 1",
+                (email,),
+            ).fetchone()
+            return dict(row) if row else None
+        finally:
+            conn.close()
+
+
 # Backward-compatible wrappers used by local demo flow.
 def ensure_local_subscription(db_path, *, status="trialing", plan_name="Starter Trial", cards_per_month_limit=200):
     return ensure_subscription(

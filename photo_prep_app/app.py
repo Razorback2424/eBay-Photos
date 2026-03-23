@@ -505,6 +505,42 @@ def batches_page():
 def login():
     error = None
     next_url = request.values.get("next") or url_for("workspace")
+    if request.method == "POST" and request.form.get("access_email"):
+        if not _validate_csrf():
+            _json_log("auth_login_csrf_failed", mode="access_email", remote_addr=request.remote_addr)
+            return render_template("login.html", error="Security check failed. Refresh and try again.", next_url=next_url), 400
+        access_email = (request.form.get("access_email") or "").strip().lower()
+        sub = models.get_subscription_by_email(DB_PATH, access_email)
+        entitled = bool(access_email and (billing_service.is_master_user(account_email=access_email) or (sub and sub.get("status") in {"trialing", "active"})))
+        if not entitled:
+            _json_log("auth_login_access_email_failed", email=access_email, reason="no_matching_entitlement")
+            return render_template("login.html", error="That email does not have access yet. Use your purchase email and license key, or ask support to enable access.", next_url=next_url), 400
+        user = auth_service.sign_in_gumroad(access_email)
+        if sub:
+            models.set_subscription(
+                DB_PATH,
+                user["id"],
+                account_email=access_email,
+                status=sub.get("status") or "active",
+                plan_name=sub.get("plan_name"),
+                cards_per_month_limit=sub.get("cards_per_month_limit"),
+                trial_cards_total_limit=sub.get("trial_cards_total_limit"),
+                trial_exhausted_at=sub.get("trial_exhausted_at"),
+                stripe_customer_id=sub.get("stripe_customer_id"),
+                stripe_subscription_id=sub.get("stripe_subscription_id"),
+            )
+        elif billing_service.is_master_user(account_email=access_email):
+            models.set_subscription(
+                DB_PATH,
+                user["id"],
+                account_email=access_email,
+                status="active",
+                plan_name="Owner Access",
+                cards_per_month_limit=0,
+            )
+        session["show_onboarding_notice"] = True
+        _json_log("auth_login_access_email_success", user_id=user.get("id"), email=access_email)
+        return redirect(next_url)
     if request.method == "POST" and auth_service.auth_mode() == "gumroad":
         if not _validate_csrf():
             _json_log("auth_login_csrf_failed", mode="gumroad", remote_addr=request.remote_addr)

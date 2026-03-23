@@ -1127,6 +1127,7 @@ code {
 
 @media (max-width: 640px) {
   .nav-link { display: none; }
+  .nav-link.nav-login { display: inline-flex; }
   .nav-right { gap: 12px; }
   .hero { padding-top: 52px; }
   .hero-actions { align-items: stretch; }
@@ -1149,6 +1150,7 @@ function trackLandingEvent(name) {
   <div class="nav-right">
     <a href="#proof" class="nav-link">See it work</a>
     <a href="#pricing" class="nav-link">Pricing</a>
+    <a href="{{ url_for('login', next=url_for('workspace')) }}" class="nav-link nav-login">Sign in</a>
     <a href="{{ url_for('workspace') if auth.is_authenticated else (purchase_url or url_for('login', next=url_for('workspace'))) }}" class="nav-cta{% if purchase_url and not auth.is_authenticated %} nav-cta-buy{% endif %}" {% if not auth.is_authenticated %}onclick="trackLandingEvent('Landing CTA Click')"{% endif %} {% if purchase_url and not auth.is_authenticated %}target="_blank" rel="noopener noreferrer"{% endif %}>
       {{ "Open workspace" if auth.is_authenticated else "Buy access" }} →
     </a>
@@ -1166,9 +1168,9 @@ function trackLandingEvent(name) {
         <a href="{{ url_for('workspace') }}" class="primary-btn">Open workspace →</a>
         {% elif purchase_url %}
         <a href="{{ purchase_url }}" class="primary-btn" style="background: var(--accent);" onclick="trackLandingEvent('Landing Purchase Click')" target="_blank" rel="noopener noreferrer">Buy access on Gumroad →</a>
-        <a href="{{ url_for('login', next=url_for('workspace')) }}" class="primary-btn">Already have a key? Enter it here →</a>
+        <a href="{{ url_for('login', next=url_for('workspace')) }}" class="primary-btn">Already have access? Sign in →</a>
         {% else %}
-        <a href="{{ url_for('login', next=url_for('workspace')) }}" class="primary-btn">Enter license key and open workspace →</a>
+        <a href="{{ url_for('login', next=url_for('workspace')) }}" class="primary-btn">Sign in to open workspace →</a>
         {% endif %}
         <p class="hero-note">Buy on Gumroad, get your license key immediately, and you're in.</p>
         <div class="trust-strip">
@@ -1545,12 +1547,14 @@ function trackLandingEvent(name) {
     {% if not auth.is_authenticated and purchase_url %}
     <div class="footer-links">
       <a href="{{ purchase_url }}" target="_blank" rel="noopener noreferrer" onclick="trackLandingEvent('Footer Purchase Click')">Buy access on Gumroad</a>
+      <a href="{{ url_for('login', next=url_for('workspace')) }}">Sign in</a>
       <a href="{{ url_for('privacy_page') }}">Privacy</a>
       <a href="{{ url_for('terms_page') }}">Terms</a>
       <a href="/cdn-cgi/l/email-protection#463d3d663533363629343219232b272f2a663b3b">{{ support_email }}</a>
     </div>
     {% else %}
     <div class="footer-links">
+      <a href="{{ url_for('login', next=url_for('workspace')) }}">Sign in</a>
       <a href="{{ url_for('privacy_page') }}">Privacy</a>
       <a href="{{ url_for('terms_page') }}">Terms</a>
       <a href="/cdn-cgi/l/email-protection#99e2e2b9eaece9e9f6ebedc6fcf4f8f0f5b9e4e4">{{ support_email }}</a>

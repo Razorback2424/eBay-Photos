@@ -134,8 +134,8 @@
 </head>
 <body>
   <main class="card">
-    <h1>Enter your license key</h1>
-    <p>Use the purchase email and Gumroad license key from your receipt to unlock the workspace. After access opens, start by photographing all card fronts in one shot and all card backs in another before confirming the pairings.</p>
+    <h1>Access your workspace</h1>
+    <p>Use your purchase email and Gumroad license key if you bought access. If your email was already approved, sign in with that email instead. After access opens, start by photographing all card fronts in one shot and all card backs in another before confirming the pairings.</p>
     <div class="chiprow">
       <span class="chip">Paid access required</span>
       <span class="chip">Gumroad license verification</span>
@@ -156,6 +156,19 @@
       <div class="tiny">After purchase, Gumroad should email your license key immediately. Keep that email and paste the key here whenever you sign in on a new device.</div>
     </form>
 
+    <div class="note" style="margin-top:18px;">
+      Already have access? Use the email on your approved account. You do not need to enter a license key again.
+    </div>
+
+    <form method="post" action="{{ url_for('login') }}" onsubmit="trackAccessEvent('Access Email Submit')">
+      <input type="hidden" name="next" value="{{ next_url }}" />
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      <label>Access Email</label>
+      <input type="email" name="access_email" placeholder="you@example.com" required />
+      <button type="submit">Continue with access email</button>
+      <div class="tiny">This works for approved launch emails and internal master users. If you were invited, use the email address that was granted access.</div>
+    </form>
+
     {% if purchase_url %}
     <a class="secondary" href="{{ purchase_url }}" target="_blank" rel="noopener noreferrer" onclick="trackAccessEvent('Access Purchase Click')">Buy Access on Gumroad</a>
     {% endif %}
@@ -170,7 +183,7 @@
       <a href="mailto:{{ support_email }}">{{ support_email }}</a>
     </div>
 
-    <a class="toplink" href="{{ url_for('workspace') if auth and auth.is_authenticated else url_for('dashboard') }}">← Back to Home</a>
+    <a class="toplink" href="{{ url_for('workspace') if auth and auth.is_authenticated else url_for('index') }}">← Back to Home</a>
   </main>
 </body>
 </html>
