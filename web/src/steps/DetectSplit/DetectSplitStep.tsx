@@ -396,6 +396,7 @@ const DetectionThumbnail = ({ detection, index, working }: DetectionThumbnailPro
 export const DetectSplitStep = () => {
   const {
     files,
+    sourcePairs,
     workingImages,
     detectedCards,
     detectionAdjustments,
@@ -406,6 +407,7 @@ export const DetectSplitStep = () => {
     removeManualDetection
   } = useSessionStore((state) => ({
     files: state.files,
+    sourcePairs: state.getConfirmedSourcePairs(),
     workingImages: state.workingImages,
     detectedCards: state.detectedCards,
     detectionAdjustments: state.detectionAdjustments,
@@ -416,12 +418,29 @@ export const DetectSplitStep = () => {
     removeManualDetection: state.removeManualDetection
   }));
 
-  const frontFile = files[0];
-  const backFile = files[1];
+  const [activeSourcePairId, setActiveSourcePairId] = useState<string | null>(sourcePairs[0]?.id ?? null);
+  const [statusByFileId, setStatusByFileId] = useState<Record<string, DetectionStatus>>({});
+  const [errorByFileId, setErrorByFileId] = useState<Record<string, string | null>>({});
+
+  useEffect(() => {
+    if (!sourcePairs.some((pair) => pair.id === activeSourcePairId)) {
+      setActiveSourcePairId(sourcePairs[0]?.id ?? null);
+    }
+  }, [activeSourcePairId, sourcePairs]);
+
+  const activeSourcePair = useMemo(
+    () => sourcePairs.find((pair) => pair.id === activeSourcePairId) ?? sourcePairs[0] ?? null,
+    [activeSourcePairId, sourcePairs]
+  );
+
+  const fileMap = useMemo(() => new Map(files.map((file) => [file.id, file])), [files]);
+  const frontFile = activeSourcePair ? fileMap.get(activeSourcePair.primaryFileId) : files[0];
+  const backFile = activeSourcePair ? fileMap.get(activeSourcePair.secondaryFileId) : files[1];
   const frontWorking = frontFile ? workingImages[frontFile.id] : undefined;
   const backWorking = backFile ? workingImages[backFile.id] : undefined;
 
   const frontDetections = useMemo(() => (frontFile ? detectedCards[frontFile.id] ?? [] : []), [frontFile, detectedCards]);
+  const backDetections = useMemo(() => (backFile ? detectedCards[backFile.id] ?? [] : []), [backFile, detectedCards]);
 
   const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
   const adjustDialogId = useId();
@@ -436,10 +455,10 @@ export const DetectSplitStep = () => {
   const frontManualDetections = useMemo(() => frontAdjustments?.manual ?? [], [frontAdjustments]);
   const frontInactiveDetections = useMemo(() => frontAdjustments?.disabledAuto ?? [], [frontAdjustments]);
 
-  const [frontStatus, setFrontStatus] = useState<DetectionStatus>(frontDetections.length > 0 ? 'ready' : 'idle');
-  const [frontError, setFrontError] = useState<string | null>(null);
-  const [backStatus, setBackStatus] = useState<DetectionStatus>('idle');
-  const [backError, setBackError] = useState<string | null>(null);
+  const frontStatus = frontFile ? statusByFileId[frontFile.id] ?? (frontDetections.length > 0 ? 'ready' : 'idle') : 'idle';
+  const frontError = frontFile ? errorByFileId[frontFile.id] ?? null : null;
+  const backStatus = backFile ? statusByFileId[backFile.id] ?? (backDetections.length > 0 ? 'ready' : 'idle') : 'idle';
+  const backError = backFile ? errorByFileId[backFile.id] ?? null : null;
   const frontSpinnerVisible = useDelayedVisibility(frontStatus === 'pending', 300);
   const backSpinnerVisible = useDelayedVisibility(backStatus === 'pending', 300);
 
@@ -551,25 +570,7 @@ export const DetectSplitStep = () => {
   }, []);
 
   useEffect(() => {
-    if (!frontWorking) {
-      setFrontStatus('idle');
-      setFrontError(null);
-    }
-    if (!backWorking) {
-      setBackStatus('idle');
-      setBackError(null);
-    }
-  }, [frontWorking, backWorking]);
-
-  useEffect(() => {
-    if (!workerReady || !frontFile || !frontWorking) {
-      return;
-    }
-    if (frontStatus === 'error') {
-      return;
-    }
-    if (frontDetections.length > 0) {
-      setFrontStatus('ready');
+    if (!workerReady) {
       return;
     }
 
@@ -579,74 +580,49 @@ export const DetectSplitStep = () => {
       return;
     }
 
-    setFrontStatus('pending');
-    setFrontError(null);
-
     (async () => {
-      try {
-        const bitmap = await createImageBitmap(frontWorking.blob);
-        const detections = await proxy.detect(transfer(bitmap, [bitmap]));
-        if (cancelled) {
-          return;
+      const fileIds = Array.from(
+        new Set(sourcePairs.flatMap((pair) => [pair.primaryFileId, pair.secondaryFileId]).filter(Boolean))
+      );
+      for (const fileId of fileIds) {
+        if (cancelled) break;
+        const working = workingImages[fileId];
+        if (!working) {
+          continue;
         }
-        setDetectedCards(frontFile.id, detections);
-        setFrontStatus('ready');
-      } catch (error) {
-        if (cancelled) {
-          return;
+        if ((detectedCards[fileId]?.length ?? 0) > 0) {
+          setStatusByFileId((current) => ({ ...current, [fileId]: 'ready' }));
+          continue;
         }
-        console.error('[DetectSplitStep] Detection failed for front image:', error);
-        setFrontStatus('error');
-        setFrontError(error instanceof Error ? error.message : 'Detection failed.');
-        setDetectedCards(frontFile.id, []);
+        setStatusByFileId((current) => ({ ...current, [fileId]: 'pending' }));
+        setErrorByFileId((current) => ({ ...current, [fileId]: null }));
+        try {
+          const bitmap = await createImageBitmap(working.blob);
+          const detections = await proxy.detect(transfer(bitmap, [bitmap]) as unknown as ImageBitmap);
+          if (cancelled) {
+            return;
+          }
+          setDetectedCards(fileId, detections);
+          setStatusByFileId((current) => ({ ...current, [fileId]: 'ready' }));
+        } catch (error) {
+          if (cancelled) {
+            return;
+          }
+          console.error('[DetectSplitStep] Detection failed:', error);
+          setDetectedCards(fileId, []);
+          setStatusByFileId((current) => ({ ...current, [fileId]: 'error' }));
+          setErrorByFileId((current) => ({
+            ...current,
+            [fileId]: error instanceof Error ? error.message : 'Detection failed.'
+          }));
+        }
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [workerReady, frontFile, frontWorking, frontDetections.length, setDetectedCards, frontStatus]);
-
-  useEffect(() => {
-    if (!workerReady || !backFile || !backWorking) {
-      return;
-    }
-    if (backStatus === 'error') {
-      return;
-    }
-
-    let cancelled = false;
-    const proxy = proxyRef.current;
-    if (!proxy) {
-      return;
-    }
-
-    setBackStatus('pending');
-    setBackError(null);
-
-    (async () => {
-      try {
-        const bitmap = await createImageBitmap(backWorking.blob);
-        const detections = await proxy.detect(transfer(bitmap, [bitmap]));
-        if (cancelled) {
-          return;
-        }
-        setDetectedCards(backFile.id, detections);
-        setBackStatus('ready');
-      } catch (error) {
-        if (cancelled) {
-          return;
-        }
-        setBackStatus('error');
-        setBackError(error instanceof Error ? error.message : 'Detection failed.');
-        setDetectedCards(backFile.id, []);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [workerReady, backFile, backWorking, setDetectedCards, backStatus]);
+  }, [detectedCards, setDetectedCards, sourcePairs, workerReady, workingImages]);
 
   const thumbnails = useMemo(() => {
     if (!frontWorking || frontDetections.length === 0) {
@@ -720,6 +696,22 @@ export const DetectSplitStep = () => {
           We analyse working copies to find card boundaries. Confirm the primary detections before pairing photos.
         </Text>
       </Stack>
+      {sourcePairs.length > 1 && (
+        <div className="source-pairTabs" role="tablist" aria-label="Source pairs">
+          {sourcePairs.map((pair, index) => (
+            <button
+              key={pair.id}
+              type="button"
+              role="tab"
+              className={`source-pairTabs__tab${pair.id === activeSourcePair?.id ? ' source-pairTabs__tab--active' : ''}`}
+              aria-selected={pair.id === activeSourcePair?.id}
+              onClick={() => setActiveSourcePairId(pair.id)}
+            >
+              Pair {index + 1}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="detect-preview">
         <div>
           <Text as="h3" variant="label">

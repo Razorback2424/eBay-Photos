@@ -171,4 +171,4 @@ const processPair = async ({
 
 expose({
   processPair
-});
+} as Record<string, (...args: unknown[]) => unknown>);

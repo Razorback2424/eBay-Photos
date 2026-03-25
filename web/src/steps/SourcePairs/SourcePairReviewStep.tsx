@@ -1,0 +1,282 @@
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+
+import { StepNavigation } from '../../components/StepNavigation';
+import { FileAsset, SourcePair, useSessionStore } from '../../state/session';
+import { Button } from '../../ui/Button';
+import { Stack } from '../../ui/Stack';
+import { Text } from '../../ui/Text';
+
+const createObjectUrlMap = (entries: Array<[string, Blob]>) =>
+  Object.fromEntries(entries.map(([key, blob]) => [key, URL.createObjectURL(blob)]));
+
+const orderManualPair = (first: FileAsset, second: FileAsset) => {
+  if (first.inferredSide === 'front' && second.inferredSide === 'back') {
+    return { primary: first, secondary: second };
+  }
+  if (first.inferredSide === 'back' && second.inferredSide === 'front') {
+    return { primary: second, secondary: first };
+  }
+  return { primary: first, secondary: second };
+};
+
+interface SourceFilePreviewProps {
+  file: FileAsset;
+  objectUrl?: string;
+  selected?: boolean;
+  onClick?: () => void;
+  action?: ReactNode;
+}
+
+const SourceFilePreview = ({ file, objectUrl, selected, onClick, action }: SourceFilePreviewProps) => (
+  <article className={`source-fileCard${selected ? ' source-fileCard--selected' : ''}`}>
+    <button type="button" className="source-fileCard__button" onClick={onClick}>
+      <div className="source-fileCard__imageFrame">
+        {objectUrl ? <img src={objectUrl} alt="" className="source-fileCard__image" /> : <div className="source-fileCard__placeholder" />}
+      </div>
+      <Stack gap={4}>
+        <Text as="span" variant="label">
+          {file.inferredSide ?? 'unknown'}
+        </Text>
+        <Text as="span" variant="body" className="source-fileCard__name">
+          {file.relativePath || file.name}
+        </Text>
+      </Stack>
+    </button>
+    {action}
+  </article>
+);
+
+export const SourcePairReviewStep = () => {
+  const {
+    files,
+    sourcePairs,
+    skippedFileIds,
+    workingImages,
+    setSourcePairs,
+    setSkippedFileIds,
+    confirmSourcePairs
+  } = useSessionStore((state) => ({
+    files: state.files,
+    sourcePairs: state.sourcePairs,
+    skippedFileIds: state.skippedFileIds,
+    workingImages: state.workingImages,
+    setSourcePairs: state.setSourcePairs,
+    setSkippedFileIds: state.setSkippedFileIds,
+    confirmSourcePairs: state.confirmSourcePairs
+  }));
+
+  const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
+
+  const fileMap = useMemo(() => new Map(files.map((file) => [file.id, file])), [files]);
+  const objectUrls = useMemo(
+    () =>
+      createObjectUrlMap(
+        files
+          .map((file) => [file.id, workingImages[file.id]?.blob] as const)
+          .filter((entry): entry is [string, Blob] => Boolean(entry[1]))
+      ),
+    [files, workingImages]
+  );
+
+  useEffect(() => {
+    return () => {
+      Object.values(objectUrls).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [objectUrls]);
+
+  const pairedFileIds = useMemo(() => {
+    const paired = new Set<string>();
+    sourcePairs.forEach((pair) => {
+      paired.add(pair.primaryFileId);
+      paired.add(pair.secondaryFileId);
+    });
+    return paired;
+  }, [sourcePairs]);
+
+  const skippedSet = useMemo(() => new Set(skippedFileIds), [skippedFileIds]);
+
+  const unmatchedFiles = useMemo(
+    () => files.filter((file) => !pairedFileIds.has(file.id) && !skippedSet.has(file.id)),
+    [files, pairedFileIds, skippedSet]
+  );
+
+  const handleUnpair = useCallback(
+    (pairId: string) => {
+      const pair = sourcePairs.find((item) => item.id === pairId);
+      if (!pair) return;
+      setSourcePairs(sourcePairs.filter((item) => item.id !== pairId));
+      setSelectedFileIds((current) =>
+        current.filter((fileId) => fileId !== pair.primaryFileId && fileId !== pair.secondaryFileId)
+      );
+    },
+    [setSourcePairs, sourcePairs]
+  );
+
+  const toggleSkip = useCallback(
+    (fileId: string) => {
+      const next = new Set(skippedFileIds);
+      if (next.has(fileId)) {
+        next.delete(fileId);
+      } else {
+        next.add(fileId);
+        setSelectedFileIds((current) => current.filter((id) => id !== fileId));
+      }
+      setSkippedFileIds(Array.from(next));
+    },
+    [setSkippedFileIds, skippedFileIds]
+  );
+
+  const handleSelectFile = useCallback(
+    (fileId: string) => {
+      setSelectedFileIds((current) => {
+        if (current.includes(fileId)) {
+          return current.filter((id) => id !== fileId);
+        }
+        if (current.length >= 2) {
+          return [current[1], fileId];
+        }
+        return [...current, fileId];
+      });
+    },
+    []
+  );
+
+  const handleCreatePair = useCallback(() => {
+    if (selectedFileIds.length !== 2) {
+      return;
+    }
+    const first = fileMap.get(selectedFileIds[0]);
+    const second = fileMap.get(selectedFileIds[1]);
+    if (!first || !second) {
+      return;
+    }
+    const ordered = orderManualPair(first, second);
+    const nextPair: SourcePair = {
+      id: `source-${ordered.primary.id}-${ordered.secondary.id}`,
+      primaryFileId: ordered.primary.id,
+      secondaryFileId: ordered.secondary.id,
+      status: 'draft',
+      matchType: 'manual',
+      reason: 'Paired manually during batch review.'
+    };
+    setSourcePairs([...sourcePairs, nextPair]);
+    setSelectedFileIds([]);
+  }, [fileMap, selectedFileIds, setSourcePairs, sourcePairs]);
+
+  const unresolvedCount = unmatchedFiles.length;
+
+  const handleNext = useCallback(() => {
+    if (unresolvedCount > 0) {
+      return false;
+    }
+    confirmSourcePairs();
+  }, [confirmSourcePairs, unresolvedCount]);
+
+  return (
+    <Stack gap={24}>
+      <Stack gap={8}>
+        <Text as="h2" variant="title">
+          Review source pairs
+        </Text>
+        <Text variant="body">
+          Confirm the suggested front/back matches. If a file is ambiguous, pair it manually or skip it before moving on.
+        </Text>
+      </Stack>
+
+      <Stack gap={12}>
+        <Text as="h3" variant="label">
+          Suggested pairs ({sourcePairs.length})
+        </Text>
+        {sourcePairs.length === 0 ? (
+          <Text variant="muted">No automatic matches yet. Select two unmatched files below to create a pair.</Text>
+        ) : (
+          <div className="source-pairList">
+            {sourcePairs.map((pair) => {
+              const primary = fileMap.get(pair.primaryFileId);
+              const secondary = fileMap.get(pair.secondaryFileId);
+              if (!primary || !secondary) {
+                return null;
+              }
+              return (
+                <article key={pair.id} className="source-pairCard">
+                  <div className="source-pairCard__grid">
+                    <SourceFilePreview file={primary} objectUrl={objectUrls[primary.id]} />
+                    <SourceFilePreview file={secondary} objectUrl={objectUrls[secondary.id]} />
+                  </div>
+                  <Stack direction="row" justify="between" align="center">
+                    <Text variant="muted">{pair.reason ?? 'Ready for review.'}</Text>
+                    <Button type="button" variant="ghost" onClick={() => handleUnpair(pair.id)}>
+                      Unpair
+                    </Button>
+                  </Stack>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </Stack>
+
+      <Stack gap={12}>
+        <Stack direction="row" justify="between" align="center">
+          <div>
+            <Text as="h3" variant="label">
+              Unmatched files ({unmatchedFiles.length})
+            </Text>
+            <Text variant="muted">Select two files to create a manual pair. Skip any leftovers you do not want to process.</Text>
+          </div>
+          <Button type="button" variant="secondary" onClick={handleCreatePair} disabled={selectedFileIds.length !== 2}>
+            Pair selected files
+          </Button>
+        </Stack>
+        {unmatchedFiles.length === 0 ? (
+          <Text variant="muted">All files are resolved.</Text>
+        ) : (
+          <div className="source-fileGrid">
+            {unmatchedFiles.map((file) => (
+              <SourceFilePreview
+                key={file.id}
+                file={file}
+                objectUrl={objectUrls[file.id]}
+                selected={selectedFileIds.includes(file.id)}
+                onClick={() => handleSelectFile(file.id)}
+                action={
+                  <Button type="button" variant="ghost" onClick={() => toggleSkip(file.id)}>
+                    Skip
+                  </Button>
+                }
+              />
+            ))}
+          </div>
+        )}
+      </Stack>
+
+      {skippedFileIds.length > 0 && (
+        <Stack gap={12}>
+          <Text as="h3" variant="label">
+            Skipped files ({skippedFileIds.length})
+          </Text>
+          <div className="source-fileGrid">
+            {skippedFileIds.map((fileId) => {
+              const file = fileMap.get(fileId);
+              if (!file) return null;
+              return (
+                <SourceFilePreview
+                  key={fileId}
+                  file={file}
+                  objectUrl={objectUrls[fileId]}
+                  action={
+                    <Button type="button" variant="ghost" onClick={() => toggleSkip(fileId)}>
+                      Restore
+                    </Button>
+                  }
+                />
+              );
+            })}
+          </div>
+        </Stack>
+      )}
+
+      <StepNavigation step="sourcePairs" nextLabel="Review detections" nextDisabled={unresolvedCount > 0} onNext={handleNext} />
+    </Stack>
+  );
+};

@@ -82,15 +82,30 @@ export const pairsRoute = createRoute({
     }
   },
   component: function PairsStep() {
-    const { files, detectedCards, detectionAdjustments, setPairs } = useSessionStore((state) => ({
+    const { files, sourcePairs, pairs, detectedCards, detectionAdjustments, setPairsForSourcePair } = useSessionStore((state) => ({
       files: state.files,
+      sourcePairs: state.getConfirmedSourcePairs(),
+      pairs: state.pairs,
       detectedCards: state.detectedCards,
       detectionAdjustments: state.detectionAdjustments,
-      setPairs: state.setPairs
+      setPairsForSourcePair: state.setPairsForSourcePair
     }));
 
-    const frontFile = files[0];
-    const backFile = files[1];
+    const [activeSourcePairId, setActiveSourcePairId] = useState<string | null>(sourcePairs[0]?.id ?? null);
+
+    useEffect(() => {
+      if (!sourcePairs.some((pair) => pair.id === activeSourcePairId)) {
+        setActiveSourcePairId(sourcePairs[0]?.id ?? null);
+      }
+    }, [activeSourcePairId, sourcePairs]);
+
+    const activeSourcePair = useMemo(
+      () => sourcePairs.find((pair) => pair.id === activeSourcePairId) ?? sourcePairs[0] ?? null,
+      [activeSourcePairId, sourcePairs]
+    );
+    const fileMap = useMemo(() => new Map(files.map((file) => [file.id, file])), [files]);
+    const frontFile = activeSourcePair ? fileMap.get(activeSourcePair.primaryFileId) : files[0];
+    const backFile = activeSourcePair ? fileMap.get(activeSourcePair.secondaryFileId) : files[1];
 
     const frontCards = useMemo(
       () => createAdjustedCards(frontFile?.id, detectedCards, detectionAdjustments),
@@ -103,9 +118,11 @@ export const pairsRoute = createRoute({
 
     useEffect(() => {
       if (frontCards.length === 0) {
-        setPairs([]);
+        if (activeSourcePair) {
+          setPairsForSourcePair(activeSourcePair.id, []);
+        }
       }
-    }, [frontCards.length, setPairs]);
+    }, [activeSourcePair, frontCards.length, setPairsForSourcePair]);
 
     const { forwardDistance, reversedDistance } = useMemo(() => {
       if (frontCards.length === 0 || frontCards.length !== backCards.length) {
@@ -137,21 +154,30 @@ export const pairsRoute = createRoute({
     const [skippedBacks, setSkippedBacks] = useState<string[]>([]);
 
     useEffect(() => {
+      if (!activeSourcePair || !backFile) {
+        setAssignments({});
+        setSkippedBacks([]);
+        return;
+      }
       const validBackIds = new Set(backCards.map((card) => card.id));
-      setAssignments((current) => {
-        const next: Record<string, string | null> = {};
-        frontCards.forEach((front) => {
-          const assigned = current[front.id];
-          next[front.id] = assigned && validBackIds.has(assigned) ? assigned : null;
-        });
-        return next;
+      const storedPairs = pairs.filter((pair) => pair.sourcePairId === activeSourcePair.id);
+      const nextAssignments: Record<string, string | null> = {};
+      frontCards.forEach((front) => {
+        const stored = storedPairs.find((pair) => pair.primaryDetectionId === front.id);
+        nextAssignments[front.id] =
+          stored?.secondaryDetectionId && validBackIds.has(stored.secondaryDetectionId) ? stored.secondaryDetectionId : null;
       });
-    }, [frontCards, backCards]);
-
-    useEffect(() => {
-      const validBackIds = new Set(backCards.map((card) => card.id));
-      setSkippedBacks((current) => current.filter((id) => validBackIds.has(id)));
-    }, [backCards]);
+      setAssignments(nextAssignments);
+      const assignedBackIds = new Set(
+        storedPairs
+          .map((pair) => pair.secondaryDetectionId)
+          .filter((value): value is string => typeof value === 'string' && validBackIds.has(value))
+      );
+      setSkippedBacks(backCards.filter((card) => !assignedBackIds.has(card.id)).map((card) => card.id).filter((id) => {
+        const usedByAssignment = Object.values(nextAssignments).includes(id);
+        return !usedByAssignment;
+      }));
+    }, [activeSourcePair, backCards, backFile, frontCards, pairs]);
 
     const handleDragStart = useCallback((event: DragEvent<HTMLDivElement>, backId: string) => {
       event.dataTransfer?.setData('text/plain', backId);
@@ -247,8 +273,7 @@ export const pairsRoute = createRoute({
     const orderedBacks = useMemo(() => (reverseBacks ? [...backCards].reverse() : backCards), [backCards, reverseBacks]);
 
     const handleSavePairs = useCallback(() => {
-      if (!frontFile || frontCards.length === 0) {
-        setPairs([]);
+      if (!activeSourcePair || !frontFile || frontCards.length === 0) {
         return;
       }
 
@@ -257,15 +282,16 @@ export const pairsRoute = createRoute({
           const assignedId = assignments[front.id];
           const matched = assignedId ? backMap.get(assignedId) : undefined;
           return {
-            id: `pair-${front.id}`,
+            id: `pair-${activeSourcePair.id}-${front.id}`,
+            sourcePairId: activeSourcePair.id,
             primaryFileId: frontFile.id,
             primaryDetectionId: front.id,
             secondaryFileId: matched ? backFile?.id : undefined,
             secondaryDetectionId: matched?.id,
-            status: matched ? 'matched' : 'pending'
+            status: matched ? 'matched' as const : 'pending' as const
           };
         });
-        setPairs(nextPairs);
+        setPairsForSourcePair(activeSourcePair.id, nextPairs);
         return;
       }
 
@@ -273,18 +299,42 @@ export const pairsRoute = createRoute({
       const nextPairs = frontCards.map((front, index) => {
         const matched = order[index];
         return {
-          id: `pair-${front.id}`,
+          id: `pair-${activeSourcePair.id}-${front.id}`,
+          sourcePairId: activeSourcePair.id,
           primaryFileId: frontFile.id,
           primaryDetectionId: front.id,
           secondaryFileId: matched ? backFile.id : undefined,
           secondaryDetectionId: matched?.id,
-          status: matched ? 'matched' : 'pending'
+          status: matched ? 'matched' as const : 'pending' as const
         };
       });
-      setPairs(nextPairs);
-    }, [assignments, backCards, backFile, backMap, frontCards, frontFile, reverseBacks, setPairs]);
+      setPairsForSourcePair(activeSourcePair.id, nextPairs);
+    }, [activeSourcePair, assignments, backCards, backFile, backMap, frontCards, frontFile, reverseBacks, setPairsForSourcePair]);
 
     const autoPairing = frontCards.length > 0 && frontCards.length === backCards.length;
+    const resolvedSourcePairIds = useMemo(() => new Set(pairs.map((pair) => pair.sourcePairId)), [pairs]);
+    const unresolvedSourcePairs = sourcePairs.filter((pair) => !resolvedSourcePairIds.has(pair.id)).length;
+
+    const handleSwitchSourcePair = useCallback(
+      (sourcePairId: string) => {
+        handleSavePairs();
+        setActiveSourcePairId(sourcePairId);
+      },
+      [handleSavePairs]
+    );
+
+    const handleNext = useCallback(() => {
+      handleSavePairs();
+      const nextResolved = new Set([
+        ...pairs
+          .filter((pair) => pair.sourcePairId !== activeSourcePair?.id)
+          .map((pair) => pair.sourcePairId),
+        activeSourcePair?.id
+      ].filter((value): value is string => Boolean(value)));
+      if (!sourcePairs.every((pair) => nextResolved.has(pair.id))) {
+        return false;
+      }
+    }, [activeSourcePair?.id, handleSavePairs, pairs, sourcePairs]);
 
     return (
       <Stack gap={24}>
@@ -296,6 +346,29 @@ export const pairsRoute = createRoute({
             Match fronts and backs so naming and export settings stay aligned.
           </Text>
         </Stack>
+        {sourcePairs.length > 1 && (
+          <Stack gap={8}>
+            <div className="source-pairTabs" role="tablist" aria-label="Detected source pairs">
+              {sourcePairs.map((pair, index) => (
+                <button
+                  key={pair.id}
+                  type="button"
+                  role="tab"
+                  className={`source-pairTabs__tab${pair.id === activeSourcePair?.id ? ' source-pairTabs__tab--active' : ''}`}
+                  aria-selected={pair.id === activeSourcePair?.id}
+                  onClick={() => handleSwitchSourcePair(pair.id)}
+                >
+                  Pair {index + 1}
+                </button>
+              ))}
+            </div>
+            {unresolvedSourcePairs > 0 && (
+              <Text variant="muted">
+                Save each source pair before continuing. {unresolvedSourcePairs} source pair{unresolvedSourcePairs === 1 ? '' : 's'} still need pairing data.
+              </Text>
+            )}
+          </Stack>
+        )}
         {frontCards.length === 0 ? (
           <Text variant="muted">Confirm or add primary detections before pairing.</Text>
         ) : autoPairing ? (
@@ -435,7 +508,7 @@ export const pairsRoute = createRoute({
           step="pairs"
           nextLabel="Naming"
           nextDisabled={frontCards.length === 0}
-          onNext={handleSavePairs}
+          onNext={handleNext}
         />
       </Stack>
     );

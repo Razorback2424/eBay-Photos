@@ -128,4 +128,4 @@ const detectCards = async (image: ImageBitmap): Promise<DetectedCard[]> => {
 
 expose({
   detect: detectCards
-});
+} as Record<string, (...args: unknown[]) => unknown>);

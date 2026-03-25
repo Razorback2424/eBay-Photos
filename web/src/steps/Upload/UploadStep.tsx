@@ -3,30 +3,27 @@ import type { ChangeEvent, DragEvent, KeyboardEvent } from 'react';
 import clsx from 'clsx';
 
 import { StepNavigation } from '../../components/StepNavigation';
+import { Button } from '../../ui/Button';
 import { Stack } from '../../ui/Stack';
 import { Text } from '../../ui/Text';
 import { FileAsset, useSessionStore } from '../../state/session';
 import { decodeImage, DecodedImage } from '../../utils/images/decodeImage';
+import { autoMatchBatchFiles } from '../../utils/batchMatching';
 
 const ACCEPT = 'image/jpeg,image/png,image/heic,image/heif,image/avif';
-type PickerAccept = NonNullable<OpenFilePickerOptions['types']>[number];
-const FILE_TYPES: PickerAccept[] = [
-  {
-    description: 'Images',
-    accept: {
-      'image/*': ['.jpg', '.jpeg', '.png', '.heic', '.heif', '.avif']
-    }
-  }
-];
 const WORKING_COPY_SIZE = 2500;
 
-const toAsset = (file: File): FileAsset => ({
-  id: `${file.name}-${file.size}-${file.lastModified}`,
-  name: file.name,
-  size: file.size,
-  type: file.type,
-  lastModified: file.lastModified
-});
+const toAsset = (file: File): FileAsset => {
+  const relativePath = 'webkitRelativePath' in file ? (file.webkitRelativePath || undefined) : undefined;
+  return {
+    id: `${relativePath ?? file.name}-${file.size}-${file.lastModified}`,
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    lastModified: file.lastModified,
+    relativePath
+  };
+};
 
 interface SlotState {
   status: 'empty' | 'loading' | 'ready' | 'error';
@@ -41,18 +38,10 @@ type SlotKey = 'primary' | 'secondary';
 const createToken = () => Date.now() + Math.random();
 
 const releaseSlot = (state: SlotState | undefined) => {
-  if (!state) return;
-  if (state.decoded) {
-    state.decoded.decodedBitmap.close();
-    state.decoded.workingBitmap.close();
-  }
+  if (!state?.decoded) return;
+  state.decoded.decodedBitmap.close();
+  state.decoded.workingBitmap.close();
 };
-
-declare global {
-  interface Window {
-    showOpenFilePicker?: (options?: OpenFilePickerOptions) => Promise<FileSystemFileHandle[]>;
-  }
-}
 
 interface ImagePreviewProps {
   decoded: DecodedImage;
@@ -98,9 +87,7 @@ const ImagePreview = ({ decoded }: ImagePreviewProps) => {
 
     return () => {
       active = false;
-      if (previewBitmap) {
-        previewBitmap.close();
-      }
+      previewBitmap?.close();
     };
   }, [decoded]);
 
@@ -125,38 +112,16 @@ interface DropzoneProps {
   description: string;
   slotKey: SlotKey;
   state: SlotState;
-  pickerSupported: boolean;
   onFile: (slot: SlotKey, file: File) => void;
-  onError: (slot: SlotKey, message: string) => void;
 }
 
-const Dropzone = ({ label, description, slotKey, state, pickerSupported, onFile, onError }: DropzoneProps) => {
+const Dropzone = ({ label, description, slotKey, state, onFile }: DropzoneProps) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragActive, setIsDragActive] = useState(false);
 
-  const openPicker = useCallback(async () => {
-    if (pickerSupported && typeof window.showOpenFilePicker === 'function') {
-      try {
-        const handles = await window.showOpenFilePicker({
-          multiple: false,
-          excludeAcceptAllOption: true,
-          types: FILE_TYPES
-        });
-        const handle = handles[0];
-        if (!handle) return;
-        const file = await handle.getFile();
-        onFile(slotKey, file);
-      } catch (error) {
-        if ((error as DOMException)?.name === 'AbortError') {
-          return;
-        }
-        onError(slotKey, 'Unable to open file picker.');
-      }
-      return;
-    }
-
+  const openPicker = useCallback(() => {
     inputRef.current?.click();
-  }, [pickerSupported, slotKey, onError, onFile]);
+  }, []);
 
   const handleDrop = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
@@ -170,12 +135,15 @@ const Dropzone = ({ label, description, slotKey, state, pickerSupported, onFile,
     [slotKey, onFile]
   );
 
-  const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    if (!isDragActive) {
-      setIsDragActive(true);
-    }
-  }, [isDragActive]);
+  const handleDragOver = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      if (!isDragActive) {
+        setIsDragActive(true);
+      }
+    },
+    [isDragActive]
+  );
 
   const handleDragLeave = useCallback((event: DragEvent<HTMLDivElement>) => {
     if (event.currentTarget.contains(event.relatedTarget as Node)) {
@@ -207,7 +175,7 @@ const Dropzone = ({ label, description, slotKey, state, pickerSupported, onFile,
 
   const stateMessage = useMemo(() => {
     if (state.status === 'loading') {
-      return 'Decoding image…';
+      return 'Decoding image...';
     }
     if (state.status === 'error') {
       return state.error ?? 'We could not load this image.';
@@ -261,18 +229,40 @@ const Dropzone = ({ label, description, slotKey, state, pickerSupported, onFile,
   );
 };
 
-export const UploadStep = () => {
-  const pickerSupported = typeof window !== 'undefined' && typeof window.showOpenFilePicker === 'function';
+type BatchLoadState = 'idle' | 'loading' | 'ready' | 'error';
 
+export const UploadStep = () => {
   const [slots, setSlots] = useState<Record<SlotKey, SlotState>>({
     primary: { status: 'empty' },
     secondary: { status: 'empty' }
   });
+  const [showBatch, setShowBatch] = useState(false);
+  const [batchState, setBatchState] = useState<BatchLoadState>('idle');
+  const [batchMessage, setBatchMessage] = useState<string>('Select a folder containing one-card front and back scans.');
+  const folderInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { setFiles, setWorkingImage, clearWorkingImages } = useSessionStore((state) => ({
+  const {
+    intakeMode,
+    files,
+    sourcePairs,
+    skippedFileIds,
+    setIntakeMode,
+    setFiles,
+    setSourcePairs,
+    setSkippedFileIds,
+    setWorkingImage,
+    clearWorkflowData
+  } = useSessionStore((state) => ({
+    intakeMode: state.intakeMode,
+    files: state.files,
+    sourcePairs: state.sourcePairs,
+    skippedFileIds: state.skippedFileIds,
+    setIntakeMode: state.setIntakeMode,
     setFiles: state.setFiles,
+    setSourcePairs: state.setSourcePairs,
+    setSkippedFileIds: state.setSkippedFileIds,
     setWorkingImage: state.setWorkingImage,
-    clearWorkingImages: state.clearWorkingImages
+    clearWorkflowData: state.clearWorkflowData
   }));
 
   useEffect(() => {
@@ -286,7 +276,7 @@ export const UploadStep = () => {
   const updateSlot = useCallback((slot: SlotKey, next: SlotState | ((current: SlotState) => SlotState)) => {
     setSlots((prev) => {
       const current = prev[slot];
-      const newState = typeof next === 'function' ? (next as (current: SlotState) => SlotState)(current) : next;
+      const newState = typeof next === 'function' ? next(current) : next;
       return {
         ...prev,
         [slot]: newState
@@ -294,15 +284,39 @@ export const UploadStep = () => {
     });
   }, []);
 
-  const setError = useCallback((slot: SlotKey, message: string) => {
-    updateSlot(slot, (current) => {
-      releaseSlot(current);
-      return { status: 'error', error: message };
-    });
-  }, [updateSlot]);
+  const resetWorkflow = useCallback(
+    (mode: 'simple' | 'batch') => {
+      setIntakeMode(mode);
+      clearWorkflowData();
+    },
+    [clearWorkflowData, setIntakeMode]
+  );
+
+  const stashDecodedImage = useCallback(
+    (asset: FileAsset, decoded: DecodedImage) => {
+      setWorkingImage(asset.id, {
+        blob: decoded.workingBlob,
+        width: decoded.workingWidth,
+        height: decoded.workingHeight,
+        originalBlob: decoded.decodedBlob,
+        originalWidth: decoded.width,
+        originalHeight: decoded.height,
+        scaleX: decoded.width / Math.max(1, decoded.workingWidth),
+        scaleY: decoded.height / Math.max(1, decoded.workingHeight)
+      });
+    },
+    [setWorkingImage]
+  );
 
   const handleFile = useCallback(
     async (slot: SlotKey, file: File) => {
+      if (intakeMode !== 'simple') {
+        resetWorkflow('simple');
+        setShowBatch(false);
+        setBatchState('idle');
+        setBatchMessage('Select a folder containing one-card front and back scans.');
+      }
+
       const token = createToken();
       updateSlot(slot, (current) => {
         releaseSlot(current);
@@ -314,10 +328,10 @@ export const UploadStep = () => {
 
         updateSlot(slot, (current) => {
           if (current.token !== token) {
-            releaseSlot({ status: 'ready', decoded });
+            decoded.decodedBitmap.close();
+            decoded.workingBitmap.close();
             return current;
           }
-
           releaseSlot(current);
           return {
             status: 'ready',
@@ -334,7 +348,7 @@ export const UploadStep = () => {
         });
       }
     },
-    [updateSlot]
+    [intakeMode, resetWorkflow, updateSlot]
   );
 
   useEffect(() => {
@@ -350,35 +364,97 @@ export const UploadStep = () => {
     ) {
       const primaryAsset = toAsset(primary.file);
       const secondaryAsset = toAsset(secondary.file);
+      resetWorkflow('simple');
       setFiles([primaryAsset, secondaryAsset]);
-      clearWorkingImages();
-      setWorkingImage(primaryAsset.id, {
-        blob: primary.decoded.workingBlob,
-        width: primary.decoded.workingWidth,
-        height: primary.decoded.workingHeight,
-        originalBlob: primary.decoded.decodedBlob,
-        originalWidth: primary.decoded.width,
-        originalHeight: primary.decoded.height,
-        scaleX: primary.decoded.width / Math.max(1, primary.decoded.workingWidth),
-        scaleY: primary.decoded.height / Math.max(1, primary.decoded.workingHeight)
-      });
-      setWorkingImage(secondaryAsset.id, {
-        blob: secondary.decoded.workingBlob,
-        width: secondary.decoded.workingWidth,
-        height: secondary.decoded.workingHeight,
-        originalBlob: secondary.decoded.decodedBlob,
-        originalWidth: secondary.decoded.width,
-        originalHeight: secondary.decoded.height,
-        scaleX: secondary.decoded.width / Math.max(1, secondary.decoded.workingWidth),
-        scaleY: secondary.decoded.height / Math.max(1, secondary.decoded.workingHeight)
-      });
-    } else {
-      setFiles([]);
-      clearWorkingImages();
+      setSourcePairs([
+        {
+          id: `source-${primaryAsset.id}-${secondaryAsset.id}`,
+          primaryFileId: primaryAsset.id,
+          secondaryFileId: secondaryAsset.id,
+          status: 'confirmed',
+          matchType: 'manual',
+          confidence: 1,
+          reason: 'Selected directly in the two-file upload flow.'
+        }
+      ]);
+      setSkippedFileIds([]);
+      stashDecodedImage(primaryAsset, primary.decoded);
+      stashDecodedImage(secondaryAsset, secondary.decoded);
     }
-  }, [slots, setFiles, setWorkingImage, clearWorkingImages]);
+  }, [resetWorkflow, setFiles, setSkippedFileIds, setSourcePairs, slots, stashDecodedImage]);
+
+  const handleBatchOpen = useCallback(() => {
+    resetWorkflow('batch');
+    releaseSlot(slots.primary);
+    releaseSlot(slots.secondary);
+    setSlots({
+      primary: { status: 'empty' },
+      secondary: { status: 'empty' }
+    });
+    setShowBatch(true);
+    folderInputRef.current?.click();
+  }, [resetWorkflow, slots.primary, slots.secondary]);
+
+  const handleBatchFiles = useCallback(
+    async (selectedFiles: File[]) => {
+      if (selectedFiles.length === 0) {
+        return;
+      }
+
+      resetWorkflow('batch');
+      setShowBatch(true);
+      setBatchState('loading');
+      setBatchMessage(`Preparing ${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'}...`);
+
+      const preparedAssets: FileAsset[] = [];
+      const decodedEntries: Array<{ asset: FileAsset; decoded: DecodedImage }> = [];
+
+      try {
+        for (const file of selectedFiles) {
+          const decoded = await decodeImage(file);
+          const asset = toAsset(file);
+          preparedAssets.push(asset);
+          decodedEntries.push({ asset, decoded });
+        }
+
+        const matched = autoMatchBatchFiles(preparedAssets);
+        setFiles(matched.files);
+        setSourcePairs(matched.sourcePairs);
+        setSkippedFileIds([]);
+        decodedEntries.forEach(({ asset, decoded }) => {
+          stashDecodedImage(asset, decoded);
+          decoded.decodedBitmap.close();
+          decoded.workingBitmap.close();
+        });
+        setBatchState('ready');
+        setBatchMessage(
+          `Found ${matched.sourcePairs.length} suggested pair${matched.sourcePairs.length === 1 ? '' : 's'} and ${matched.unmatchedFileIds.length} unmatched file${matched.unmatchedFileIds.length === 1 ? '' : 's'}.`
+        );
+      } catch (error) {
+        decodedEntries.forEach(({ decoded }) => {
+          decoded.decodedBitmap.close();
+          decoded.workingBitmap.close();
+        });
+        setBatchState('error');
+        setBatchMessage(error instanceof Error ? error.message : 'Unable to prepare this folder.');
+      }
+    },
+    [resetWorkflow, setFiles, setSkippedFileIds, setSourcePairs, stashDecodedImage]
+  );
+
+  const handleFolderInputChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const nextFiles = Array.from(event.target.files ?? []);
+      const supported = nextFiles.filter((file) => file.type.startsWith('image/') || /\.(jpe?g|png|heic|heif|avif)$/i.test(file.name));
+      void handleBatchFiles(supported);
+      event.target.value = '';
+    },
+    [handleBatchFiles]
+  );
 
   const bothReady = slots.primary.status === 'ready' && slots.secondary.status === 'ready';
+  const readyForNext = intakeMode === 'batch' ? batchState === 'ready' && files.length > 0 : bothReady;
+  const unmatchedCount = Math.max(0, files.length - sourcePairs.length * 2 - skippedFileIds.length);
 
   return (
     <Stack gap={24}>
@@ -387,30 +463,104 @@ export const UploadStep = () => {
           Upload both sides of your product
         </Text>
         <Text variant="body">
-          Drag in the hero shot and the secondary angle. Images stay on this device; we only keep lightweight metadata
-          while you work.
+          The default path stays fast for one card at a time. If you already have a folder of scans, batch intake is
+          available without changing the rest of the workflow.
         </Text>
       </Stack>
-      <div className="upload-grid" role="group" aria-label="Photo upload options">
-        <Dropzone
-          label="Primary photo"
-          description="Add the main catalog image"
-          slotKey="primary"
-          state={slots.primary}
-          pickerSupported={pickerSupported}
-          onFile={handleFile}
-          onError={setError}
-        />
-        <Dropzone
-          label="Secondary photo"
-          description="Add a supporting angle or detail"
-          slotKey="secondary"
-          state={slots.secondary}
-          pickerSupported={pickerSupported}
-          onFile={handleFile}
-          onError={setError}
-        />
-      </div>
+
+      {!showBatch && (
+        <>
+          <div className="upload-grid" role="group" aria-label="Photo upload options">
+            <Dropzone
+              label="Front photo"
+              description="Add the front scan"
+              slotKey="primary"
+              state={slots.primary}
+              onFile={handleFile}
+            />
+            <Dropzone
+              label="Back photo"
+              description="Add the back scan"
+              slotKey="secondary"
+              state={slots.secondary}
+              onFile={handleFile}
+            />
+          </div>
+          <div className="upload-batchCallout">
+            <Stack gap={8}>
+              <Text as="h3" variant="label">
+                Have a folder of scans?
+              </Text>
+              <Text variant="muted">
+                Batch intake will suggest front/back matches, then let you review them before detections.
+              </Text>
+            </Stack>
+            <Button type="button" variant="ghost" onClick={handleBatchOpen}>
+              Batch upload folder
+            </Button>
+          </div>
+        </>
+      )}
+
+      {showBatch && (
+        <Stack gap={16} className="batch-upload">
+          <div className="batch-upload__header">
+            <Stack gap={6}>
+              <Text as="h3" variant="label">
+                Batch folder
+              </Text>
+              <Text variant="body">{batchMessage}</Text>
+            </Stack>
+            <Stack direction="row" gap={8}>
+              <Button type="button" variant="secondary" onClick={() => folderInputRef.current?.click()}>
+                Choose folder
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  resetWorkflow('simple');
+                  setShowBatch(false);
+                  setBatchState('idle');
+                  setBatchMessage('Select a folder containing one-card front and back scans.');
+                }}
+              >
+                Back to simple upload
+              </Button>
+            </Stack>
+          </div>
+          <div className="batch-upload__summary">
+            <div className="batch-upload__metric">
+              <Text as="span" variant="label">
+                Files
+              </Text>
+              <Text as="span" variant="body">
+                {files.length}
+              </Text>
+            </div>
+            <div className="batch-upload__metric">
+              <Text as="span" variant="label">
+                Suggested pairs
+              </Text>
+              <Text as="span" variant="body">
+                {sourcePairs.length}
+              </Text>
+            </div>
+            <div className="batch-upload__metric">
+              <Text as="span" variant="label">
+                Unmatched
+              </Text>
+              <Text as="span" variant="body">
+                {unmatchedCount}
+              </Text>
+            </div>
+          </div>
+          <Text variant="muted">
+            Continue to review the suggested matches. Any ambiguous files can be paired manually there.
+          </Text>
+        </Stack>
+      )}
+
       <Stack gap={4}>
         <Text as="h3" variant="label">
           Working copies
@@ -420,7 +570,22 @@ export const UploadStep = () => {
           export.
         </Text>
       </Stack>
-      <StepNavigation step="files" nextLabel="Review detections" nextDisabled={!bothReady} />
+
+      <input
+        ref={folderInputRef}
+        type="file"
+        multiple
+        accept={ACCEPT}
+        className="upload-dropzone__input"
+        onChange={handleFolderInputChange}
+        {...({ webkitdirectory: '', directory: '' } as Record<string, string>)}
+      />
+
+      <StepNavigation
+        step="files"
+        nextLabel={intakeMode === 'batch' ? 'Review source pairs' : 'Review detections'}
+        nextDisabled={!readyForNext}
+      />
     </Stack>
   );
 };

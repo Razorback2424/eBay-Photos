@@ -12,7 +12,9 @@ export interface DetectionAdjustment {
   manual: ManualDetectionAdjustment[];
 }
 
-export type SessionStep = 'files' | 'detections' | 'pairs' | 'naming' | 'output';
+export type SessionStep = 'files' | 'sourcePairs' | 'detections' | 'pairs' | 'naming' | 'output';
+export type IntakeMode = 'simple' | 'batch';
+export type InferredSide = 'front' | 'back' | 'unknown';
 
 export interface FileAsset {
   id: string;
@@ -20,6 +22,18 @@ export interface FileAsset {
   size: number;
   type: string;
   lastModified: number;
+  relativePath?: string;
+  inferredSide?: InferredSide;
+}
+
+export interface SourcePair {
+  id: string;
+  primaryFileId: string;
+  secondaryFileId: string;
+  status: 'draft' | 'confirmed';
+  confidence?: number;
+  reason?: string;
+  matchType: 'auto' | 'manual';
 }
 
 export interface WorkingImageInfo {
@@ -44,6 +58,7 @@ export interface Detection {
 
 export interface Pairing {
   id: string;
+  sourcePairId: string;
   primaryFileId: string;
   primaryDetectionId?: string;
   secondaryFileId?: string;
@@ -70,16 +85,16 @@ export interface OutputConfig {
   includeWarped: boolean;
 }
 
-export const SESSION_STEPS: SessionStep[] = [
-  'files',
-  'detections',
-  'pairs',
-  'naming',
-  'output'
-];
+const SIMPLE_STEPS: SessionStep[] = ['files', 'detections', 'pairs', 'naming', 'output'];
+const BATCH_STEPS: SessionStep[] = ['files', 'sourcePairs', 'detections', 'pairs', 'naming', 'output'];
+
+export const SESSION_STEPS: SessionStep[] = BATCH_STEPS;
+
+export const getSessionSteps = (mode: IntakeMode): SessionStep[] => (mode === 'batch' ? BATCH_STEPS : SIMPLE_STEPS);
 
 export const STEP_PATHS: Record<SessionStep, string> = {
   files: '/',
+  sourcePairs: '/source-pairs',
   detections: '/detections',
   pairs: '/pairs',
   naming: '/naming',
@@ -87,7 +102,10 @@ export const STEP_PATHS: Record<SessionStep, string> = {
 };
 
 const initialState = {
+  intakeMode: 'simple' as IntakeMode,
   files: [] as FileAsset[],
+  sourcePairs: [] as SourcePair[],
+  skippedFileIds: [] as string[],
   detections: [] as Detection[],
   pairs: [] as Pairing[],
   naming: [] as NamingPreset[],
@@ -100,9 +118,14 @@ const initialState = {
 };
 
 export type SessionState = typeof initialState & {
+  setIntakeMode: (mode: IntakeMode) => void;
   setFiles: (files: FileAsset[]) => void;
+  setSourcePairs: (pairs: SourcePair[]) => void;
+  confirmSourcePairs: () => void;
+  setSkippedFileIds: (fileIds: string[]) => void;
   setDetections: (detections: Detection[]) => void;
   setPairs: (pairs: Pairing[]) => void;
+  setPairsForSourcePair: (sourcePairId: string, pairs: Pairing[]) => void;
   setNaming: (naming: NamingPreset[]) => void;
   setOutput: (output: OutputConfig | null) => void;
   setCurrentStep: (step: SessionStep) => void;
@@ -113,6 +136,9 @@ export type SessionState = typeof initialState & {
   toggleDetectionActive: (fileId: string, index: number) => void;
   addManualDetection: (fileId: string, card: DetectedCard) => void;
   removeManualDetection: (fileId: string, manualId: string) => void;
+  clearWorkflowData: () => void;
+  getVisibleSteps: () => SessionStep[];
+  getConfirmedSourcePairs: () => SourcePair[];
   reset: () => void;
   canAccessStep: (step: SessionStep) => boolean;
   getFirstAccessibleStep: () => SessionStep;
@@ -122,9 +148,26 @@ export type SessionState = typeof initialState & {
 
 export const useSessionStore = create<SessionState>((set, get) => ({
   ...initialState,
+  setIntakeMode: (mode) => set({ intakeMode: mode }),
   setFiles: (files) => set({ files }),
+  setSourcePairs: (sourcePairs) => set({ sourcePairs }),
+  confirmSourcePairs: () =>
+    set((state) => ({
+      sourcePairs: state.sourcePairs.map((pair) => ({
+        ...pair,
+        status: 'confirmed'
+      }))
+    })),
+  setSkippedFileIds: (skippedFileIds) => set({ skippedFileIds }),
   setDetections: (detections) => set({ detections }),
   setPairs: (pairs) => set({ pairs }),
+  setPairsForSourcePair: (sourcePairId, nextPairs) =>
+    set((state) => ({
+      pairs: [
+        ...state.pairs.filter((pair) => pair.sourcePairId !== sourcePairId),
+        ...nextPairs
+      ]
+    })),
   setNaming: (naming) => set({ naming }),
   setOutput: (output) => set({ output }),
   setCurrentStep: (step) => set({ currentStep: step }),
@@ -215,6 +258,21 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         }
       };
     }),
+  clearWorkflowData: () =>
+    set((state) => ({
+      sourcePairs: [],
+      skippedFileIds: [],
+      detections: [],
+      pairs: [],
+      naming: [],
+      output: null,
+      completedSteps: state.currentStep === 'files' ? [] : ['files'],
+      workingImages: {},
+      detectedCards: {},
+      detectionAdjustments: {}
+    })),
+  getVisibleSteps: () => getSessionSteps(get().intakeMode),
+  getConfirmedSourcePairs: () => get().sourcePairs.filter((pair) => pair.status === 'confirmed'),
   reset: () =>
     set({
       ...initialState,
@@ -222,31 +280,38 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       detectedCards: {}
     }),
   canAccessStep: (step) => {
-    const idx = SESSION_STEPS.indexOf(step);
+    const orderedSteps = getSessionSteps(get().intakeMode);
+    const idx = orderedSteps.indexOf(step);
+    if (idx === -1) {
+      return false;
+    }
     if (idx <= 0) {
       return true;
     }
-    const prevStep = SESSION_STEPS[idx - 1];
+    const prevStep = orderedSteps[idx - 1];
     return get().completedSteps.includes(prevStep);
   },
   getFirstAccessibleStep: () => {
+    const orderedSteps = getSessionSteps(get().intakeMode);
     const { completedSteps } = get();
-    for (const step of SESSION_STEPS) {
+    for (const step of orderedSteps) {
       if (!completedSteps.includes(step)) {
         return step;
       }
     }
-    return SESSION_STEPS[SESSION_STEPS.length - 1];
+    return orderedSteps[orderedSteps.length - 1];
   },
   getNextStep: (step) => {
-    const idx = SESSION_STEPS.indexOf(step);
+    const orderedSteps = getSessionSteps(get().intakeMode);
+    const idx = orderedSteps.indexOf(step);
     if (idx === -1) return null;
-    return SESSION_STEPS[idx + 1] ?? null;
+    return orderedSteps[idx + 1] ?? null;
   },
   getPreviousStep: (step) => {
-    const idx = SESSION_STEPS.indexOf(step);
+    const orderedSteps = getSessionSteps(get().intakeMode);
+    const idx = orderedSteps.indexOf(step);
     if (idx <= 0) return null;
-    return SESSION_STEPS[idx - 1];
+    return orderedSteps[idx - 1];
   }
 }));
 

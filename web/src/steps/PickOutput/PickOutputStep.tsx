@@ -119,7 +119,9 @@ export const PickOutputStep = () => {
     }
 
     try {
-      const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      const handle = await (window as Window & {
+        showDirectoryPicker: (options?: { mode?: 'readwrite' | 'read' }) => Promise<FileSystemDirectoryHandle>;
+      }).showDirectoryPicker({ mode: 'readwrite' });
       setOutput({
         ...config,
         directoryHandle: handle,

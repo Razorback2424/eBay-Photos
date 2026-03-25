@@ -1,10 +1,11 @@
 import clsx from 'clsx';
 
-import { SESSION_STEPS, SessionStep, useSessionStore } from '../state/session';
+import { SessionStep, useSessionStore } from '../state/session';
 import { Text } from '../ui/Text';
 
 const STEP_LABELS: Record<SessionStep, string> = {
   files: 'Import files',
+  sourcePairs: 'Review source pairs',
   detections: 'Review detections',
   pairs: 'Pair imagery',
   naming: 'Naming',
@@ -12,14 +13,15 @@ const STEP_LABELS: Record<SessionStep, string> = {
 };
 
 export const StepIndicator = () => {
-  const { currentStep, completedSteps } = useSessionStore((state) => ({
+  const { currentStep, completedSteps, visibleSteps } = useSessionStore((state) => ({
     currentStep: state.currentStep,
-    completedSteps: state.completedSteps
+    completedSteps: state.completedSteps,
+    visibleSteps: state.getVisibleSteps()
   }));
 
   return (
     <ul className="step-indicator" aria-label="Wizard progress">
-      {SESSION_STEPS.map((step) => {
+      {visibleSteps.map((step) => {
         const isActive = currentStep === step;
         const isComplete = completedSteps.includes(step);
         return (

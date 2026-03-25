@@ -344,9 +344,9 @@ export const exportSession = async ({
           emitProgress('writing', `Saved ${image.name}`, pair, index);
         }
       } else if (zip) {
-        let folder = zip as JSZip;
+        let folder: JSZip = zip;
         for (const segment of segments) {
-          folder = folder.folder(segment);
+          folder = folder.folder(segment) ?? folder;
         }
         for (const image of result.images) {
           folder.file(image.name, image.blob);
@@ -410,9 +410,9 @@ export const exportSession = async ({
       }
     } else if (zip) {
       for (const manifest of manifests) {
-        let folder = zip as JSZip;
+        let folder: JSZip = zip;
         for (const segment of manifest.segments) {
-          folder = folder.folder(segment);
+          folder = folder.folder(segment) ?? folder;
         }
         folder.file('MANIFEST.json', JSON.stringify(manifest.entry, null, 2));
         completed += 1;

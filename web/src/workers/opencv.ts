@@ -1,7 +1,8 @@
 const OPENCV_BASE_URL = 'https://docs.opencv.org/4.x/';
 const OPENCV_SCRIPT_URL = `${OPENCV_BASE_URL}opencv.js`;
 
-export type CV = typeof globalThis extends { cv: infer T } ? T : unknown;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type CV = typeof globalThis extends { cv: infer T } ? T : any;
 
 type Runtime = {
   cv?: CV;
