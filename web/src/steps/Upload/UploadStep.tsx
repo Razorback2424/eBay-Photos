@@ -14,6 +14,16 @@ import { autoMatchBatchFiles } from '../../utils/batchMatching';
 const ACCEPT = 'image/jpeg,image/png,image/heic,image/heif,image/avif';
 const WORKING_COPY_SIZE = 2500;
 
+const formatFileSize = (bytes: number) => {
+  if (bytes < 1024) {
+    return '< 1 KB';
+  }
+  if (bytes < 10 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  return `${Math.round(bytes / 1024)} KB`;
+};
+
 const toAsset = (file: File): FileAsset => {
   const relativePath = 'webkitRelativePath' in file ? (file.webkitRelativePath || undefined) : undefined;
   return {
@@ -182,8 +192,7 @@ const Dropzone = ({ label, description, slotKey, state, onFile }: DropzoneProps)
       return state.error ?? 'We could not load this image.';
     }
     if (state.status === 'ready' && state.file) {
-      const sizeKb = (state.file.size / 1024).toFixed(0);
-      return `${state.file.name} · ${sizeKb} KB`;
+      return `${state.file.name} · ${formatFileSize(state.file.size)}`;
     }
     return description;
   }, [state, description]);
@@ -245,8 +254,6 @@ export const UploadStep = () => {
   const {
     intakeMode,
     files,
-    sourcePairs,
-    skippedFileIds,
     setIntakeMode,
     setFiles,
     setSourcePairs,
@@ -256,8 +263,6 @@ export const UploadStep = () => {
   } = useSessionStore((state) => ({
     intakeMode: state.intakeMode,
     files: state.files,
-    sourcePairs: state.sourcePairs,
-    skippedFileIds: state.skippedFileIds,
     setIntakeMode: state.setIntakeMode,
     setFiles: state.setFiles,
     setSourcePairs: state.setSourcePairs,
@@ -427,9 +432,9 @@ export const UploadStep = () => {
           decoded.decodedBitmap.close();
           decoded.workingBitmap.close();
         });
-        setBatchState('ready');
+      setBatchState('ready');
         setBatchMessage(
-          `Found ${matched.sourcePairs.length} suggested pair${matched.sourcePairs.length === 1 ? '' : 's'} and ${matched.unmatchedFileIds.length} unmatched file${matched.unmatchedFileIds.length === 1 ? '' : 's'}.`
+          `${matched.files.length} files loaded • ${matched.sourcePairs.length} suggested pair${matched.sourcePairs.length === 1 ? '' : 's'} • ${matched.unmatchedFileIds.length} unmatched`
         );
       } catch (error) {
         decodedEntries.forEach(({ decoded }) => {
@@ -455,7 +460,6 @@ export const UploadStep = () => {
 
   const bothReady = slots.primary.status === 'ready' && slots.secondary.status === 'ready';
   const readyForNext = intakeMode === 'batch' ? batchState === 'ready' && files.length > 0 : bothReady;
-  const unmatchedCount = Math.max(0, files.length - sourcePairs.length * 2 - skippedFileIds.length);
 
   return (
     <Stack gap={24}>
@@ -521,11 +525,6 @@ export const UploadStep = () => {
               </Button>
             </Stack>
           </div>
-          <Text variant="muted" className="batch-upload__status">
-            {files.length > 0
-              ? `${files.length} files loaded • ${sourcePairs.length} suggested pairs • ${unmatchedCount} unmatched`
-              : 'Choose a folder to prepare matches for review.'}
-          </Text>
         </Stack>
       )}
 

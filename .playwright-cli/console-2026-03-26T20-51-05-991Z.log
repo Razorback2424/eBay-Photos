@@ -1,0 +1,1 @@
+[   12662ms] [WARNING] [DEPRECATED] Use `createWithEqualityFn` instead of `create` or use `useStoreWithEqualityFn` instead of `useStore`. They can be imported from 'zustand/traditional'. https://github.com/pmndrs/zustand/discussions/1937 @ http://127.0.0.1:4173/node_modules/.vite/deps/zustand.js?v=de3754c1:285

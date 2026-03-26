@@ -1,0 +1,34 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - heading "eBay Photos" [level=1] [ref=e6]
+  - generic "Wizard progress" [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]: Step 1 of 5
+      - generic [ref=e10]: Import files
+    - generic [ref=e17]: 0 completed
+  - generic [ref=e19]:
+    - generic [ref=e20]:
+      - heading "Add front and back scans" [level=2] [ref=e21]
+      - paragraph [ref=e22]: Start with one front and one back, or switch to batch if you already have a folder of scans.
+    - group "Photo upload options" [ref=e23]:
+      - button "Front photo cardA_shot01.jpg · < 1 KB Click to select or drop a file Choose File" [active] [ref=e39] [cursor=pointer]:
+        - generic:
+          - generic: Front photo
+          - generic: cardA_shot01.jpg · < 1 KB
+          - generic: Click to select or drop a file
+        - button "Choose File" [ref=e26]
+      - button "Back photo Add the back scan Click to select or drop a file Choose File" [ref=e28] [cursor=pointer]:
+        - generic:
+          - generic: Back photo
+          - generic: Add the back scan
+          - generic: Click to select or drop a file
+        - button "Choose File" [ref=e29]
+    - generic [ref=e30]:
+      - paragraph [ref=e31]: Have a folder instead?
+      - button "Batch upload folder" [ref=e32] [cursor=pointer]
+    - paragraph [ref=e33]: Working copies are capped at 2500px for speed. Originals stay available for export.
+    - button "Choose File" [ref=e34]
+    - navigation "Wizard navigation" [ref=e35]:
+      - generic [ref=e36]:
+        - button "Back" [disabled] [ref=e37]
+        - button "Review detections" [disabled] [ref=e38]

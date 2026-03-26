@@ -604,13 +604,11 @@
 }
 
 .source-reviewFooter {
-  position: sticky;
-  bottom: 0;
+  position: static;
   padding: 10px 12px;
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: var(--ui-radius-md);
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(6px);
+  background: rgba(255, 255, 255, 0.78);
 }
 
 .detect-preview {

@@ -1,13 +1,10 @@
-import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { StepNavigation } from '../../components/StepNavigation';
 import { FileAsset, SourcePair, useSessionStore } from '../../state/session';
 import { Button } from '../../ui/Button';
 import { Stack } from '../../ui/Stack';
 import { Text } from '../../ui/Text';
-
-const createObjectUrlMap = (entries: Array<[string, Blob]>) =>
-  Object.fromEntries(entries.map(([key, blob]) => [key, URL.createObjectURL(blob)]));
 
 const orderManualPair = (first: FileAsset, second: FileAsset) => {
   if (first.inferredSide === 'front' && second.inferredSide === 'back') {
@@ -34,9 +31,11 @@ const SourceFilePreview = ({ file, objectUrl, selected, onClick, action }: Sourc
         {objectUrl ? <img src={objectUrl} alt="" className="source-fileCard__image" /> : <div className="source-fileCard__placeholder" />}
       </div>
       <Stack gap={4}>
-        <Text as="span" variant="label">
-          {file.inferredSide ?? 'unknown'}
-        </Text>
+        {file.inferredSide && file.inferredSide !== 'unknown' && (
+          <Text as="span" variant="label">
+            {file.inferredSide}
+          </Text>
+        )}
         <Text as="span" variant="body" className="source-fileCard__name">
           {file.relativePath || file.name}
         </Text>
@@ -66,23 +65,49 @@ export const SourcePairReviewStep = () => {
   }));
 
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
+  const objectUrlMapRef = useRef<Record<string, string>>({});
 
   const fileMap = useMemo(() => new Map(files.map((file) => [file.id, file])), [files]);
-  const objectUrls = useMemo(
-    () =>
-      createObjectUrlMap(
-        files
-          .map((file) => [file.id, workingImages[file.id]?.blob] as const)
-          .filter((entry): entry is [string, Blob] => Boolean(entry[1]))
-      ),
-    [files, workingImages]
-  );
+  const [objectUrls, setObjectUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let changed = false;
+    const nextMap = { ...objectUrlMapRef.current };
+    const activeFileIds = new Set<string>();
+
+    files.forEach((file) => {
+      const blob = workingImages[file.id]?.blob;
+      if (!blob) {
+        return;
+      }
+      activeFileIds.add(file.id);
+      if (!nextMap[file.id]) {
+        nextMap[file.id] = URL.createObjectURL(blob);
+        changed = true;
+      }
+    });
+
+    Object.keys(nextMap).forEach((fileId) => {
+      if (activeFileIds.has(fileId)) {
+        return;
+      }
+      URL.revokeObjectURL(nextMap[fileId]);
+      delete nextMap[fileId];
+      changed = true;
+    });
+
+    if (changed) {
+      objectUrlMapRef.current = nextMap;
+      setObjectUrls(nextMap);
+    }
+  }, [files, workingImages]);
 
   useEffect(() => {
     return () => {
-      Object.values(objectUrls).forEach((url) => URL.revokeObjectURL(url));
+      Object.values(objectUrlMapRef.current).forEach((url) => URL.revokeObjectURL(url));
+      objectUrlMapRef.current = {};
     };
-  }, [objectUrls]);
+  }, []);
 
   const pairedFileIds = useMemo(() => {
     const paired = new Set<string>();

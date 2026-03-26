@@ -9,21 +9,9 @@ import { Spinner } from '../../ui/Spinner';
 import { Stack } from '../../ui/Stack';
 import { Text } from '../../ui/Text';
 import type { DetectedCard } from '../../types/detections';
-import type { Detection } from '../../state/session';
-import { releaseProxy, transfer, wrap } from 'comlink';
-import type { Endpoint } from 'comlink';
-
-type DetectionWorker = {
-  detect: (image: ImageBitmap) => Promise<DetectedCard[]>;
-};
+import { detectCards } from '../../utils/detection/detectCards';
 
 type DetectionStatus = 'idle' | 'pending' | 'ready' | 'error';
-
-type WorkerProxy = DetectionWorker & {
-  [releaseProxy]?: () => void;
-};
-
-const workerUrl = new URL('../../workers/detection.worker.ts', import.meta.url);
 const MAX_PREVIEW_EDGE = 720;
 const THUMBNAIL_MAX_EDGE = 220;
 
@@ -394,33 +382,30 @@ const DetectionThumbnail = ({ detection, index, working }: DetectionThumbnailPro
 };
 
 export const DetectSplitStep = () => {
-  const {
-    files,
-    sourcePairs,
-    workingImages,
-    detectedCards,
-    detectionAdjustments,
-    setDetectedCards,
-    setDetections,
-    toggleDetectionActive,
-    addManualDetection,
-    removeManualDetection
-  } = useSessionStore((state) => ({
-    files: state.files,
-    sourcePairs: state.getConfirmedSourcePairs(),
-    workingImages: state.workingImages,
-    detectedCards: state.detectedCards,
-    detectionAdjustments: state.detectionAdjustments,
-    setDetectedCards: state.setDetectedCards,
-    setDetections: state.setDetections,
-    toggleDetectionActive: state.toggleDetectionActive,
-    addManualDetection: state.addManualDetection,
-    removeManualDetection: state.removeManualDetection
-  }));
+  const files = useSessionStore((state) => state.files);
+  const sourcePairRecords = useSessionStore((state) => state.sourcePairs);
+  const workingImages = useSessionStore((state) => state.workingImages);
+  const detectedCards = useSessionStore((state) => state.detectedCards);
+  const detectionAdjustments = useSessionStore((state) => state.detectionAdjustments);
+  const setDetectedCards = useSessionStore((state) => state.setDetectedCards);
+  const toggleDetectionActive = useSessionStore((state) => state.toggleDetectionActive);
+  const addManualDetection = useSessionStore((state) => state.addManualDetection);
+  const removeManualDetection = useSessionStore((state) => state.removeManualDetection);
+
+  const sourcePairs = useMemo(() => sourcePairRecords.filter((pair) => pair.status === 'confirmed'), [sourcePairRecords]);
 
   const [activeSourcePairId, setActiveSourcePairId] = useState<string | null>(sourcePairs[0]?.id ?? null);
   const [statusByFileId, setStatusByFileId] = useState<Record<string, DetectionStatus>>({});
   const [errorByFileId, setErrorByFileId] = useState<Record<string, string | null>>({});
+  const inFlightFileIdsRef = useRef<Set<string>>(new Set());
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!sourcePairs.some((pair) => pair.id === activeSourcePairId)) {
@@ -454,6 +439,11 @@ export const DetectSplitStep = () => {
   );
   const frontManualDetections = useMemo(() => frontAdjustments?.manual ?? [], [frontAdjustments]);
   const frontInactiveDetections = useMemo(() => frontAdjustments?.disabledAuto ?? [], [frontAdjustments]);
+
+  const sourcePairFileIds = useMemo(
+    () => Array.from(new Set(sourcePairs.flatMap((pair) => [pair.primaryFileId, pair.secondaryFileId]).filter(Boolean))),
+    [sourcePairs]
+  );
 
   const frontStatus = frontFile ? statusByFileId[frontFile.id] ?? (frontDetections.length > 0 ? 'ready' : 'idle') : 'idle';
   const frontError = frontFile ? errorByFileId[frontFile.id] ?? null : null;
@@ -502,6 +492,30 @@ export const DetectSplitStep = () => {
     [frontFile, removeManualDetection]
   );
 
+  const updateFileStatus = useCallback((fileId: string, nextStatus: DetectionStatus) => {
+    setStatusByFileId((current) => {
+      if (current[fileId] === nextStatus) {
+        return current;
+      }
+      return {
+        ...current,
+        [fileId]: nextStatus
+      };
+    });
+  }, []);
+
+  const updateFileError = useCallback((fileId: string, message: string | null) => {
+    setErrorByFileId((current) => {
+      if ((current[fileId] ?? null) === message) {
+        return current;
+      }
+      return {
+        ...current,
+        [fileId]: message
+      };
+    });
+  }, []);
+
   const renderPrimaryPreview = useCallback(
     (showOverlay: boolean) => {
       if (!frontWorking) {
@@ -549,80 +563,70 @@ export const DetectSplitStep = () => {
     }
   }, [frontStatus, frontWorking]);
 
-  const workerRef = useRef<Worker | null>(null);
-  const proxyRef = useRef<WorkerProxy | null>(null);
-  const [workerReady, setWorkerReady] = useState(false);
-
   useEffect(() => {
-    const worker = new Worker(workerUrl, { type: 'classic' });
-    workerRef.current = worker;
-    const endpoint = worker as unknown as Endpoint;
-    proxyRef.current = wrap<DetectionWorker>(endpoint) as WorkerProxy;
-    setWorkerReady(true);
+    const readyFileIds = new Set(
+      sourcePairFileIds.filter((fileId) => {
+        const cards = detectedCards[fileId];
+        return Array.isArray(cards) && cards.length > 0;
+      })
+    );
 
-    return () => {
-      proxyRef.current?.[releaseProxy]?.();
-      proxyRef.current = null;
-      setWorkerReady(false);
-      workerRef.current?.terminate();
-      workerRef.current = null;
-    };
-  }, []);
+    readyFileIds.forEach((fileId) => {
+      updateFileStatus(fileId, 'ready');
+      updateFileError(fileId, null);
+    });
 
-  useEffect(() => {
-    if (!workerReady) {
+    const pendingFileIds = sourcePairFileIds.filter((fileId) => {
+      if (inFlightFileIdsRef.current.has(fileId)) {
+        return false;
+      }
+      const working = workingImages[fileId];
+      if (!working) {
+        return false;
+      }
+      const hasDetectedEntry = Object.prototype.hasOwnProperty.call(detectedCards, fileId);
+      if (hasDetectedEntry) {
+        return false;
+      }
+      return !readyFileIds.has(fileId);
+    });
+
+    if (pendingFileIds.length === 0) {
       return;
     }
 
-    let cancelled = false;
-    const proxy = proxyRef.current;
-    if (!proxy) {
-      return;
-    }
+    pendingFileIds.forEach((fileId) => {
+      const working = workingImages[fileId];
+      if (!working) {
+        return;
+      }
+      inFlightFileIdsRef.current.add(fileId);
+      updateFileStatus(fileId, 'pending');
+      updateFileError(fileId, null);
 
-    (async () => {
-      const fileIds = Array.from(
-        new Set(sourcePairs.flatMap((pair) => [pair.primaryFileId, pair.secondaryFileId]).filter(Boolean))
-      );
-      for (const fileId of fileIds) {
-        if (cancelled) break;
-        const working = workingImages[fileId];
-        if (!working) {
-          continue;
-        }
-        if ((detectedCards[fileId]?.length ?? 0) > 0) {
-          setStatusByFileId((current) => ({ ...current, [fileId]: 'ready' }));
-          continue;
-        }
-        setStatusByFileId((current) => ({ ...current, [fileId]: 'pending' }));
-        setErrorByFileId((current) => ({ ...current, [fileId]: null }));
-        try {
-          const bitmap = await createImageBitmap(working.blob);
-          const detections = await proxy.detect(transfer(bitmap, [bitmap]) as unknown as ImageBitmap);
-          if (cancelled) {
+      void detectCards(working.blob)
+        .then((detections) => {
+          if (!mountedRef.current) {
             return;
           }
           setDetectedCards(fileId, detections);
-          setStatusByFileId((current) => ({ ...current, [fileId]: 'ready' }));
-        } catch (error) {
-          if (cancelled) {
+          updateFileStatus(fileId, detections.length > 0 ? 'ready' : 'error');
+          updateFileError(fileId, detections.length > 0 ? null : 'No cards detected.');
+        })
+        .catch((error) => {
+          if (!mountedRef.current) {
             return;
           }
           console.error('[DetectSplitStep] Detection failed:', error);
           setDetectedCards(fileId, []);
-          setStatusByFileId((current) => ({ ...current, [fileId]: 'error' }));
-          setErrorByFileId((current) => ({
-            ...current,
-            [fileId]: error instanceof Error ? error.message : 'Detection failed.'
-          }));
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [detectedCards, setDetectedCards, sourcePairs, workerReady, workingImages]);
+          updateFileStatus(fileId, 'error');
+          updateFileError(fileId, error instanceof Error ? error.message : 'Detection failed.');
+        })
+        .finally(() => {
+          inFlightFileIdsRef.current.delete(fileId);
+        });
+    });
+  }, [detectedCards, setDetectedCards, sourcePairFileIds, updateFileError, updateFileStatus, workingImages]);
 
   const thumbnails = useMemo(() => {
     if (!frontWorking || frontDetections.length === 0) {
@@ -632,59 +636,6 @@ export const DetectSplitStep = () => {
       <DetectionThumbnail key={`${detection.bbox.x}-${detection.bbox.y}-${index}`} detection={detection} index={index} working={frontWorking} />
     ));
   }, [frontDetections, frontWorking]);
-
-  useEffect(() => {
-    const detectionList: Detection[] = [];
-    const fileIds = new Set([
-      ...Object.keys(detectedCards),
-      ...Object.keys(detectionAdjustments)
-    ]);
-
-    for (const fileId of fileIds) {
-      const working = workingImages[fileId];
-      if (!working) {
-        continue;
-      }
-      const width = Math.max(1, working.width);
-      const height = Math.max(1, working.height);
-      const cards = detectedCards[fileId] ?? [];
-      const adjustments = detectionAdjustments[fileId];
-      const disabledSet = new Set(adjustments?.disabledAuto ?? []);
-
-      cards.forEach((card, index) => {
-        const x1 = Math.max(0, Math.min(1, card.bbox.x / width));
-        const y1 = Math.max(0, Math.min(1, card.bbox.y / height));
-        const x2 = Math.max(0, Math.min(1, (card.bbox.x + card.bbox.width) / width));
-        const y2 = Math.max(0, Math.min(1, (card.bbox.y + card.bbox.height) / height));
-        detectionList.push({
-          id: `${fileId}-card-${index}`,
-          fileId,
-          label: 'Card',
-          confidence: 1,
-          bounds: [x1, y1, x2, y2],
-          accepted: disabledSet.has(index) ? false : true
-        });
-      });
-
-      adjustments?.manual?.forEach((entry) => {
-        const card = entry.card;
-        const x1 = Math.max(0, Math.min(1, card.bbox.x / width));
-        const y1 = Math.max(0, Math.min(1, card.bbox.y / height));
-        const x2 = Math.max(0, Math.min(1, (card.bbox.x + card.bbox.width) / width));
-        const y2 = Math.max(0, Math.min(1, (card.bbox.y + card.bbox.height) / height));
-        detectionList.push({
-          id: `${fileId}-manual-${entry.id}`,
-          fileId,
-          label: 'Card',
-          confidence: 1,
-          bounds: [x1, y1, x2, y2],
-          accepted: true
-        });
-      });
-    }
-
-    setDetections(detectionList);
-  }, [detectedCards, detectionAdjustments, workingImages, setDetections]);
 
   return (
     <Stack gap={24}>

@@ -8,7 +8,26 @@ type Runtime = {
   cv?: CV;
   Module?: Record<string, unknown>;
   importScripts?: (...urls: string[]) => void;
+  eval?: (script: string) => void;
 } & typeof globalThis;
+
+const loadScriptIntoWorker = async (runtime: Runtime) => {
+  if (typeof runtime.importScripts === 'function') {
+    runtime.importScripts(OPENCV_SCRIPT_URL);
+    return;
+  }
+
+  const response = await fetch(OPENCV_SCRIPT_URL);
+  if (!response.ok) {
+    throw new Error(`Failed to load OpenCV script (${response.status}).`);
+  }
+
+  const scriptSource = await response.text();
+  if (typeof runtime.eval !== 'function') {
+    throw new Error('OpenCV could not be evaluated in this worker context.');
+  }
+  runtime.eval(scriptSource);
+};
 
 const loadOpenCv = async (): Promise<CV> => {
   const runtime = self as unknown as Runtime;
@@ -31,22 +50,31 @@ const loadOpenCv = async (): Promise<CV> => {
   runtime.Module = moduleConfig;
 
   return await new Promise<CV>((resolve, reject) => {
-    moduleConfig.onRuntimeInitialized = () => {
-      if (!runtime.cv) {
-        reject(new Error('OpenCV runtime failed to initialise.'));
-        return;
-      }
-      resolve(runtime.cv);
+    const timeoutId = setTimeout(() => {
+      reject(new Error('OpenCV runtime initialization timed out.'));
+    }, 8000);
+
+    const finalizeResolve = (value: CV) => {
+      clearTimeout(timeoutId);
+      resolve(value);
     };
 
-    try {
-      if (typeof runtime.importScripts !== 'function') {
-        throw new Error('OpenCV can only be loaded in classic workers with importScripts support.');
-      }
-      runtime.importScripts(OPENCV_SCRIPT_URL);
-    } catch (error) {
+    const finalizeReject = (error: unknown) => {
+      clearTimeout(timeoutId);
       reject(error instanceof Error ? error : new Error('Failed to load OpenCV script.'));
-    }
+    };
+
+    moduleConfig.onRuntimeInitialized = () => {
+      if (!runtime.cv) {
+        finalizeReject(new Error('OpenCV runtime failed to initialise.'));
+        return;
+      }
+      finalizeResolve(runtime.cv);
+    };
+
+    loadScriptIntoWorker(runtime).catch((error) => {
+      finalizeReject(error);
+    });
   });
 };
 
