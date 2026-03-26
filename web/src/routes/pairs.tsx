@@ -340,11 +340,9 @@ export const pairsRoute = createRoute({
       <Stack gap={24}>
         <Stack gap={8}>
           <Text as="h2" variant="title">
-            Pair related imagery
+            Confirm card pairs
           </Text>
-          <Text variant="body">
-            Match fronts and backs so naming and export settings stay aligned.
-          </Text>
+          <Text variant="body">Keep the suggested matches or adjust them if needed.</Text>
         </Stack>
         {sourcePairs.length > 1 && (
           <Stack gap={8}>
@@ -364,7 +362,7 @@ export const pairsRoute = createRoute({
             </div>
             {unresolvedSourcePairs > 0 && (
               <Text variant="muted">
-                Save each source pair before continuing. {unresolvedSourcePairs} source pair{unresolvedSourcePairs === 1 ? '' : 's'} still need pairing data.
+                {unresolvedSourcePairs} source pair{unresolvedSourcePairs === 1 ? '' : 's'} still need pairing data.
               </Text>
             )}
           </Stack>
@@ -374,8 +372,8 @@ export const pairsRoute = createRoute({
         ) : autoPairing ? (
           <Stack gap={16} aria-live="polite">
             <Text variant="muted">
-              We matched {frontCards.length} front card{frontCards.length === 1 ? '' : 's'} with {backCards.length} back
-              card{backCards.length === 1 ? '' : 's'} based on card positions.
+              {frontCards.length} front card{frontCards.length === 1 ? '' : 's'} matched to {backCards.length} back
+              card{backCards.length === 1 ? '' : 's'}.
             </Text>
             {reverseRecommended && (
               <label className="pair-auto__toggle">
@@ -408,9 +406,7 @@ export const pairsRoute = createRoute({
           </Stack>
         ) : (
           <Stack gap={16} aria-live="polite">
-            <Text variant="muted">
-              Drag backs to fronts to create pairs. Drop a back into “Skip back” to leave it unmatched.
-            </Text>
+            <Text variant="muted">Drag backs onto the matching front. Skip any back you do not want to use.</Text>
             <div className="pair-grid">
               <div className="pair-grid__column">
                 <Text as="h3" variant="label">

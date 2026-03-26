@@ -1,5 +1,6 @@
 import { ChangeEvent, useCallback, useEffect, useMemo, useState, useId } from 'react';
 
+import { BannerChromium } from '../../components/BannerChromium';
 import { StepNavigation } from '../../components/StepNavigation';
 import { NamingPreset, OutputConfig, Pairing, useSessionStore, WorkingImageInfo } from '../../state/session';
 import { Stack } from '../../ui/Stack';
@@ -240,13 +241,11 @@ export const PickOutputStep = () => {
     <Stack gap={24}>
       <Stack gap={8}>
         <Text as="h2" variant="title">
-          Choose export destination
+          Export
         </Text>
-        <Text variant="body">
-          Save processed imagery directly to a folder when supported, or fall back to a ZIP archive when
-          directory access is unavailable.
-        </Text>
+        <Text variant="body">Choose where the finished assets should go.</Text>
       </Stack>
+      <BannerChromium compact />
       <Stack gap={12}>
         <Stack direction="row" gap={12} align="center">
           <Button type="button" onClick={handlePickDirectory}>
@@ -343,11 +342,9 @@ export const PickOutputStep = () => {
       </details>
       <Stack gap={8}>
         <Text as="h3" variant="label">
-          Session summary
+          Ready to export
         </Text>
-        <Text variant="body">Files selected: {files.length}</Text>
-        <Text variant="body">Pairs ready for export: {pairs.length}</Text>
-        <Text variant="body">Naming presets: {naming.length}</Text>
+        <Text variant="muted">{files.length} files • {pairs.length} card pairs • {naming.length} naming presets</Text>
       </Stack>
       {(exportState === 'running' || progress) && (
         <Stack gap={8} role="status" aria-live="polite">
@@ -363,7 +360,7 @@ export const PickOutputStep = () => {
       )}
       {exportState === 'success' && (
         <Text role="status" aria-live="polite" variant="muted">
-          Export complete. Check your folder{directorySupported ? '' : ' or downloads list'} for the generated assets.
+          Export complete. Check your {directorySupported ? 'chosen folder' : 'downloads'} for the generated assets.
         </Text>
       )}
       {isDialogOpen && errorTitle && errorMessage && (

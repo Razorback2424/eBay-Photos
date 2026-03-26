@@ -3,6 +3,7 @@ import type { ChangeEvent, DragEvent, KeyboardEvent } from 'react';
 import clsx from 'clsx';
 
 import { StepNavigation } from '../../components/StepNavigation';
+import { BannerChromium } from '../../components/BannerChromium';
 import { Button } from '../../ui/Button';
 import { Stack } from '../../ui/Stack';
 import { Text } from '../../ui/Text';
@@ -460,13 +461,11 @@ export const UploadStep = () => {
     <Stack gap={24}>
       <Stack gap={8}>
         <Text as="h2" variant="title">
-          Upload both sides of your product
+          Add front and back scans
         </Text>
-        <Text variant="body">
-          The default path stays fast for one card at a time. If you already have a folder of scans, batch intake is
-          available without changing the rest of the workflow.
-        </Text>
+        <Text variant="body">Start with one front and one back, or switch to batch if you already have a folder of scans.</Text>
       </Stack>
+      <BannerChromium compact />
 
       {!showBatch && (
         <>
@@ -487,14 +486,7 @@ export const UploadStep = () => {
             />
           </div>
           <div className="upload-batchCallout">
-            <Stack gap={8}>
-              <Text as="h3" variant="label">
-                Have a folder of scans?
-              </Text>
-              <Text variant="muted">
-                Batch intake will suggest front/back matches, then let you review them before detections.
-              </Text>
-            </Stack>
+            <Text variant="muted">Have a folder instead?</Text>
             <Button type="button" variant="ghost" onClick={handleBatchOpen}>
               Batch upload folder
             </Button>
@@ -512,7 +504,7 @@ export const UploadStep = () => {
               <Text variant="body">{batchMessage}</Text>
             </Stack>
             <Stack direction="row" gap={8}>
-              <Button type="button" variant="secondary" onClick={() => folderInputRef.current?.click()}>
+              <Button type="button" onClick={() => folderInputRef.current?.click()}>
                 Choose folder
               </Button>
               <Button
@@ -529,47 +521,15 @@ export const UploadStep = () => {
               </Button>
             </Stack>
           </div>
-          <div className="batch-upload__summary">
-            <div className="batch-upload__metric">
-              <Text as="span" variant="label">
-                Files
-              </Text>
-              <Text as="span" variant="body">
-                {files.length}
-              </Text>
-            </div>
-            <div className="batch-upload__metric">
-              <Text as="span" variant="label">
-                Suggested pairs
-              </Text>
-              <Text as="span" variant="body">
-                {sourcePairs.length}
-              </Text>
-            </div>
-            <div className="batch-upload__metric">
-              <Text as="span" variant="label">
-                Unmatched
-              </Text>
-              <Text as="span" variant="body">
-                {unmatchedCount}
-              </Text>
-            </div>
-          </div>
-          <Text variant="muted">
-            Continue to review the suggested matches. Any ambiguous files can be paired manually there.
+          <Text variant="muted" className="batch-upload__status">
+            {files.length > 0
+              ? `${files.length} files loaded • ${sourcePairs.length} suggested pairs • ${unmatchedCount} unmatched`
+              : 'Choose a folder to prepare matches for review.'}
           </Text>
         </Stack>
       )}
 
-      <Stack gap={4}>
-        <Text as="h3" variant="label">
-          Working copies
-        </Text>
-        <Text variant="muted">
-          We create a {WORKING_COPY_SIZE}px working copy to keep the experience fast while preserving your originals for
-          export.
-        </Text>
-      </Stack>
+      <Text variant="muted">Working copies are capped at {WORKING_COPY_SIZE}px for speed. Originals stay available for export.</Text>
 
       <input
         ref={folderInputRef}

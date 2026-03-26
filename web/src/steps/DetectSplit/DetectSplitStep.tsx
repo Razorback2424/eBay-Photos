@@ -692,9 +692,7 @@ export const DetectSplitStep = () => {
         <Text as="h2" variant="title">
           Review detections
         </Text>
-        <Text variant="body">
-          We analyse working copies to find card boundaries. Confirm the primary detections before pairing photos.
-        </Text>
+        <Text variant="body">Check the front detection, then continue.</Text>
       </Stack>
       {sourcePairs.length > 1 && (
         <div className="source-pairTabs" role="tablist" aria-label="Source pairs">
@@ -729,7 +727,7 @@ export const DetectSplitStep = () => {
                 aria-controls={adjustDialogId}
                 aria-expanded={adjustDialogOpen && frontStatus === 'ready'}
               >
-                Adjust detections
+                Adjust front detections
               </Button>
               {noDetectionsReady && (
                 <Text variant="muted" role="alert">
@@ -748,9 +746,6 @@ export const DetectSplitStep = () => {
           </Text>
           {backWorking ? (
             <Stack gap={8}>
-              <Text variant="muted">
-                Secondary detections run automatically to help with pairing suggestions.
-              </Text>
               {backSpinnerVisible && <Spinner size="sm" label="Detecting secondary photo…" />}
               {backStatus === 'ready' && (
                 <Text variant="muted" aria-live="polite">

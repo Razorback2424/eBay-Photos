@@ -2,7 +2,6 @@ import { useRouter } from '@tanstack/react-router';
 
 import { getStepPath, SessionStep, useSessionStore } from '../state/session';
 import { Button } from '../ui/Button';
-import { Text } from '../ui/Text';
 
 export interface StepNavigationProps {
   step: SessionStep;
@@ -57,11 +56,6 @@ export const StepNavigation = ({
 
   return (
     <nav className="navigation-bar" aria-label="Wizard navigation">
-      <div>
-        <Text as="span" variant="muted">
-          Use the buttons below or press Enter to continue.
-        </Text>
-      </div>
       <div className="navigation-bar__actions">
         <Button variant="secondary" onClick={handleBack} disabled={!previousStep} aria-disabled={!previousStep}>
           {backLabel}

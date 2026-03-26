@@ -37,13 +37,12 @@ export const ShellLayout = ({ banner, children }: ShellLayoutProps) => {
 
   return (
     <div className="app-shell">
-      <Stack gap={24}>
+      <Stack gap={20}>
         {banner}
-        <header>
+        <header className="app-shell__header">
           <Text as="h1" variant="title">
-            eBay Photos Workflow
+            eBay Photos
           </Text>
-          <Text variant="muted">Guided wizard to prepare product imagery for listing.</Text>
         </header>
         <StepIndicator />
         <Card>{children}</Card>

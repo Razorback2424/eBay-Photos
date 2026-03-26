@@ -132,36 +132,29 @@ export const SourcePairReviewStep = () => {
         if (current.includes(fileId)) {
           return current.filter((id) => id !== fileId);
         }
-        if (current.length >= 2) {
-          return [current[1], fileId];
+        if (current.length === 1) {
+          const first = fileMap.get(current[0]);
+          const second = fileMap.get(fileId);
+          if (!first || !second) {
+            return current;
+          }
+          const ordered = orderManualPair(first, second);
+          const nextPair: SourcePair = {
+            id: `source-${ordered.primary.id}-${ordered.secondary.id}`,
+            primaryFileId: ordered.primary.id,
+            secondaryFileId: ordered.secondary.id,
+            status: 'draft',
+            matchType: 'manual',
+            reason: 'Paired manually during batch review.'
+          };
+          setSourcePairs([...sourcePairs, nextPair]);
+          return [];
         }
-        return [...current, fileId];
+        return [fileId];
       });
     },
-    []
+    [fileMap, setSourcePairs, sourcePairs]
   );
-
-  const handleCreatePair = useCallback(() => {
-    if (selectedFileIds.length !== 2) {
-      return;
-    }
-    const first = fileMap.get(selectedFileIds[0]);
-    const second = fileMap.get(selectedFileIds[1]);
-    if (!first || !second) {
-      return;
-    }
-    const ordered = orderManualPair(first, second);
-    const nextPair: SourcePair = {
-      id: `source-${ordered.primary.id}-${ordered.secondary.id}`,
-      primaryFileId: ordered.primary.id,
-      secondaryFileId: ordered.secondary.id,
-      status: 'draft',
-      matchType: 'manual',
-      reason: 'Paired manually during batch review.'
-    };
-    setSourcePairs([...sourcePairs, nextPair]);
-    setSelectedFileIds([]);
-  }, [fileMap, selectedFileIds, setSourcePairs, sourcePairs]);
 
   const unresolvedCount = unmatchedFiles.length;
 
@@ -176,11 +169,9 @@ export const SourcePairReviewStep = () => {
     <Stack gap={24}>
       <Stack gap={8}>
         <Text as="h2" variant="title">
-          Review source pairs
+          Check the pairings
         </Text>
-        <Text variant="body">
-          Confirm the suggested front/back matches. If a file is ambiguous, pair it manually or skip it before moving on.
-        </Text>
+        <Text variant="body">Keep the matches that look right. Unmatched files can be paired or skipped as needed.</Text>
       </Stack>
 
       <Stack gap={12}>
@@ -216,45 +207,40 @@ export const SourcePairReviewStep = () => {
         )}
       </Stack>
 
-      <Stack gap={12}>
-        <Stack direction="row" justify="between" align="center">
-          <div>
-            <Text as="h3" variant="label">
-              Unmatched files ({unmatchedFiles.length})
+      {unmatchedFiles.length > 0 && (
+        <details className="source-reviewSection" open>
+          <summary className="source-reviewSection__summary">
+            Unmatched files ({unmatchedFiles.length})
+          </summary>
+          <Stack gap={12}>
+            <Text variant="muted">
+              Select one file, then select its match. Skip anything you do not want to process.
             </Text>
-            <Text variant="muted">Select two files to create a manual pair. Skip any leftovers you do not want to process.</Text>
-          </div>
-          <Button type="button" variant="secondary" onClick={handleCreatePair} disabled={selectedFileIds.length !== 2}>
-            Pair selected files
-          </Button>
-        </Stack>
-        {unmatchedFiles.length === 0 ? (
-          <Text variant="muted">All files are resolved.</Text>
-        ) : (
-          <div className="source-fileGrid">
-            {unmatchedFiles.map((file) => (
-              <SourceFilePreview
-                key={file.id}
-                file={file}
-                objectUrl={objectUrls[file.id]}
-                selected={selectedFileIds.includes(file.id)}
-                onClick={() => handleSelectFile(file.id)}
-                action={
-                  <Button type="button" variant="ghost" onClick={() => toggleSkip(file.id)}>
-                    Skip
-                  </Button>
-                }
-              />
-            ))}
-          </div>
-        )}
-      </Stack>
+            <div className="source-fileGrid">
+              {unmatchedFiles.map((file) => (
+                <SourceFilePreview
+                  key={file.id}
+                  file={file}
+                  objectUrl={objectUrls[file.id]}
+                  selected={selectedFileIds.includes(file.id)}
+                  onClick={() => handleSelectFile(file.id)}
+                  action={
+                    <Button type="button" variant="ghost" onClick={() => toggleSkip(file.id)}>
+                      Skip
+                    </Button>
+                  }
+                />
+              ))}
+            </div>
+          </Stack>
+        </details>
+      )}
 
       {skippedFileIds.length > 0 && (
-        <Stack gap={12}>
-          <Text as="h3" variant="label">
+        <details className="source-reviewSection">
+          <summary className="source-reviewSection__summary">
             Skipped files ({skippedFileIds.length})
-          </Text>
+          </summary>
           <div className="source-fileGrid">
             {skippedFileIds.map((fileId) => {
               const file = fileMap.get(fileId);
@@ -273,8 +259,18 @@ export const SourcePairReviewStep = () => {
               );
             })}
           </div>
-        </Stack>
+        </details>
       )}
+
+      <div className="source-reviewFooter">
+        <Text variant="muted">
+          {selectedFileIds.length === 1
+            ? 'Select one more file to make a pair.'
+            : unresolvedCount > 0
+              ? `${unresolvedCount} file${unresolvedCount === 1 ? '' : 's'} still need a decision.`
+              : 'All files are resolved.'}
+        </Text>
+      </div>
 
       <StepNavigation step="sourcePairs" nextLabel="Review detections" nextDisabled={unresolvedCount > 0} onNext={handleNext} />
     </Stack>

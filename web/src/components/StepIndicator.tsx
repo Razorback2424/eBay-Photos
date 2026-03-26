@@ -19,27 +19,38 @@ export const StepIndicator = () => {
     visibleSteps: state.getVisibleSteps()
   }));
 
+  const currentIndex = Math.max(visibleSteps.indexOf(currentStep), 0);
+  const currentLabel = STEP_LABELS[currentStep];
+  const completedCount = completedSteps.filter((step) => visibleSteps.includes(step)).length;
+
   return (
-    <ul className="step-indicator" aria-label="Wizard progress">
-      {visibleSteps.map((step) => {
-        const isActive = currentStep === step;
-        const isComplete = completedSteps.includes(step);
-        return (
-          <li
-            key={step}
-            className={clsx('step-indicator__item', {
-              'step-indicator__item--active': isActive,
-              'step-indicator__item--complete': isComplete
-            })}
-            aria-current={isActive ? 'step' : undefined}
-          >
-            <span className="step-indicator__dot" aria-hidden="true" />
-            <Text as="span" variant={isActive ? 'body' : 'muted'}>
-              {STEP_LABELS[step]}
-            </Text>
-          </li>
-        );
-      })}
-    </ul>
+    <div className="step-indicator" aria-label="Wizard progress">
+      <div className="step-indicator__summary">
+        <Text as="span" variant="label">
+          Step {currentIndex + 1} of {visibleSteps.length}
+        </Text>
+        <Text as="span" variant="body">
+          {currentLabel}
+        </Text>
+      </div>
+      <div className="step-indicator__track" aria-hidden="true">
+        {visibleSteps.map((step) => {
+          const isActive = currentStep === step;
+          const isComplete = completedSteps.includes(step);
+          return (
+            <span
+              key={step}
+              className={clsx('step-indicator__segment', {
+                'step-indicator__segment--active': isActive,
+                'step-indicator__segment--complete': isComplete
+              })}
+            />
+          );
+        })}
+      </div>
+      <Text as="span" variant="muted" className="step-indicator__count">
+        {completedCount} completed
+      </Text>
+    </div>
   );
 };
