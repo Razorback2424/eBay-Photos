@@ -1,0 +1,34 @@
+- main [ref=e2]:
+  - heading "Access your workspace" [level=1] [ref=e3]
+  - paragraph [ref=e4]: Use your purchase email and Gumroad license key if you bought access. If your email was already approved, sign in with that email instead. After access opens, start by photographing all card fronts in one shot and all card backs in another before confirming the pairings.
+  - generic [ref=e5]:
+    - generic [ref=e6]: Paid access required
+    - generic [ref=e7]: Gumroad license verification
+    - generic [ref=e8]: Browser-based workspace
+  - generic [ref=e9]:
+    - generic [ref=e10]: Purchase Email
+    - textbox "you@example.com" [ref=e11]
+    - generic [ref=e12]: License Key
+    - textbox "XXXX-XXXX-XXXX" [ref=e13]
+    - button "Unlock Workspace" [ref=e14] [cursor=pointer]
+    - generic [ref=e15]: After purchase, Gumroad should email your license key immediately. Keep that email and paste the key here whenever you sign in on a new device.
+  - generic [ref=e16]: Already have access? Use the email on your approved account. You do not need to enter a license key again.
+  - generic [ref=e17]:
+    - generic [ref=e18]: Access Email
+    - textbox "you@example.com" [ref=e19]
+    - button "Continue with access email" [ref=e20] [cursor=pointer]
+    - generic [ref=e21]: This works for approved launch emails and internal master users. If you were invited, use the email address that was granted access.
+  - generic [ref=e22]:
+    - text: If you lose the receipt, search your inbox for Gumroad first. If the key still is not available, contact
+    - link "support@cardworks.app" [ref=e23] [cursor=pointer]:
+      - /url: mailto:support@cardworks.app
+    - text: .
+  - generic [ref=e24]:
+    - link "Privacy" [ref=e25] [cursor=pointer]:
+      - /url: /privacy
+    - link "Terms" [ref=e26] [cursor=pointer]:
+      - /url: /terms
+    - link "support@cardworks.app" [ref=e27] [cursor=pointer]:
+      - /url: mailto:support@cardworks.app
+  - link "← Back to Home" [ref=e28] [cursor=pointer]:
+    - /url: /

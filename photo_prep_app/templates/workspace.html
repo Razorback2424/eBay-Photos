@@ -819,6 +819,72 @@
       font-size: 12px;
       color: #5c7084;
     }
+    .folder-helper {
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      padding: 12px 14px;
+      border: 1px solid #dbe6ef;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(248,252,255,.88));
+    }
+    .folder-helper__copy {
+      min-width: 0;
+      flex: 1 1 320px;
+    }
+    .folder-helper__title {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 800;
+      color: #284052;
+    }
+    .folder-helper__text {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: #5a7084;
+      line-height: 1.45;
+    }
+    .folder-helper__actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .folder-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .folder-status {
+      margin-top: 10px;
+      border-radius: 12px;
+      border: 1px solid #d9e6f0;
+      background: #f8fbff;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #395064;
+      line-height: 1.5;
+    }
+    .folder-status.warn {
+      border-color: #f0d1d6;
+      background: #fff6f7;
+      color: #8d3342;
+    }
+    .folder-status strong {
+      color: #21384a;
+    }
+    .folder-status.warn strong {
+      color: #8d3342;
+    }
     .output-note {
       margin-top: 14px;
       border: 1px solid #dce7f0;
@@ -992,7 +1058,7 @@
             <form id="queue-form" class="workspace-wrap" method="post" action="{{ url_for('enqueue_job') }}" enctype="multipart/form-data">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
               <div class="rule warning">
-                Upload in matched order: front #1 pairs with back #1, front #2 with back #2, and so on. If the photos are out of order, fix that before you start the batch.
+                Manual upload works best when fronts and backs are already in matching order. If everything is mixed together in one folder, use the helper below and confirm the suggested pairings before you start.
               </div>
               <div class="grid">
                 <div class="field">
@@ -1012,6 +1078,17 @@
                   </div>
                 </div>
               </div>
+              <div class="folder-helper">
+                <div class="folder-helper__copy">
+                  <p class="folder-helper__title">Import mixed folder</p>
+                  <p class="folder-helper__text">Choose one folder of one-card scans and CardWorks will sort likely fronts and backs into the current preview for review.</p>
+                </div>
+                <div class="folder-helper__actions">
+                  <input id="mixed-folder-input" class="folder-input" type="file" accept=".jpg,.jpeg,.heic,image/jpeg,image/heic" multiple webkitdirectory directory />
+                  <button type="button" class="ghost" id="mixed-folder-btn">Import Mixed Folder</button>
+                </div>
+              </div>
+              <div id="folder-import-status" class="folder-status" style="display:none;"></div>
               <div class="rule" style="margin-top:14px;">
                 No filename convention required. CardWorks pairs by upload order, then lets you confirm the matches before processing.
               </div>
@@ -1172,6 +1249,7 @@
   <script>
     const dropped = { front_files: [], back_files: [] };
     const pairLabels = [];
+    let unresolvedMixedFiles = [];
     let previewObjectUrls = [];
     const previewUrlCache = new WeakMap();
     const fileCellCache = new WeakMap();
@@ -1186,6 +1264,9 @@
     const clientError = document.getElementById("client-error");
     const clearFrontsBtn = document.getElementById("clear-fronts");
     const clearBacksBtn = document.getElementById("clear-backs");
+    const mixedFolderInput = document.getElementById("mixed-folder-input");
+    const mixedFolderBtn = document.getElementById("mixed-folder-btn");
+    const folderImportStatus = document.getElementById("folder-import-status");
 
     const setClientError = (msg) => {
       if (!clientError) return;
@@ -1196,6 +1277,19 @@
       }
       clientError.textContent = msg;
       clientError.style.display = "block";
+    };
+
+    const setFolderStatus = (msg, tone = "info") => {
+      if (!folderImportStatus) return;
+      if (!msg) {
+        folderImportStatus.style.display = "none";
+        folderImportStatus.textContent = "";
+        folderImportStatus.classList.remove("warn");
+        return;
+      }
+      folderImportStatus.style.display = "block";
+      folderImportStatus.classList.toggle("warn", tone === "warn");
+      folderImportStatus.innerHTML = msg;
     };
 
     const escapeHtml = (s) => String(s ?? "")
@@ -1240,6 +1334,180 @@
         try { URL.revokeObjectURL(url); } catch (_) {}
       }
       previewObjectUrls = [];
+    };
+
+    const fileDisplayName = (file) => file?.webkitRelativePath || file?.name || "";
+
+    const normalizeBaseName = (name) => {
+      return String(name || "")
+        .replace(/\.[^.]+$/, "")
+        .replace(/[_\-.]+/g, " ")
+        .replace(/\b(scan|img|image|photo|copy)\b/gi, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+    };
+
+    const stripSideWords = (name) => {
+      return normalizeBaseName(name)
+        .replace(/\b(front|frt|obverse|back|bck|reverse|rear)\b/gi, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    };
+
+    const inferSide = (file) => {
+      const name = fileDisplayName(file).toLowerCase();
+      const frontPattern = /(^|[^a-z0-9])(front|frt|obverse)([^a-z0-9]|$)/i;
+      const backPattern = /(^|[^a-z0-9])(back|bck|reverse|rear)([^a-z0-9]|$)/i;
+      const isFront = frontPattern.test(name);
+      const isBack = backPattern.test(name);
+      if (isFront && !isBack) return "front";
+      if (isBack && !isFront) return "back";
+      return "unknown";
+    };
+
+    const getNumericTokens = (file) => {
+      const matches = normalizeBaseName(fileDisplayName(file)).match(/\d+/g) || [];
+      return matches.map((value) => Number(value)).filter((value) => Number.isFinite(value));
+    };
+
+    const pairMixedFolderFiles = (files) => {
+      const candidates = files
+        .filter((file) => file && file.name)
+        .filter((file) => /\.(jpe?g|heic)$/i.test(file.name || ""));
+
+      const fronts = [];
+      const backs = [];
+      const unresolved = [];
+      const used = new Set();
+      const frontByStem = new Map();
+      const backByStem = new Map();
+
+      for (const file of candidates) {
+        const side = inferSide(file);
+        const stem = stripSideWords(fileDisplayName(file));
+        if (!stem) continue;
+        if (side === "front") {
+          if (!frontByStem.has(stem)) frontByStem.set(stem, []);
+          frontByStem.get(stem).push(file);
+        } else if (side === "back") {
+          if (!backByStem.has(stem)) backByStem.set(stem, []);
+          backByStem.get(stem).push(file);
+        }
+      }
+
+      const sharedStems = Array.from(frontByStem.keys()).filter((stem) => backByStem.has(stem)).sort();
+      for (const stem of sharedStems) {
+        const frontList = frontByStem.get(stem) || [];
+        const backList = backByStem.get(stem) || [];
+        const pairCount = Math.min(frontList.length, backList.length);
+        for (let i = 0; i < pairCount; i += 1) {
+          const front = frontList[i];
+          const back = backList[i];
+          used.add(front);
+          used.add(back);
+          fronts.push(front);
+          backs.push(back);
+        }
+      }
+
+      const remaining = candidates
+        .filter((file) => !used.has(file))
+        .sort((a, b) => fileDisplayName(a).localeCompare(fileDisplayName(b), undefined, { numeric: true }));
+
+      for (let i = 0; i < remaining.length; i += 1) {
+        const current = remaining[i];
+        if (used.has(current)) continue;
+        const currentSide = inferSide(current);
+        const currentNums = getNumericTokens(current);
+        let matchedIndex = -1;
+
+        for (let j = i + 1; j < remaining.length; j += 1) {
+          const candidate = remaining[j];
+          if (used.has(candidate)) continue;
+          const candidateSide = inferSide(candidate);
+          const candidateNums = getNumericTokens(candidate);
+          const sideCompatible =
+            (currentSide === "front" && candidateSide === "back") ||
+            (currentSide === "back" && candidateSide === "front") ||
+            (currentSide === "unknown" && candidateSide === "unknown");
+          if (!sideCompatible) continue;
+          const sequential =
+            currentNums.length > 0 &&
+            candidateNums.length > 0 &&
+            currentNums[currentNums.length - 1] + 1 === candidateNums[candidateNums.length - 1];
+          if (!sequential) continue;
+          matchedIndex = j;
+          break;
+        }
+
+        if (matchedIndex === -1) {
+          unresolved.push(current);
+          continue;
+        }
+
+        const other = remaining[matchedIndex];
+        used.add(current);
+        used.add(other);
+        if (currentSide === "back") {
+          fronts.push(other);
+          backs.push(current);
+        } else {
+          fronts.push(current);
+          backs.push(other);
+        }
+      }
+
+      for (const file of remaining) {
+        if (!used.has(file) && !unresolved.includes(file)) {
+          unresolved.push(file);
+        }
+      }
+
+      return {
+        fronts,
+        backs,
+        unresolved,
+        totalImported: candidates.length
+      };
+    };
+
+    const applyMixedFolder = (files) => {
+      const result = pairMixedFolderFiles(files);
+      dropped.front_files = result.fronts.slice();
+      dropped.back_files = result.backs.slice();
+      unresolvedMixedFiles = result.unresolved.slice();
+      pairLabels.length = Math.max(result.fronts.length, result.backs.length);
+
+      const frontInput = form ? form.querySelector("[name='front_files']") : null;
+      const backInput = form ? form.querySelector("[name='back_files']") : null;
+      const frontMeta = frontInput ? frontInput.closest("[data-drop]")?.querySelector("[data-meta]") : null;
+      const backMeta = backInput ? backInput.closest("[data-drop]")?.querySelector("[data-meta]") : null;
+      setMeta(frontInput, frontMeta, dropped.front_files);
+      setMeta(backInput, backMeta, dropped.back_files);
+      scheduleRenderPairPreview();
+
+      if (!result.totalImported) {
+        setFolderStatus("No supported JPG or HEIC files were found in that folder.", "warn");
+        return;
+      }
+
+      const unresolvedNames = result.unresolved
+        .slice(0, 6)
+        .map((file) => `<code>${escapeHtml(fileDisplayName(file))}</code>`)
+        .join(", ");
+
+      if (result.unresolved.length > 0) {
+        setFolderStatus(
+          `<strong>Mixed folder imported.</strong> ${result.fronts.length} ready pair${result.fronts.length === 1 ? "" : "s"} found, ${result.unresolved.length} file${result.unresolved.length === 1 ? "" : "s"} unresolved. Review the preview and fix any gaps before starting.${unresolvedNames ? ` Unresolved: ${unresolvedNames}${result.unresolved.length > 6 ? ", ..." : ""}.` : ""}`,
+          "warn"
+        );
+        return;
+      }
+
+      setFolderStatus(
+        `<strong>Mixed folder imported.</strong> ${result.totalImported} file${result.totalImported === 1 ? "" : "s"} sorted into ${result.fronts.length} ready pair${result.fronts.length === 1 ? "" : "s"}. Review the suggested pairings below before starting.`
+      );
     };
 
     const scheduleRenderPairPreview = () => {
@@ -1325,14 +1593,21 @@
       const rows = Math.max(fronts.length, backs.length);
       const readyPairs = Math.min(fronts.length, backs.length);
       const mismatch = fronts.length !== backs.length;
+      const unresolvedCount = unresolvedMixedFiles.length;
       if (previewSummary) {
-        previewSummary.textContent = mismatch
-          ? (readyPairs + " ready · count mismatch")
-          : (readyPairs + " pair" + (readyPairs === 1 ? "" : "s") + " ready");
-        previewSummary.classList.toggle("warn", mismatch);
+        if (unresolvedCount > 0) {
+          previewSummary.textContent = readyPairs + " ready · " + unresolvedCount + " unresolved";
+        } else if (mismatch) {
+          previewSummary.textContent = readyPairs + " ready · count mismatch";
+        } else {
+          previewSummary.textContent = readyPairs + " pair" + (readyPairs === 1 ? "" : "s") + " ready";
+        }
+        previewSummary.classList.toggle("warn", mismatch || unresolvedCount > 0);
       }
       if (actionReadyPill) {
-        actionReadyPill.textContent = readyPairs + " ready pair" + (readyPairs === 1 ? "" : "s");
+        actionReadyPill.textContent = unresolvedCount > 0
+          ? readyPairs + " ready · " + unresolvedCount + " unresolved"
+          : readyPairs + " ready pair" + (readyPairs === 1 ? "" : "s");
       }
       if (!rows) {
         previewBody.className = "preview-empty";
@@ -1447,6 +1722,8 @@
         const dt = e.dataTransfer;
         if (!dt || !dt.files || !dt.files.length) return;
         dropped[field] = mergeFiles(dropped[field], Array.from(dt.files));
+        unresolvedMixedFiles = [];
+        setFolderStatus("");
         updateMeta();
         scheduleRenderPairPreview();
       });
@@ -1455,6 +1732,8 @@
           dropped[input.name] = mergeFiles(dropped[input.name], Array.from(input.files || []));
           // Clear native input so selecting the same file again still fires change.
           input.value = "";
+          unresolvedMixedFiles = [];
+          setFolderStatus("");
           updateMeta();
           scheduleRenderPairPreview();
         });
@@ -1468,10 +1747,26 @@
       const meta = input ? input.closest("[data-drop]")?.querySelector("[data-meta]") : null;
       if (input) input.value = "";
       setMeta(input, meta, []);
+      if (fieldName === "front_files" && !(dropped.back_files || []).length) {
+        unresolvedMixedFiles = [];
+        setFolderStatus("");
+      }
+      if (fieldName === "back_files" && !(dropped.front_files || []).length) {
+        unresolvedMixedFiles = [];
+        setFolderStatus("");
+      }
       scheduleRenderPairPreview();
     };
     if (clearFrontsBtn) clearFrontsBtn.addEventListener("click", () => clearField("front_files"));
     if (clearBacksBtn) clearBacksBtn.addEventListener("click", () => clearField("back_files"));
+    if (mixedFolderBtn && mixedFolderInput) {
+      mixedFolderBtn.addEventListener("click", () => mixedFolderInput.click());
+      mixedFolderInput.addEventListener("change", () => {
+        const files = Array.from(mixedFolderInput.files || []);
+        applyMixedFolder(files);
+        mixedFolderInput.value = "";
+      });
+    }
     renderPairPreview();
     window.addEventListener("beforeunload", clearPreviewObjectUrls);
 
@@ -1487,6 +1782,10 @@
         }
         if (fronts.length !== backs.length) {
           setClientError("Front and back counts must match before you can start processing.");
+          return;
+        }
+        if (unresolvedMixedFiles.length) {
+          setClientError("Some mixed-folder files could not be confidently paired. Re-import, clear the batch, or upload those files manually before starting.");
           return;
         }
 

@@ -1,0 +1,192 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: CardWorks
+        - generic [ref=e8]: seller workspace
+      - generic [ref=e9]:
+        - generic [ref=e10]: sean.a.keller@gmail.com
+        - link "Workspace" [ref=e11] [cursor=pointer]:
+          - /url: /workspace
+        - link "Batches" [ref=e12] [cursor=pointer]:
+          - /url: /batches
+        - link "Account" [ref=e13] [cursor=pointer]:
+          - /url: /account
+        - link "Sign Out" [ref=e14] [cursor=pointer]:
+          - /url: /logout
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]: CardWorks
+      - heading "CardWorks" [level=1] [ref=e18]
+      - paragraph [ref=e19]: Prepare eBay-ready card photos fast. Upload full front and back images, confirm the pairing visually, then export one ZIP with the full images plus quadrant detail shots.
+      - generic [ref=e20]:
+        - generic [ref=e21]: Full front + full back preserved
+        - generic [ref=e22]: 4 front quadrants + 4 back quadrants
+        - generic [ref=e23]: 10 photos per card
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - strong [ref=e27]: First batch
+            - text: Photograph all card fronts in one shot, then all card backs in another. Upload both sets here, confirm the pairings in order, and start processing before you export the ZIP.
+          - generic [ref=e28]: "Free trial: 20 cards remaining (5/25 used)."
+          - generic [ref=e29]:
+            - generic [ref=e30]: New Batch
+            - heading "Upload and Pair Scans" [level=2] [ref=e31]
+            - paragraph [ref=e32]: "Work left to right: upload fronts and backs, review the pair preview, then start processing. The batch keeps running even if you leave this page."
+            - generic [ref=e33]:
+              - generic [ref=e34]: Manual upload works best when fronts and backs are already in matching order. If everything is mixed together in one folder, use the helper below and confirm the suggested pairings before you start.
+              - generic [ref=e35]:
+                - generic [ref=e36]:
+                  - generic [ref=e37]: Front Scans
+                  - generic [ref=e38]:
+                    - button "Choose File" [ref=e39]
+                    - generic [ref=e40]: Drag one or many front scans.
+                    - generic [ref=e41]: 2 files selected
+                - generic [ref=e42]:
+                  - generic [ref=e43]: Back Scans
+                  - generic [ref=e44]:
+                    - button "Choose File" [ref=e45]
+                    - generic [ref=e46]: Drag matching back scans in the same order.
+                    - generic [ref=e47]: 2 files selected
+              - generic [ref=e48]:
+                - generic [ref=e49]:
+                  - paragraph [ref=e50]: Import mixed folder
+                  - paragraph [ref=e51]: Choose one folder of one-card scans and CardWorks will sort likely fronts and backs into the current preview for review.
+                - generic [ref=e52]:
+                  - button "Choose File" [ref=e53]
+                  - button "Import Mixed Folder" [ref=e54] [cursor=pointer]
+              - generic [ref=e127]:
+                - strong [ref=e184]: Mixed folder imported.
+                - text: 4 files sorted into 2 ready pairs. Review the suggested pairings below before starting.
+              - generic [ref=e55]: No filename convention required. CardWorks pairs by upload order, then lets you confirm the matches before processing.
+              - group [ref=e56]:
+                - generic "Tips for sharper exports Expand" [ref=e57] [cursor=pointer]
+              - generic [ref=e58]:
+                - text: Need help with access or exports? Contact
+                - link "support@cardworks.app" [ref=e59] [cursor=pointer]:
+                  - /url: mailto:support@cardworks.app
+                - text: ". Launch details:"
+                - link "Privacy" [ref=e60] [cursor=pointer]:
+                  - /url: /privacy
+                - text: and
+                - link "Terms" [ref=e61] [cursor=pointer]:
+                  - /url: /terms
+                - text: .
+              - generic [ref=e62]:
+                - generic [ref=e63]:
+                  - generic [ref=e64]:
+                    - generic [ref=e65]: Pair Preview
+                    - generic [ref=e66]: 2 pairs ready
+                  - generic [ref=e67]:
+                    - button "Clear Fronts" [ref=e68] [cursor=pointer]
+                    - button "Clear Backs" [ref=e69] [cursor=pointer]
+                - table [ref=e185]:
+                  - rowgroup [ref=e186]:
+                    - row "# Pair Name Front Back Status" [ref=e187]:
+                      - columnheader "#" [ref=e188]
+                      - columnheader "Pair Name" [ref=e189]
+                      - columnheader "Front" [ref=e190]
+                      - columnheader "Back" [ref=e191]
+                      - columnheader "Status" [ref=e192]
+                  - rowgroup [ref=e193]:
+                    - row "1 img_1001.jpg img_1001.jpg Up Down Remove img_1002.jpg img_1002.jpg Up Down Remove Ready" [ref=e194]:
+                      - cell "1" [ref=e195]
+                      - cell [ref=e196]:
+                        - textbox "Optional name (e.g. Charizard holo)" [ref=e197]
+                      - cell "img_1001.jpg img_1001.jpg Up Down Remove" [ref=e198]:
+                        - generic [ref=e199]:
+                          - img "img_1001.jpg" [ref=e200]
+                          - generic [ref=e201]:
+                            - generic [ref=e202]: img_1001.jpg
+                            - generic [ref=e203]:
+                              - button "Up" [disabled] [ref=e204]
+                              - button "Down" [ref=e205] [cursor=pointer]
+                              - button "Remove" [ref=e206] [cursor=pointer]
+                      - cell "img_1002.jpg img_1002.jpg Up Down Remove" [ref=e207]:
+                        - generic [ref=e208]:
+                          - img "img_1002.jpg" [ref=e209]
+                          - generic [ref=e210]:
+                            - generic [ref=e211]: img_1002.jpg
+                            - generic [ref=e212]:
+                              - button "Up" [disabled] [ref=e213]
+                              - button "Down" [ref=e214] [cursor=pointer]
+                              - button "Remove" [ref=e215] [cursor=pointer]
+                      - cell "Ready" [ref=e216]
+                    - row "2 img_1003.jpg img_1003.jpg Up Down Remove img_1004.jpg img_1004.jpg Up Down Remove Ready" [ref=e217]:
+                      - cell "2" [ref=e218]
+                      - cell [ref=e219]:
+                        - textbox "Optional name (e.g. Charizard holo)" [ref=e220]
+                      - cell "img_1003.jpg img_1003.jpg Up Down Remove" [ref=e221]:
+                        - generic [ref=e222]:
+                          - img "img_1003.jpg" [ref=e223]
+                          - generic [ref=e224]:
+                            - generic [ref=e225]: img_1003.jpg
+                            - generic [ref=e226]:
+                              - button "Up" [ref=e227] [cursor=pointer]
+                              - button "Down" [disabled] [ref=e228]
+                              - button "Remove" [ref=e229] [cursor=pointer]
+                      - cell "img_1004.jpg img_1004.jpg Up Down Remove" [ref=e230]:
+                        - generic [ref=e231]:
+                          - img "img_1004.jpg" [ref=e232]
+                          - generic [ref=e233]:
+                            - generic [ref=e234]: img_1004.jpg
+                            - generic [ref=e235]:
+                              - button "Up" [ref=e236] [cursor=pointer]
+                              - button "Down" [disabled] [ref=e237]
+                              - button "Remove" [ref=e238] [cursor=pointer]
+                      - cell "Ready" [ref=e239]
+              - generic [ref=e72]:
+                - generic [ref=e73]: Batch Name (Optional)
+                - 'textbox "example: weekend-batch" [ref=e74]'
+              - generic [ref=e75]:
+                - strong [ref=e76]: What your batch exports
+                - paragraph [ref=e77]: "Each card exports as one organized set: full front, full back, and 8 corner crops. That gives you 10 listing-ready images per card in the ZIP."
+                - generic [ref=e78]:
+                  - generic [ref=e79]: CARD_NAME_FRONT.jpg
+                  - generic [ref=e80]: CARD_NAME_BACK.jpg
+                  - generic [ref=e81]: CARD_NAME_FRONT_TL.jpg ... CARD_NAME_BACK_BR.jpg
+              - generic [ref=e82]:
+                - generic [ref=e83]:
+                  - generic [ref=e84]: 2 ready pairs
+                  - generic [ref=e85]: After you click Start, open the batch page to review previews and download the ZIP.
+                - button "Start Batch Processing" [ref=e86] [cursor=pointer]
+        - complementary [ref=e87]:
+          - generic [ref=e88]:
+            - generic [ref=e89]:
+              - generic [ref=e90]: Overview
+              - generic [ref=e92]:
+                - generic [ref=e93]: Plan
+                - generic [ref=e94]: Starter Trial
+                - generic [ref=e95]: 20 cards remaining in trial (5/25 used)
+                - link "View Plan & Billing" [ref=e99] [cursor=pointer]:
+                  - /url: /account
+            - generic [ref=e100]:
+              - generic [ref=e101]: Quick Start
+              - heading "What to do next" [level=3] [ref=e102]
+              - generic [ref=e103]:
+                - generic [ref=e104]:
+                  - generic [ref=e105]: Fronts
+                  - generic [ref=e106]: "2"
+                - generic [ref=e107]:
+                  - generic [ref=e108]: Backs
+                  - generic [ref=e109]: "2"
+              - list [ref=e110]:
+                - listitem [ref=e111]: Drop all front images in the left upload area.
+                - listitem [ref=e112]: Drop all back images in the right upload area in matching order.
+                - listitem [ref=e113]: Use Pair Preview to rename or reorder, then click Start Batch Processing.
+              - generic [ref=e114]:
+                - text: Keep your Gumroad receipt for the license key. If access or billing looks wrong, email
+                - link "support@cardworks.app" [ref=e115] [cursor=pointer]:
+                  - /url: mailto:support@cardworks.app
+                - text: .
+            - generic [ref=e116]:
+              - generic [ref=e117]: Recent Activity
+              - heading "Latest Batches" [level=3] [ref=e118]
+              - generic [ref=e119]: For full history and downloads, use the Batches page.
+              - list [ref=e121]:
+                - listitem [ref=e122]:
+                  - link "Batch 1" [ref=e123] [cursor=pointer]:
+                    - /url: /job/20260323-105715-142611
+                  - generic [ref=e124]: Expired • 5 pairs • 5 cards
+              - link "Open Batches Page" [ref=e126] [cursor=pointer]:
+                - /url: /batches
