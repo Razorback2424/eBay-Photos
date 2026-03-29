@@ -135,7 +135,7 @@
 <body>
   <main class="card">
     <h1>Access your workspace</h1>
-    <p>Use your purchase email and Gumroad license key if you bought access. If your email was already approved, sign in with that email instead. After access opens, start by photographing all card fronts in one shot and all card backs in another before confirming the pairings.</p>
+    <p>Use your purchase email and Gumroad license key to unlock the workspace. If this email already has access, continue with email only.</p>
     <div class="chiprow">
       <span class="chip">Paid access required</span>
       <span class="chip">Gumroad license verification</span>
@@ -157,7 +157,7 @@
     </form>
 
     <div class="note" style="margin-top:18px;">
-      Already have access? Use the email on your approved account. You do not need to enter a license key again.
+      Already unlocked on this email? You can continue without re-entering the license key.
     </div>
 
     <form method="post" action="{{ url_for('login') }}" onsubmit="trackAccessEvent('Access Email Submit')">
@@ -165,8 +165,8 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
       <label>Access Email</label>
       <input type="email" name="access_email" placeholder="you@example.com" required />
-      <button type="submit">Continue with access email</button>
-      <div class="tiny">This works for approved launch emails and internal master users. If you were invited, use the email address that was granted access.</div>
+      <button type="submit">Continue with email</button>
+      <div class="tiny">Use the same email address that already has access to this workspace.</div>
     </form>
 
     {% if purchase_url %}

@@ -1150,7 +1150,11 @@ function trackLandingEvent(name) {
   <div class="nav-right">
     <a href="#proof" class="nav-link">See it work</a>
     <a href="#pricing" class="nav-link">Pricing</a>
+    {% if auth.is_authenticated %}
+    <a href="{{ url_for('account_page') }}" class="nav-link nav-login">Account</a>
+    {% else %}
     <a href="{{ url_for('login', next=url_for('workspace')) }}" class="nav-link nav-login">Sign in</a>
+    {% endif %}
     <a href="{{ url_for('workspace') if auth.is_authenticated else (purchase_url or url_for('login', next=url_for('workspace'))) }}" class="nav-cta{% if purchase_url and not auth.is_authenticated %} nav-cta-buy{% endif %}" {% if not auth.is_authenticated %}onclick="trackLandingEvent('Landing CTA Click')"{% endif %} {% if purchase_url and not auth.is_authenticated %}target="_blank" rel="noopener noreferrer"{% endif %}>
       {{ "Open workspace" if auth.is_authenticated else "Buy access" }} →
     </a>
@@ -1172,7 +1176,13 @@ function trackLandingEvent(name) {
         {% else %}
         <a href="{{ url_for('login', next=url_for('workspace')) }}" class="primary-btn">Sign in to open workspace →</a>
         {% endif %}
+        {% if auth.is_authenticated %}
+        <p class="hero-note">Your workspace is ready. Open it and start your next batch.</p>
+        {% elif purchase_url %}
         <p class="hero-note">Buy on Gumroad, get your license key immediately, and you're in.</p>
+        {% else %}
+        <p class="hero-note">Sign in with your access email or license key to open the workspace.</p>
+        {% endif %}
         <div class="trust-strip">
           <span class="trust-chip">2 photos → 10 images per card</span>
           <span class="trust-chip">Runs in your browser</span>
@@ -1255,13 +1265,6 @@ function trackLandingEvent(name) {
 
 <section class="marquee-band" aria-label="Seller pain quotes">
   <div class="marquee-track">
-    <div class="marquee-chip">“The photos of the item really slow me down.”</div>
-    <div class="marquee-chip">“I still absolutely dread listing.”</div>
-    <div class="marquee-chip">“Going through the 800+ photos is the worst part.”</div>
-    <div class="marquee-chip">“I spend more time sorting fronts and backs than actually listing.”</div>
-    <div class="marquee-chip">“I never bothered with corner shots, now I get them automatically.”</div>
-    <div class="marquee-chip">“Buyers actually ask about corners on anything over $50.”</div>
-    <div class="marquee-chip">“Taking individual corner photos was killing my listing time.”</div>
     <div class="marquee-chip">“The photos of the item really slow me down.”</div>
     <div class="marquee-chip">“I still absolutely dread listing.”</div>
     <div class="marquee-chip">“Going through the 800+ photos is the worst part.”</div>
@@ -1456,7 +1459,7 @@ function trackLandingEvent(name) {
     <div class="pricing-intro">
       <div>
         <div class="section-label">Pricing</div>
-        <h2 class="section-headline">Simple pricing.<br>No fake urgency.</h2>
+        <h2 class="section-headline">Simple pricing.<br>Pick the plan that fits.</h2>
       </div>
       <p class="section-sub">You are paying for ready-to-list card images from the photos you already took — no manual cropping, no sorting, no extra shots.</p>
     </div>
@@ -1469,7 +1472,7 @@ function trackLandingEvent(name) {
           <li>Full access to CardWorks</li>
           <li>Unlimited cards and batches</li>
           <li>Rate locked forever. This price never increases.</li>
-          <li>First 20 sellers only — this tier closes when spots fill</li>
+          <li>Lowest monthly rate for early supporters</li>
         </ul>
         <a href="{{ purchase_url or url_for('login', next=url_for('workspace')) }}" class="price-btn-solid" {% if purchase_url %}target="_blank" rel="noopener noreferrer"{% endif %} onclick="trackLandingEvent('Pricing Founding Click')">{{ "Buy founding access on Gumroad →" if purchase_url else "Enter license key →" }}</a>
       </article>
@@ -1554,7 +1557,7 @@ function trackLandingEvent(name) {
     </div>
     {% else %}
     <div class="footer-links">
-      <a href="{{ url_for('login', next=url_for('workspace')) }}">Sign in</a>
+      <a href="{{ url_for('workspace') if auth.is_authenticated else url_for('login', next=url_for('workspace')) }}">{{ "Workspace" if auth.is_authenticated else "Sign in" }}</a>
       <a href="{{ url_for('privacy_page') }}">Privacy</a>
       <a href="{{ url_for('terms_page') }}">Terms</a>
       <a href="/cdn-cgi/l/email-protection#99e2e2b9eaece9e9f6ebedc6fcf4f8f0f5b9e4e4">{{ support_email }}</a>

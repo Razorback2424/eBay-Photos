@@ -265,11 +265,11 @@
       <div class="progress"><div></div></div>
       <p class="muted" style="margin-top:8px;">{{ job.progress_label }}</p>
       {% if job.status in ("queued", "running") %}
-      <p class="muted" style="margin-top:6px;">What to do next: wait here or leave this page. It refreshes automatically while processing.</p>
+      <p class="muted" style="margin-top:6px;">You can wait here or leave this page. It refreshes automatically while processing.</p>
       {% elif job.status in ("completed", "completed_with_warnings") %}
-      <p class="muted" style="margin-top:6px;">What to do next: review the card previews below, then download the ZIP when everything looks right.</p>
+      <p class="muted" style="margin-top:6px;">Review the previews below, then download the ZIP when everything looks right.</p>
       {% elif job.status == "failed" %}
-      <p class="muted" style="margin-top:6px; color:#a83144;">What to do next: review the error message below, then return to the workspace and re-run the batch.</p>
+      <p class="muted" style="margin-top:6px; color:#a83144;">Review the error below, then return to the workspace and re-run the batch.</p>
       {% endif %}
       <div class="kpis">
         <div class="kpi"><div class="v">{{ job.pair_count }}</div><div class="k">Pairs Submitted</div></div>
@@ -292,7 +292,7 @@
     {% if job.pair_results %}
     <section class="panel lift">
       <h2 class="headline" style="font-size:20px;">Pair Results</h2>
-      <p class="muted" style="margin-bottom:10px;">Check that each uploaded front/back pair processed successfully before downloading.</p>
+      <p class="muted" style="margin-bottom:10px;">Check each pair before downloading.</p>
       <div class="table-wrap">
       <table>
         <thead><tr><th>Pair</th><th>Status</th><th>Cards</th><th>Photos</th><th>Notes</th></tr></thead>
@@ -315,7 +315,7 @@
     {% if job.card_tiles %}
     <section class="panel lift">
       <h2 class="headline" style="font-size:20px;">Card Preview</h2>
-      <p class="muted" style="margin-bottom:10px;">Spot-check fronts and backs here. If anything looks wrong, return to the workspace and re-run that batch.</p>
+      <p class="muted" style="margin-bottom:10px;">Spot-check the fronts and backs here before you download.</p>
       <div class="grid-cards">
         {% for tile in job.card_tiles %}
         <article class="card-tile">
@@ -349,10 +349,6 @@
       </details>
     </section>
     {% endif %}
-
-    <section class="panel lift">
-      <a href="{{ url_for('workspace') }}">Start Another Batch</a>
-    </section>
   </main>
 </body>
 </html>

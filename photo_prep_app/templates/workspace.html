@@ -1054,11 +1054,11 @@
           <div class="section-card lift">
             <div class="section-eyebrow">New Batch</div>
             <h2 class="section-title">Upload and Pair Scans</h2>
-            <p class="section-subtitle">Work left to right: upload fronts and backs, review the pair preview, then start processing. The batch keeps running even if you leave this page.</p>
+            <p class="section-subtitle">Upload fronts and backs, confirm the pair preview, then start processing. The batch keeps running if you leave this page.</p>
             <form id="queue-form" class="workspace-wrap" method="post" action="{{ url_for('enqueue_job') }}" enctype="multipart/form-data">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
               <div class="rule warning">
-                Manual upload works best when fronts and backs are already in matching order. If everything is mixed together in one folder, use the helper below and confirm the suggested pairings before you start.
+                If fronts and backs are already in order, upload them directly. If they are mixed together, use the folder helper below first.
               </div>
               <div class="grid">
                 <div class="field">
@@ -1090,7 +1090,7 @@
               </div>
               <div id="folder-import-status" class="folder-status" style="display:none;"></div>
               <div class="rule" style="margin-top:14px;">
-                No filename convention required. CardWorks pairs by upload order, then lets you confirm the matches before processing.
+                CardWorks pairs by upload order, and you can confirm every match before processing.
               </div>
               <details class="tips-disclosure">
                 <summary>Tips for sharper exports</summary>
@@ -1109,9 +1109,6 @@
                   </div>
                 </div>
               </details>
-              <div class="support-note">
-                Need help with access or exports? Contact <a href="mailto:{{ support_email }}">{{ support_email }}</a>. Launch details: <a href="{{ url_for('privacy_page') }}">Privacy</a> and <a href="{{ url_for('terms_page') }}">Terms</a>.
-              </div>
               <div class="preview" id="pair-preview">
                 <div class="preview-head">
                   <div class="preview-meta">
@@ -1123,7 +1120,7 @@
                     <button type="button" class="ghost" id="clear-backs">Clear Backs</button>
                   </div>
                 </div>
-                <div id="pair-preview-body" class="preview-empty">After uploading, you will see front and back thumbnails here so you can confirm each match before processing.</div>
+                <div id="pair-preview-body" class="preview-empty">Front and back thumbnails will appear here for a quick match check before processing.</div>
               </div>
               <div class="row">
                 <div class="field">
@@ -1131,19 +1128,10 @@
                   <input name="batch_name" type="text" placeholder="example: weekend-batch" />
                 </div>
               </div>
-              <div class="output-note">
-                <strong>What your batch exports</strong>
-                <p>Each card exports as one organized set: full front, full back, and 8 corner crops. That gives you 10 listing-ready images per card in the ZIP.</p>
-                <div class="output-files">
-                  <div>CARD_NAME_FRONT.jpg</div>
-                  <div>CARD_NAME_BACK.jpg</div>
-                  <div>CARD_NAME_FRONT_TL.jpg ... CARD_NAME_BACK_BR.jpg</div>
-                </div>
-              </div>
               <div class="actionbar">
                 <div class="actionmeta">
                   <span class="subtle-pill" id="action-ready-pill">0 ready pairs</span>
-                  <span class="hint" style="margin:0;">After you click Start, open the batch page to review previews and download the ZIP.</span>
+                  <span class="hint" style="margin:0;">Each card exports as a ZIP-ready set with the full front, full back, and 8 corner crops.</span>
                 </div>
                 <button type="submit" id="submit-btn" {% if account and not account.can_process %}disabled{% endif %}>Start Batch Processing</button>
               </div>
@@ -1193,29 +1181,6 @@
             </div>
 
             <div class="section-card lift">
-              <div class="section-eyebrow">Quick Start</div>
-              <h3 style="margin:0; font-size:16px; color:#21384a;">What to do next</h3>
-              <div class="mini-metric-grid">
-                <div class="mini-metric">
-                  <div class="k">Fronts</div>
-                  <div class="v" id="front-count-side">0</div>
-                </div>
-                <div class="mini-metric">
-                  <div class="k">Backs</div>
-                  <div class="v" id="back-count-side">0</div>
-                </div>
-              </div>
-              <ol class="checklist">
-                <li>Drop all front images in the left upload area.</li>
-                <li>Drop all back images in the right upload area in matching order.</li>
-                <li>Use Pair Preview to rename or reorder, then click Start Batch Processing.</li>
-              </ol>
-              <div class="support-note">
-                Keep your Gumroad receipt for the license key. If access or billing looks wrong, email <a href="mailto:{{ support_email }}">{{ support_email }}</a>.
-              </div>
-            </div>
-
-            <div class="section-card lift">
               <div class="section-eyebrow">Recent Activity</div>
               <h3 style="margin:0; font-size:16px; color:#21384a;">Latest Batches</h3>
               <div class="stack-note">For full history and downloads, use the Batches page.</div>
@@ -1238,6 +1203,7 @@
               </div>
               <div class="cta-row" style="margin-top:10px;">
                 <a class="linkbtn" href="{{ url_for('batches_page') }}">Open Batches Page</a>
+                <a class="linkbtn" href="mailto:{{ support_email }}">Contact Support</a>
               </div>
             </div>
           </div>
