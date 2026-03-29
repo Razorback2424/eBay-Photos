@@ -40,7 +40,7 @@ pip install -r requirements-web.txt
 Create a production `.env`:
 
 ```bash
-cp .env.example .env
+cp .env.production.example .env
 ```
 
 Set at minimum:
@@ -70,6 +70,7 @@ python3 scripts/preflight_check.py
 ```
 
 This script prints a JSON checklist and exits non-zero if any required launch checks fail.
+Warnings are included for optional-but-recommended monitoring gaps such as missing Sentry or Plausible configuration.
 
 After it passes, start the app and verify:
 - `https://your-domain-or-ip/healthz` -> ok
@@ -121,6 +122,7 @@ SQLite DB file:
 
 MVP recommendation:
 - nightly backup of `photo_prep_app.db`
+- use `python3 scripts/backup_db.py --label nightly --out-dir backups/`
 
 `_Web_Runs/` is temporary (24h retention). Backing it up is usually unnecessary.
 
@@ -133,6 +135,8 @@ MVP recommendation:
 5. Confirm `PHOTO_PREP_APP_SECRET` is a real random secret
 6. Confirm Gumroad product settings send the buyer their license key and direct them to `/login`
 7. Confirm Gunicorn is starting with `-c gunicorn.conf.py` and still running one worker
+8. Confirm `SUPPORT_EMAIL`, `LEGAL_ENTITY_NAME`, and `LEGAL_CONTACT_ADDRESS` are set to real launch values
+9. Save the latest DB backup path from `python3 scripts/backup_db.py --label prelaunch`
 
 ## 11. Post-Launch Smoke Test
 
@@ -142,3 +146,4 @@ MVP recommendation:
 4. Complete a Gumroad purchase with the real product link
 5. Confirm the buyer can enter the purchase email + license key at `/login`
 6. Confirm paid processing still works
+7. Save `/readiness` output and archive smoke-test evidence under `qa/reports/launch-evidence/`

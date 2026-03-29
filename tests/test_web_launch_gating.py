@@ -2,10 +2,13 @@ import os
 import tempfile
 import unittest
 from unittest import mock
+import importlib
 
 from photo_prep_app import models
 from photo_prep_app.services import billing
 from photo_prep_app.app import app
+
+app_module = importlib.import_module("photo_prep_app.app")
 
 
 class TestWebLaunchGating(unittest.TestCase):
@@ -61,6 +64,92 @@ class TestWebLaunchGating(unittest.TestCase):
         client = app.test_client()
         self.assertEqual(client.get("/privacy").status_code, 200)
         self.assertEqual(client.get("/terms").status_code, 200)
+
+    def test_readiness_flags_missing_launch_contact_and_purchase_link(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = os.path.join(tmpdir, "test.db")
+            models.init_db(db_path)
+            old_secret = app_module.app.config.get("SECRET_KEY")
+            app_module.app.config["SECRET_KEY"] = "not-default"
+            try:
+                with mock.patch.object(app_module, "DB_PATH", db_path), mock.patch.object(app_module, "RUNS_ROOT", tmpdir), mock.patch.object(
+                    app_module, "APP_BASE_URL", "https://cardworks.example.com"
+                ), mock.patch.object(
+                    app_module.shutil, "which", return_value="/usr/bin/tesseract"
+                ), mock.patch.dict(
+                    os.environ,
+                    {
+                        "APP_ENV": "production",
+                        "AUTH_MODE": "gumroad",
+                        "LAUNCH_MODE": "true",
+                        "SUPPORT_EMAIL": "support@cardworks.app",
+                        "GUMROAD_PRODUCT_ID": "prod_123",
+                        "GUMROAD_PRODUCT_URL": "",
+                        "GUMROAD_PRODUCT_PERMALINK": "",
+                    },
+                    clear=False,
+                ):
+                    issues = app_module._readiness_issues()
+            finally:
+                app_module.app.config["SECRET_KEY"] = old_secret
+
+        self.assertTrue(any("SUPPORT_EMAIL" in item for item in issues))
+        self.assertTrue(any("purchase link" in item for item in issues))
+
+    def test_readiness_endpoint_includes_warnings(self):
+        client = app.test_client()
+        old_secret = app_module.app.config.get("SECRET_KEY")
+        app_module.app.config["SECRET_KEY"] = "not-default"
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir, mock.patch.object(app_module, "RUNS_ROOT", tmpdir), mock.patch.object(
+                app_module, "DB_PATH", os.path.join(tmpdir, "test.db")
+            ), mock.patch.object(
+                app_module, "APP_BASE_URL", "https://cardworks.example.com"
+            ), mock.patch.object(
+                app_module.shutil, "which", return_value="/usr/bin/tesseract"
+            ), mock.patch.dict(
+                os.environ,
+                {
+                    "APP_ENV": "production",
+                    "AUTH_MODE": "gumroad",
+                    "LAUNCH_MODE": "true",
+                    "SUPPORT_EMAIL": "help@example.com",
+                    "GUMROAD_PRODUCT_PERMALINK": "cardworks-live",
+                    "GUMROAD_PRODUCT_URL": "https://gumroad.com/l/cardworks-live",
+                    "SENTRY_DSN": "",
+                    "PLAUSIBLE_DOMAIN": "",
+                },
+                clear=False,
+            ):
+                models.init_db(app_module.DB_PATH)
+                resp = client.get("/readiness")
+        finally:
+            app_module.app.config["SECRET_KEY"] = old_secret
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'"warnings"', resp.data)
+        self.assertIn(b'SENTRY_DSN', resp.data)
+        self.assertIn(b'PLAUSIBLE_DOMAIN', resp.data)
+
+    def test_privacy_page_uses_configured_business_values(self):
+        client = app.test_client()
+        with mock.patch.dict(
+            os.environ,
+            {
+                "APP_DISPLAY_NAME": "CardWorks Pro",
+                "LEGAL_ENTITY_NAME": "CardWorks LLC",
+                "LEGAL_CONTACT_ADDRESS": "123 Main St",
+                "SUPPORT_EMAIL": "privacy@example.com",
+            },
+            clear=False,
+        ):
+            resp = client.get("/privacy")
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b"CardWorks LLC", resp.data)
+        self.assertIn(b"CardWorks Pro", resp.data)
+        self.assertIn(b"123 Main St", resp.data)
+        self.assertIn(b"privacy@example.com", resp.data)
 
 
 if __name__ == "__main__":

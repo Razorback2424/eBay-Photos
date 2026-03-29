@@ -39,5 +39,17 @@
 3. **ZIP parity validation** – once exports are produced, archive the validation output
    (pass/fail logs) alongside traces for traceability.
 
+## Launch evidence checklist
+- HEIC sample notes:
+  - Pending
+- Worker/profile traces:
+  - Pending
+- Export validation logs:
+  - Pending
+- Production readiness output:
+  - Pending
+- End-to-end smoke test notes:
+  - Pending
+
 Release remains gated until the above items are completed and evidence (assets, traces,
 validation logs) is attached to this readout.

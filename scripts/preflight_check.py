@@ -18,9 +18,13 @@ def main():
     gumroad = importlib.import_module("photo_prep_app.services.gumroad")
 
     checks = []
+    warnings = []
 
     def add_check(name, ok, details=""):
         checks.append({"name": name, "ok": bool(ok), "details": details})
+
+    def add_warning(name, details=""):
+        warnings.append({"name": name, "details": details})
 
     # Environment / mode
     add_check("app_env_set", bool(os.environ.get("APP_ENV")), f"APP_ENV={os.environ.get('APP_ENV','')}")
@@ -31,6 +35,16 @@ def main():
         f"AUTH_MODE={active_auth_mode} ({'supported' if active_auth_mode in {'demo', 'auth0', 'gumroad'} else 'unsupported'})",
     )
     add_check("secret_key_not_default", app_module.app.config.get("SECRET_KEY") != "local-dev-secret-change-me", "PHOTO_PREP_APP_SECRET must be non-default")
+    add_check(
+        "app_base_url_https_in_production",
+        (not billing.is_production()) or str(getattr(app_module, "APP_BASE_URL", "")).lower().startswith("https://"),
+        f"APP_BASE_URL={getattr(app_module, 'APP_BASE_URL', '')}",
+    )
+    add_check(
+        "support_email_configured_for_launch",
+        (not auth_service.launch_mode_enabled()) or auth_service.support_email_configured(),
+        f"SUPPORT_EMAIL={auth_service.support_email()}",
+    )
     add_check("demo_billing_controls_disabled_in_production", (not billing.is_production()) or (not billing.demo_billing_controls_enabled()), f"enabled={billing.demo_billing_controls_enabled()}")
 
     # Auth / billing readiness
@@ -39,6 +53,11 @@ def main():
         "gumroad_launch_ready_if_enabled",
         (active_auth_mode != "gumroad") or gumroad.launch_ready(),
         "GUMROAD_PRODUCT_PERMALINK or GUMROAD_PRODUCT_ID",
+    )
+    add_check(
+        "gumroad_purchase_link_ready_if_enabled",
+        (active_auth_mode != "gumroad") or bool(auth_service.gumroad_product_url()),
+        "GUMROAD_PRODUCT_URL or GUMROAD_PRODUCT_PERMALINK",
     )
     add_check(
         "stripe_checkout_ready_if_required",
@@ -83,8 +102,15 @@ def main():
     except Exception as exc:
         add_check("app_readiness_issues_empty", False, str(exc))
 
+    try:
+        runtime_warnings = app_module._readiness_warnings()
+        for item in runtime_warnings:
+            add_warning("readiness_warning", item)
+    except Exception as exc:
+        add_warning("readiness_warning_collection_failed", str(exc))
+
     failed = [c for c in checks if not c["ok"]]
-    print(json.dumps({"ok": not failed, "checks": checks}, indent=2))
+    print(json.dumps({"ok": not failed, "checks": checks, "warnings": warnings}, indent=2))
     return 1 if failed else 0
 
 

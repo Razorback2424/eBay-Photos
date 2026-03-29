@@ -8,6 +8,9 @@ import urllib.request
 
 from flask import redirect, request, session, url_for
 
+DEFAULT_SUPPORT_EMAIL = "support@cardworks.app"
+DEFAULT_APP_DISPLAY_NAME = "CardWorks"
+
 
 def auth_state():
     user = session.get("auth_user")
@@ -28,7 +31,24 @@ def launch_mode_enabled():
 
 
 def support_email():
-    return (os.environ.get("SUPPORT_EMAIL") or "support@cardworks.app").strip()
+    return (os.environ.get("SUPPORT_EMAIL") or DEFAULT_SUPPORT_EMAIL).strip()
+
+
+def support_email_configured():
+    email = support_email()
+    return bool(email and "@" in email and email != DEFAULT_SUPPORT_EMAIL)
+
+
+def app_display_name():
+    return (os.environ.get("APP_DISPLAY_NAME") or DEFAULT_APP_DISPLAY_NAME).strip()
+
+
+def legal_entity_name():
+    return (os.environ.get("LEGAL_ENTITY_NAME") or app_display_name()).strip()
+
+
+def legal_contact_address():
+    return (os.environ.get("LEGAL_CONTACT_ADDRESS") or "").strip()
 
 
 def gumroad_product_url():

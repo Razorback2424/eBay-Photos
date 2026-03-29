@@ -120,6 +120,15 @@ def _init_sentry_if_configured():
     )
     return True
 
+
+def _readiness_warnings():
+    warnings = []
+    if not (os.environ.get("SENTRY_DSN") or "").strip():
+        warnings.append("SENTRY_DSN is not configured; production errors will not be reported automatically.")
+    if not auth_service.plausible_domain():
+        warnings.append("PLAUSIBLE_DOMAIN is not configured; launch analytics are disabled.")
+    return warnings
+
 def _status_label(status):
     return {
         "queued": "Waiting",
@@ -386,10 +395,16 @@ def _readiness_issues():
     issues = []
     if app.config.get("SECRET_KEY") == "local-dev-secret-change-me":
         issues.append("PHOTO_PREP_APP_SECRET is using the default development value.")
+    if billing_service.is_production() and not APP_BASE_URL.lower().startswith("https://"):
+        issues.append("APP_BASE_URL must use https in production.")
+    if auth_service.launch_mode_enabled() and not auth_service.support_email_configured():
+        issues.append("SUPPORT_EMAIL must be set to a real monitored inbox before launch.")
     if auth_service.auth_mode() == "auth0" and not auth_service.auth0_ready():
         issues.append("Auth0 mode is enabled but AUTH0_* variables are incomplete.")
     if auth_service.auth_mode() == "gumroad" and not gumroad_service.launch_ready():
         issues.append("Gumroad launch mode is enabled but GUMROAD_* configuration is incomplete.")
+    if auth_service.auth_mode() == "gumroad" and not auth_service.gumroad_product_url():
+        issues.append("Gumroad launch mode needs GUMROAD_PRODUCT_URL or GUMROAD_PRODUCT_PERMALINK so buyers have a purchase link.")
     if auth_service.auth_mode() != "gumroad":
         if not STRIPE_WEBHOOK_SECRET:
             issues.append("STRIPE_WEBHOOK_SECRET is not configured.")
@@ -422,10 +437,13 @@ def inject_app_context():
     return {
         "auth": _auth_state(),
         "auth_mode": auth_service.auth_mode(),
+        "app_display_name": auth_service.app_display_name(),
         "csrf_token": _csrf_token(),
         "app_env": billing_service.app_env(),
         "demo_billing_controls_enabled": billing_service.demo_billing_controls_enabled(),
         "launch_mode": auth_service.launch_mode_enabled(),
+        "legal_entity_name": auth_service.legal_entity_name(),
+        "legal_contact_address": auth_service.legal_contact_address(),
         "support_email": auth_service.support_email(),
         "purchase_url": auth_service.gumroad_product_url(),
         "plausible_domain": auth_service.plausible_domain(),
@@ -450,8 +468,9 @@ def healthz():
 @app.get("/readiness")
 def readiness():
     issues = _readiness_issues()
+    warnings = _readiness_warnings()
     ok = not issues
-    body = json_body({"ok": ok, "issues": issues})
+    body = json_body({"ok": ok, "issues": issues, "warnings": warnings})
     return Response(body, mimetype="application/json", status=(200 if ok else 503))
 
 
@@ -917,24 +936,34 @@ def job_status(job_id):
 
 @app.get("/privacy")
 def privacy_page():
+    app_name = auth_service.app_display_name()
+    legal_entity = auth_service.legal_entity_name()
+    support_email = auth_service.support_email()
+    contact_address = auth_service.legal_contact_address()
     sections = [
-        ("What We Process", "CardWorks processes the card images you upload in the browser-based workflow described on the site. The product is positioned around keeping those images out of a remote upload pipeline."),
-        ("Account Access", "We store the minimum account information needed to let you sign in, keep access gated, and associate batches with your account."),
-        ("Billing and Purchase", "Purchase and license delivery are handled through Gumroad for launch. Payment details are not collected directly by this app."),
-        ("Support", f"For privacy questions or deletion requests, contact {auth_service.support_email()}."),
+        ("What We Process", f"{app_name} processes the card images you upload to generate listing-ready exports and temporary batch previews."),
+        ("Account Access", "We store the minimum account information needed to let you sign in, keep access gated, and associate batches with your account and export history."),
+        ("Storage and Retention", f"Batch outputs are stored in the app workspace for up to {RETENTION_HOURS} hours and may be removed sooner during cleanup or incident recovery."),
+        ("Billing and Purchase", "Launch billing, receipts, and license-key delivery are handled by Gumroad. Payment details are not collected directly by this app."),
+        ("Analytics and Error Monitoring", "If analytics or error monitoring are enabled for launch, they are used to understand product reliability and diagnose failures, not to inspect your card images."),
+        ("Support", f"For privacy questions, deletion requests, or account issues, contact {support_email}." + (f" Mail: {contact_address}." if contact_address else "")),
     ]
-    return render_template("legal.html", title="Privacy Policy", intro="This is the launch privacy policy for CardWorks.", sections=sections)
+    return render_template("legal.html", title="Privacy Policy", intro=f"This launch privacy policy describes how {legal_entity} handles access, billing, and uploaded batch data for {app_name}.", sections=sections)
 
 
 @app.get("/terms")
 def terms_page():
+    app_name = auth_service.app_display_name()
+    legal_entity = auth_service.legal_entity_name()
+    support_email = auth_service.support_email()
     sections = [
-        ("Access", "A paid license is required to use the protected workspace and batch-processing features."),
+        ("Access", f"A paid license is required to use the protected {app_name} workspace and batch-processing features beyond any launch trial allowance."),
         ("Acceptable Use", "Do not abuse the service, bypass the access gate, or use the product in a way that damages availability for other customers."),
-        ("Billing", "Launch billing and license fulfillment are handled through Gumroad. Refunds and billing issues follow the terms provided at purchase unless otherwise stated."),
-        ("Support", f"If you need help with access or batch processing, contact {auth_service.support_email()}."),
+        ("Billing", "Launch billing and license fulfillment are handled through Gumroad. Refunds, taxes, and billing disputes follow the purchase terms shown at checkout unless otherwise stated there."),
+        ("Service Limits", "The launch configuration runs as a single-app process with temporary batch retention and reasonable abuse limits. Excessive or automated use may be blocked to protect service availability."),
+        ("Support", f"If you need help with access, exports, or billing follow-up, contact {support_email}."),
     ]
-    return render_template("legal.html", title="Terms of Service", intro="These launch terms govern access to CardWorks.", sections=sections)
+    return render_template("legal.html", title="Terms of Service", intro=f"These launch terms govern access to {app_name} operated by {legal_entity}.", sections=sections)
 
 
 @app.get("/batches/<job_id>")
