@@ -8,6 +8,7 @@ This repo distinguishes between two states:
 ## Important rule
 
 `scripts/preflight_check.py` and `GET /readiness` are intended to pass **only** against a real deployment configuration.
+The checked-in `.env.production.example` must never contain valid secrets, live product IDs, or real support/legal/customer-facing business data.
 
 Expected outcomes:
 
@@ -50,3 +51,13 @@ python3 scripts/package_release.py --label prelaunch
 ```
 
 After that, collect the remaining external launch evidence under `qa/reports/launch-evidence/`.
+
+## Separate launch controls beyond preflight
+
+Preflight validates config shape and readiness rules. It does **not** prove that secrets were never committed or exposed.
+
+Before launch, also:
+
+- run your secret-exposure review for the repository and git history
+- confirm the deployed runtime still returns the expected security headers
+- confirm request throttling is active on the protected public endpoints in production

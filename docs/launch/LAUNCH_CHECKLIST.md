@@ -7,6 +7,7 @@ Read [CONFIG_REFERENCE.md](/Users/seankeller/Documents/eBay Photos/docs/launch/C
 ## 1. Production config
 
 - Copy `.env.production.example` to `.env` on the server.
+- Never commit valid secrets, live product IDs, or real support/legal data to `.env.production.example`.
 - Replace every `REPLACE_IN_DEPLOYMENT_*` value before running preflight.
 - Set a real `PHOTO_PREP_APP_SECRET`.
 - Set `APP_BASE_URL` to the public HTTPS origin.
@@ -38,8 +39,10 @@ Read [CONFIG_REFERENCE.md](/Users/seankeller/Documents/eBay Photos/docs/launch/C
 
 - Treat a failing local preflight as normal if your local `.env` is still in demo/dev mode.
 - Run `python3 scripts/preflight_check.py` on the production server and require `"ok": true`.
+- Run your repo/history secret-exposure check before launch; preflight does not replace secret hygiene review.
 - Verify `GET /healthz` returns `{"ok":true}`.
 - Verify `GET /readiness` returns `"ok": true` and review any warnings.
+- Verify the deployed app still serves the expected security headers and that request throttling is active on the protected public endpoints.
 - Execute the buyer flow in `docs/launch/SMOKE_TEST.md`.
 - Run `python3 scripts/backup_db.py --label prelaunch` and confirm the backup file exists.
 - Build the release archive with `python3 scripts/package_release.py --label prelaunch`.

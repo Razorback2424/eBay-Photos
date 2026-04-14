@@ -54,6 +54,7 @@ cp .env.production.example .env
 
 Important:
 - `.env.production.example` is intentionally non-live and should fail readiness until edited.
+- `.env.production.example` must never contain valid secrets, live product IDs, or real support/legal business data.
 - A local demo/dev `.env` is expected to fail launch readiness.
 - Use [docs/launch/CONFIG_REFERENCE.md](/Users/seankeller/Documents/eBay Photos/docs/launch/CONFIG_REFERENCE.md) as the source of truth for launch-mode config expectations.
 
@@ -161,6 +162,8 @@ MVP recommendation:
 9. Save the latest DB backup path from `python3 scripts/backup_db.py --label prelaunch`
 10. Build a clean release archive with `python3 scripts/package_release.py --label prelaunch`
 11. Use the whitelist archive above instead of zipping the repo root
+12. Run your secret-exposure review before launch; preflight only validates config shape
+13. Verify the live deployment still returns the expected security headers and throttles the protected public endpoints
 
 ## 11. Post-Launch Smoke Test
 

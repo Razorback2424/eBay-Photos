@@ -59,9 +59,12 @@
 
 ## Operator checklist for final sign-off
 - Replace every `REPLACE_IN_DEPLOYMENT_*` value in the production `.env`.
+- Use non-secret dummy values only for config-shape validation outside the real deployment secret store.
 - Run `cd web && npm ci && npm run build` on the deployment candidate and save the log under `qa/reports/launch-evidence/frontend-build/`.
 - Run `python3 scripts/preflight_check.py` against the real production env and require `"ok": true`.
+- Run the project secret-exposure review before launch; do not rely on preflight for secret hygiene.
 - Run `python3 scripts/capture_readiness.py --base-url https://your-domain.com` and save the JSON under `qa/reports/launch-evidence/readiness/`.
+- Confirm the deployed runtime returns the expected security headers and that throttling is observable on the protected public endpoints.
 - Add at least one real 48 MP HEIC batch and notes under `qa/reports/launch-evidence/heic-samples/`.
 - Run the profiling plan and save the trace plus summary under `qa/reports/launch-evidence/profiling/`.
 - Run export validation and save the output under `qa/reports/launch-evidence/export-validation/`.
