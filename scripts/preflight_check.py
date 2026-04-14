@@ -28,11 +28,11 @@ def main():
 
     # Environment / mode
     app_env = (os.environ.get("APP_ENV") or "").strip().lower()
-    add_check("app_env_set", bool(app_env), f"APP_ENV={os.environ.get('APP_ENV','')}")
+    add_check("app_env_set", bool(app_env), f"APP_ENV={os.environ.get('APP_ENV','')} (local/dev configs usually leave this unset)")
     add_check(
         "app_env_production_for_launch",
         (not auth_service.launch_mode_enabled()) or app_env == "production",
-        f"APP_ENV={os.environ.get('APP_ENV','')}",
+        f"APP_ENV={os.environ.get('APP_ENV','')} (launch config must be production)",
     )
     active_auth_mode = auth_service.auth_mode()
     add_check(
@@ -49,17 +49,17 @@ def main():
     add_check(
         "support_email_configured_for_launch",
         (not auth_service.launch_mode_enabled()) or auth_service.support_email_configured(),
-        f"SUPPORT_EMAIL={auth_service.support_email()}",
+        f"SUPPORT_EMAIL={auth_service.support_email()} (launch config requires a real monitored inbox)",
     )
     add_check(
         "legal_entity_configured_for_launch",
         (not auth_service.launch_mode_enabled()) or auth_service.legal_entity_configured(),
-        f"LEGAL_ENTITY_NAME={auth_service.legal_entity_name()}",
+        f"LEGAL_ENTITY_NAME={auth_service.legal_entity_name()} (launch config requires the real business name)",
     )
     add_check(
         "legal_contact_address_configured_for_launch",
         (not auth_service.launch_mode_enabled()) or auth_service.legal_contact_address_configured(),
-        f"LEGAL_CONTACT_ADDRESS={auth_service.legal_contact_address()}",
+        f"LEGAL_CONTACT_ADDRESS={auth_service.legal_contact_address()} (launch config requires a real contact address)",
     )
     add_check("demo_billing_controls_disabled_in_production", (not billing.is_production()) or (not billing.demo_billing_controls_enabled()), f"enabled={billing.demo_billing_controls_enabled()}")
 
@@ -68,12 +68,12 @@ def main():
     add_check(
         "gumroad_launch_ready_if_enabled",
         (active_auth_mode != "gumroad") or gumroad.launch_ready(),
-        "GUMROAD_PRODUCT_PERMALINK or GUMROAD_PRODUCT_ID",
+        "GUMROAD_PRODUCT_PERMALINK or GUMROAD_PRODUCT_ID for the real launch product",
     )
     add_check(
         "gumroad_purchase_link_ready_if_enabled",
         (active_auth_mode != "gumroad") or bool(auth_service.gumroad_product_url()),
-        "GUMROAD_PRODUCT_URL or GUMROAD_PRODUCT_PERMALINK",
+        "GUMROAD_PRODUCT_URL or GUMROAD_PRODUCT_PERMALINK for the buyer-facing purchase link",
     )
     add_check(
         "stripe_checkout_ready_if_required",

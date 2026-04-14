@@ -52,19 +52,25 @@ Create a production `.env`:
 cp .env.production.example .env
 ```
 
+Important:
+- `.env.production.example` is intentionally non-live and should fail readiness until edited.
+- A local demo/dev `.env` is expected to fail launch readiness.
+- Use [docs/launch/CONFIG_REFERENCE.md](/Users/seankeller/Documents/eBay Photos/docs/launch/CONFIG_REFERENCE.md) as the source of truth for launch-mode config expectations.
+
 Set at minimum:
 - `APP_ENV=production`
 - `APP_BASE_URL=https://your-domain.com`
-- `PHOTO_PREP_APP_SECRET=...`
+- `PHOTO_PREP_APP_SECRET=<real random secret>`
 - `LAUNCH_MODE=true`
 - `AUTH_MODE=gumroad`
-- `GUMROAD_PRODUCT_PERMALINK`
-- `GUMROAD_PRODUCT_ID`
-- `GUMROAD_PRODUCT_URL`
-- `SUPPORT_EMAIL`
+- `GUMROAD_PRODUCT_PERMALINK=<real product slug>` or `GUMROAD_PRODUCT_ID=<real product id>`
+- `GUMROAD_PRODUCT_URL=<real product URL>`
+- `SUPPORT_EMAIL=<real monitored inbox>`
+- `LEGAL_ENTITY_NAME=<real business name>`
+- `LEGAL_CONTACT_ADDRESS=<real business contact address>`
 - `FREE_TRIAL_ENABLED=true`
 - `FREE_TRIAL_CARDS_TOTAL=25`
-- `MASTER_USER_EMAILS=your-email@example.com`
+- `MASTER_USER_EMAILS=<owner emails>`
 - `ENABLE_DEMO_BILLING_CONTROLS=false`
 
 If you still maintain a separate Stripe subscription flow in your deployment, configure the Stripe variables as well. For the current Gumroad launch path, do not use the Auth0 block as your minimum production setup.
@@ -80,6 +86,7 @@ python3 scripts/preflight_check.py
 
 This script prints a JSON checklist and exits non-zero if any required launch checks fail.
 Warnings are included for optional-but-recommended monitoring gaps such as missing Sentry or Plausible configuration.
+If you run it against a local demo/dev `.env`, failure is expected and not a launch signal.
 
 After it passes, start the app and verify:
 - `https://your-domain-or-ip/healthz` -> ok
@@ -153,6 +160,7 @@ MVP recommendation:
 8. Confirm `SUPPORT_EMAIL`, `LEGAL_ENTITY_NAME`, and `LEGAL_CONTACT_ADDRESS` are set to real launch values
 9. Save the latest DB backup path from `python3 scripts/backup_db.py --label prelaunch`
 10. Build a clean release archive with `python3 scripts/package_release.py --label prelaunch`
+11. Use the whitelist archive above instead of zipping the repo root
 
 ## 11. Post-Launch Smoke Test
 

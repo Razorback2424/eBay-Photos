@@ -2,6 +2,9 @@
 
 Store launch sign-off artifacts here or in an equivalent private evidence folder.
 
+This folder is intentionally scaffolded even when evidence is still pending.
+Do not mark launch evidence complete until the real production artifacts exist.
+
 Recommended contents:
 
 - `heic-samples/` notes describing the device and capture conditions for each real HEIC batch

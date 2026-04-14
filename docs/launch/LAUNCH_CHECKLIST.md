@@ -2,9 +2,12 @@
 
 Use this checklist for the current Gumroad-gated MVP launch.
 
+Read [CONFIG_REFERENCE.md](/Users/seankeller/Documents/eBay Photos/docs/launch/CONFIG_REFERENCE.md) first. It explains why local `.env` and checked-in examples are expected to fail readiness until real deployment values are supplied.
+
 ## 1. Production config
 
 - Copy `.env.production.example` to `.env` on the server.
+- Replace every `REPLACE_IN_DEPLOYMENT_*` value before running preflight.
 - Set a real `PHOTO_PREP_APP_SECRET`.
 - Set `APP_BASE_URL` to the public HTTPS origin.
 - Set `SUPPORT_EMAIL` to a monitored inbox with an owner and response SLA.
@@ -33,12 +36,14 @@ Use this checklist for the current Gumroad-gated MVP launch.
 
 ## 4. Final verification
 
+- Treat a failing local preflight as normal if your local `.env` is still in demo/dev mode.
 - Run `python3 scripts/preflight_check.py` on the production server and require `"ok": true`.
 - Verify `GET /healthz` returns `{"ok":true}`.
 - Verify `GET /readiness` returns `"ok": true` and review any warnings.
 - Execute the buyer flow in `docs/launch/SMOKE_TEST.md`.
 - Run `python3 scripts/backup_db.py --label prelaunch` and confirm the backup file exists.
 - Build the release archive with `python3 scripts/package_release.py --label prelaunch`.
+- Use the whitelist packager above as the only supported release bundle path; do not zip the repo root manually.
 
 ## 5. Launch-day ops
 
