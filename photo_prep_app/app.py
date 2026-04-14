@@ -6,7 +6,9 @@ import time
 import uuid
 import logging
 import hashlib
+import ipaddress
 from datetime import datetime, timedelta
+from collections import deque
 from queue import Queue
 
 from flask import Flask, Response, abort, redirect, render_template, request, session, url_for
@@ -92,6 +94,11 @@ MAX_PAIRS_PER_BATCH = max(1, int(os.environ.get("MAX_PAIRS_PER_BATCH", "100") or
 LOGGER = logging.getLogger("photo_prep_app")
 if not LOGGER.handlers:
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO").upper())
+THROTTLE_LOCK = threading.Lock()
+THROTTLE_EVENTS = {}
+LOGIN_RATE_LIMIT = (10, 15 * 60)
+STRIPE_WEBHOOK_RATE_LIMIT = (120, 60)
+ENQUEUE_RATE_LIMIT = (20, 5 * 60)
 
 
 def _json_log(event, **fields):
@@ -106,6 +113,73 @@ def _json_log(event, **fields):
         else:
             record[k] = str(v)
     LOGGER.info(json.dumps(record, sort_keys=True))
+
+
+def _client_ip():
+    forwarded = (request.headers.get("X-Forwarded-For") or "").split(",")
+    candidate = (forwarded[0] if forwarded and forwarded[0].strip() else request.remote_addr or "").strip()
+    try:
+        return str(ipaddress.ip_address(candidate))
+    except ValueError:
+        return candidate or "unknown"
+
+
+def _rate_limit_key(scope):
+    if scope == "enqueue":
+        user = _current_user()
+        return (user or {}).get("id") or _client_ip()
+    return _client_ip()
+
+
+def _check_rate_limit(scope, limit, window_seconds):
+    now = time.time()
+    key = f"{scope}:{_rate_limit_key(scope)}"
+    with THROTTLE_LOCK:
+        bucket = THROTTLE_EVENTS.setdefault(key, deque())
+        while bucket and (now - bucket[0]) >= window_seconds:
+            bucket.popleft()
+        if len(bucket) >= limit:
+            retry_after = max(1, int(window_seconds - (now - bucket[0])))
+            return False, retry_after
+        bucket.append(now)
+    return True, None
+
+
+def _rate_limit_response(scope, retry_after, *, message):
+    _json_log("request_throttled", scope=scope, retry_after=retry_after, remote_addr=_client_ip())
+    response = Response(message, status=429, mimetype="text/plain")
+    response.headers["Retry-After"] = str(retry_after)
+    return response
+
+
+def _additional_script_sources():
+    sources = set()
+    plausible_src = (auth_service.plausible_script_src() or "").strip()
+    if plausible_src.startswith("https://") or plausible_src.startswith("http://"):
+        base = plausible_src.split("?", 1)[0]
+        origin_parts = base.split("/", 3)
+        if len(origin_parts) >= 3:
+            sources.add("/".join(origin_parts[:3]))
+    return sorted(sources)
+
+
+def _content_security_policy():
+    script_src = ["'self'", "'unsafe-inline'"] + _additional_script_sources()
+    style_src = ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"]
+    font_src = ["'self'", "data:", "https://fonts.gstatic.com"]
+    img_src = ["'self'", "data:", "blob:"]
+    directives = [
+        "default-src 'self'",
+        "base-uri 'self'",
+        "object-src 'none'",
+        "frame-ancestors 'none'",
+        "form-action 'self'",
+        f"script-src {' '.join(script_src)}",
+        f"style-src {' '.join(style_src)}",
+        f"font-src {' '.join(font_src)}",
+        f"img-src {' '.join(img_src)}",
+    ]
+    return "; ".join(directives)
 
 
 def _init_sentry_if_configured():
@@ -393,12 +467,18 @@ def _ensure_retention_worker():
 
 def _readiness_issues():
     issues = []
+    if auth_service.launch_mode_enabled() and not billing_service.is_production():
+        issues.append("APP_ENV must be set to production before launch.")
     if app.config.get("SECRET_KEY") == "local-dev-secret-change-me":
         issues.append("PHOTO_PREP_APP_SECRET is using the default development value.")
     if billing_service.is_production() and not APP_BASE_URL.lower().startswith("https://"):
         issues.append("APP_BASE_URL must use https in production.")
     if auth_service.launch_mode_enabled() and not auth_service.support_email_configured():
         issues.append("SUPPORT_EMAIL must be set to a real monitored inbox before launch.")
+    if auth_service.launch_mode_enabled() and not auth_service.legal_entity_configured():
+        issues.append("LEGAL_ENTITY_NAME must be set to the real business name before launch.")
+    if auth_service.launch_mode_enabled() and not auth_service.legal_contact_address_configured():
+        issues.append("LEGAL_CONTACT_ADDRESS must be set to a real contact address before launch.")
     if auth_service.auth_mode() == "auth0" and not auth_service.auth0_ready():
         issues.append("Auth0 mode is enabled but AUTH0_* variables are incomplete.")
     if auth_service.auth_mode() == "gumroad" and not gumroad_service.launch_ready():
@@ -479,6 +559,17 @@ def json_body(data):
     return json.dumps(data)
 
 
+@app.after_request
+def apply_security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Content-Security-Policy", _content_security_policy())
+    if billing_service.is_production() and request.is_secure:
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    return response
+
+
 @app.get("/")
 def index():
     return render_template("index.html")
@@ -524,6 +615,10 @@ def batches_page():
 def login():
     error = None
     next_url = request.values.get("next") or url_for("workspace")
+    if request.method == "POST":
+        allowed, retry_after = _check_rate_limit("login", *LOGIN_RATE_LIMIT)
+        if not allowed:
+            return _rate_limit_response("login", retry_after, message="Too many login attempts. Wait a few minutes and try again.")
     if request.method == "POST" and request.form.get("access_email"):
         if not _validate_csrf():
             _json_log("auth_login_csrf_failed", mode="access_email", remote_addr=request.remote_addr)
@@ -717,6 +812,9 @@ def billing_portal():
 
 @app.post("/webhooks/stripe")
 def stripe_webhook():
+    allowed, retry_after = _check_rate_limit("webhooks/stripe", *STRIPE_WEBHOOK_RATE_LIMIT)
+    if not allowed:
+        return _rate_limit_response("webhooks/stripe", retry_after, message="Too many webhook requests. Retry later.")
     payload = request.get_data(cache=False, as_text=False)
     ok, reason = billing_service.verify_stripe_signature(
         payload,
@@ -784,6 +882,9 @@ def enqueue_job():
     user = _current_user()
     if not user:
         return redirect(url_for("login", next=url_for("workspace")))
+    allowed, retry_after = _check_rate_limit("enqueue", *ENQUEUE_RATE_LIMIT)
+    if not allowed:
+        return _rate_limit_response("enqueue", retry_after, message="Too many batch submissions. Wait a few minutes and try again.")
     if not _validate_csrf():
         _json_log("enqueue_csrf_failed", user_id=user.get("id"), email=user.get("email"))
         return _render_workspace(error="Security check failed. Refresh the page and try again."), 400

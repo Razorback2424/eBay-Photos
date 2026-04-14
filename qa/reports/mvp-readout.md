@@ -46,6 +46,8 @@
   - Pending
 - Export validation logs:
   - Pending
+- Frontend clean build log:
+  - Pending
 - Production readiness output:
   - Pending
 - End-to-end smoke test notes:

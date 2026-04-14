@@ -10,6 +10,17 @@ from flask import redirect, request, session, url_for
 
 DEFAULT_SUPPORT_EMAIL = "support@cardworks.app"
 DEFAULT_APP_DISPLAY_NAME = "CardWorks"
+PLACEHOLDER_TOKENS = (
+    "example.com",
+    "example.org",
+    "example.net",
+    "your-",
+    "your ",
+    "replace",
+    "placeholder",
+    "123 main st",
+    "city, st",
+)
 
 
 def auth_state():
@@ -34,9 +45,19 @@ def support_email():
     return (os.environ.get("SUPPORT_EMAIL") or DEFAULT_SUPPORT_EMAIL).strip()
 
 
+def launch_value_configured(value, *, default_values=()):
+    normalized = (value or "").strip()
+    if not normalized:
+        return False
+    lowered = normalized.lower()
+    if lowered in {str(item).strip().lower() for item in default_values if str(item).strip()}:
+        return False
+    return not any(token in lowered for token in PLACEHOLDER_TOKENS)
+
+
 def support_email_configured():
     email = support_email()
-    return bool(email and "@" in email and email != DEFAULT_SUPPORT_EMAIL)
+    return bool("@" in email and launch_value_configured(email, default_values=(DEFAULT_SUPPORT_EMAIL,)))
 
 
 def app_display_name():
@@ -49,6 +70,17 @@ def legal_entity_name():
 
 def legal_contact_address():
     return (os.environ.get("LEGAL_CONTACT_ADDRESS") or "").strip()
+
+
+def legal_entity_configured():
+    return launch_value_configured(
+        legal_entity_name(),
+        default_values=(DEFAULT_APP_DISPLAY_NAME,),
+    )
+
+
+def legal_contact_address_configured():
+    return launch_value_configured(legal_contact_address())
 
 
 def gumroad_product_url():

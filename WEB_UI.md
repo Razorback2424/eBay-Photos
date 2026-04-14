@@ -1,6 +1,16 @@
 # Card Scan Splitter Web UI (Batch + Queue)
 
-Run this once to install the web dependency:
+Use Node `22.16.x` for the web build.
+
+Install and verify from a clean checkout:
+
+```bash
+cd web
+npm ci
+npm run build
+```
+
+Install backend dependencies:
 
 ```bash
 python3 -m pip install -r requirements-web.txt

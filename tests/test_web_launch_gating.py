@@ -12,6 +12,9 @@ app_module = importlib.import_module("photo_prep_app.app")
 
 
 class TestWebLaunchGating(unittest.TestCase):
+    def setUp(self):
+        app_module.THROTTLE_EVENTS.clear()
+
     def test_trial_one_time_limit_blocks_overage(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = os.path.join(tmpdir, "test.db")
@@ -94,7 +97,42 @@ class TestWebLaunchGating(unittest.TestCase):
                 app_module.app.config["SECRET_KEY"] = old_secret
 
         self.assertTrue(any("SUPPORT_EMAIL" in item for item in issues))
+        self.assertTrue(any("LEGAL_ENTITY_NAME" in item for item in issues))
+        self.assertTrue(any("LEGAL_CONTACT_ADDRESS" in item for item in issues))
         self.assertTrue(any("purchase link" in item for item in issues))
+
+    def test_readiness_requires_production_app_env_for_launch(self):
+        old_secret = app_module.app.config.get("SECRET_KEY")
+        app_module.app.config["SECRET_KEY"] = "not-default"
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir, mock.patch.object(
+                app_module, "RUNS_ROOT", tmpdir
+            ), mock.patch.object(
+                app_module, "DB_PATH", os.path.join(tmpdir, "test.db")
+            ), mock.patch.object(
+                app_module, "APP_BASE_URL", "https://cardworks.example.com"
+            ), mock.patch.object(
+                app_module.shutil, "which", return_value="/usr/bin/tesseract"
+            ), mock.patch.dict(
+                os.environ,
+                {
+                    "APP_ENV": "development",
+                    "AUTH_MODE": "gumroad",
+                    "LAUNCH_MODE": "true",
+                    "SUPPORT_EMAIL": "help@cardworks.app",
+                    "LEGAL_ENTITY_NAME": "CardWorks LLC",
+                    "LEGAL_CONTACT_ADDRESS": "42 Launch Ave, Denver, CO 80202, USA",
+                    "GUMROAD_PRODUCT_PERMALINK": "cardworks-live",
+                    "GUMROAD_PRODUCT_URL": "https://gumroad.com/l/cardworks-live",
+                },
+                clear=False,
+            ):
+                models.init_db(app_module.DB_PATH)
+                issues = app_module._readiness_issues()
+        finally:
+            app_module.app.config["SECRET_KEY"] = old_secret
+
+        self.assertTrue(any("APP_ENV must be set to production" in item for item in issues))
 
     def test_readiness_endpoint_includes_warnings(self):
         client = app.test_client()
@@ -113,7 +151,9 @@ class TestWebLaunchGating(unittest.TestCase):
                     "APP_ENV": "production",
                     "AUTH_MODE": "gumroad",
                     "LAUNCH_MODE": "true",
-                    "SUPPORT_EMAIL": "help@example.com",
+                    "SUPPORT_EMAIL": "help@cardworks.app",
+                    "LEGAL_ENTITY_NAME": "CardWorks LLC",
+                    "LEGAL_CONTACT_ADDRESS": "42 Launch Ave, Denver, CO 80202, USA",
                     "GUMROAD_PRODUCT_PERMALINK": "cardworks-live",
                     "GUMROAD_PRODUCT_URL": "https://gumroad.com/l/cardworks-live",
                     "SENTRY_DSN": "",

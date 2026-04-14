@@ -11,6 +11,9 @@ models = importlib.import_module("photo_prep_app.models")
 
 
 class TestWebRouteSecurity(unittest.TestCase):
+    def setUp(self):
+        app_module.THROTTLE_EVENTS.clear()
+
     def _login_session(self, client, user_id="u1", email="u1@example.com"):
         with client.session_transaction() as sess:
             sess["auth_user"] = {"id": user_id, "email": email, "provider": "demo"}
@@ -200,6 +203,68 @@ class TestWebRouteSecurity(unittest.TestCase):
         self.assertNotIn(b"Local Testing Controls", resp.data)
         self.assertNotIn(b"Admin / Launch Setup", resp.data)
         self.assertNotIn(b"Demo/Unconfigured", resp.data)
+
+    def test_security_headers_present_on_html_and_json(self):
+        client = app_module.app.test_client()
+        html_resp = client.get("/")
+        json_resp = client.get("/healthz")
+
+        for resp in (html_resp, json_resp):
+            self.assertEqual(resp.headers["X-Content-Type-Options"], "nosniff")
+            self.assertEqual(resp.headers["X-Frame-Options"], "DENY")
+            self.assertEqual(resp.headers["Referrer-Policy"], "strict-origin-when-cross-origin")
+            self.assertIn("default-src 'self'", resp.headers["Content-Security-Policy"])
+            self.assertIn("frame-ancestors 'none'", resp.headers["Content-Security-Policy"])
+
+    def test_login_rate_limit_returns_429(self):
+        client = app_module.app.test_client()
+        with mock.patch.object(app_module, "LOGIN_RATE_LIMIT", (1, 900)), mock.patch.dict(
+            os.environ,
+            {
+                "AUTH_MODE": "gumroad",
+                "LAUNCH_MODE": "true",
+            },
+            clear=False,
+        ), mock.patch.object(
+            app_module.gumroad_service,
+            "verify_license",
+            return_value=(False, "That license key was not accepted. Check the receipt and try again."),
+        ):
+            get_resp = client.get("/login")
+            self.assertEqual(get_resp.status_code, 200)
+            with client.session_transaction() as sess:
+                csrf_token = sess["csrf_token"]
+            first = client.post(
+                "/login",
+                data={"email": "buyer@example.com", "license_key": "bad-key", "csrf_token": csrf_token, "next": "/workspace"},
+            )
+            second = client.post(
+                "/login",
+                data={"email": "buyer@example.com", "license_key": "bad-key", "csrf_token": csrf_token, "next": "/workspace"},
+            )
+        self.assertEqual(first.status_code, 400)
+        self.assertEqual(second.status_code, 429)
+        self.assertIn(b"Too many login attempts", second.data)
+
+    def test_webhook_rate_limit_returns_429(self):
+        client = app_module.app.test_client()
+        payload = b'{"id":"evt_1","type":"checkout.session.completed","data":{"object":{"mode":"subscription"}}}'
+        with mock.patch.object(app_module, "STRIPE_WEBHOOK_RATE_LIMIT", (1, 60)):
+            first = client.post("/webhooks/stripe", data=payload, headers={"Content-Type": "application/json"})
+            second = client.post("/webhooks/stripe", data=payload, headers={"Content-Type": "application/json"})
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 429)
+        self.assertIn(b"Too many webhook requests", second.data)
+
+    def test_enqueue_rate_limit_returns_429(self):
+        client = app_module.app.test_client()
+        self._login_session(client, user_id="u1")
+        with mock.patch.object(app_module, "ENQUEUE_RATE_LIMIT", (1, 300)):
+            first = client.post("/enqueue", data={})
+            second = client.post("/enqueue", data={})
+        self.assertEqual(first.status_code, 400)
+        self.assertEqual(second.status_code, 429)
+        self.assertIn(b"Too many batch submissions", second.data)
 
 
 if __name__ == "__main__":

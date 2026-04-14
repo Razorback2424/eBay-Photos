@@ -2,6 +2,10 @@
 /Uncertain_mr_luccer_Mane_Prada_AON_1
 /_Processed_Scans
 .DS_Store
+.playwright-cli/
+.playwright-fixtures/
+__MACOSX/
+dist-release/
 .env
 .env.*
 !.env.example

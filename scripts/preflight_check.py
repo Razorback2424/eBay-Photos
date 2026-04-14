@@ -27,7 +27,13 @@ def main():
         warnings.append({"name": name, "details": details})
 
     # Environment / mode
-    add_check("app_env_set", bool(os.environ.get("APP_ENV")), f"APP_ENV={os.environ.get('APP_ENV','')}")
+    app_env = (os.environ.get("APP_ENV") or "").strip().lower()
+    add_check("app_env_set", bool(app_env), f"APP_ENV={os.environ.get('APP_ENV','')}")
+    add_check(
+        "app_env_production_for_launch",
+        (not auth_service.launch_mode_enabled()) or app_env == "production",
+        f"APP_ENV={os.environ.get('APP_ENV','')}",
+    )
     active_auth_mode = auth_service.auth_mode()
     add_check(
         "auth_mode",
@@ -44,6 +50,16 @@ def main():
         "support_email_configured_for_launch",
         (not auth_service.launch_mode_enabled()) or auth_service.support_email_configured(),
         f"SUPPORT_EMAIL={auth_service.support_email()}",
+    )
+    add_check(
+        "legal_entity_configured_for_launch",
+        (not auth_service.launch_mode_enabled()) or auth_service.legal_entity_configured(),
+        f"LEGAL_ENTITY_NAME={auth_service.legal_entity_name()}",
+    )
+    add_check(
+        "legal_contact_address_configured_for_launch",
+        (not auth_service.launch_mode_enabled()) or auth_service.legal_contact_address_configured(),
+        f"LEGAL_CONTACT_ADDRESS={auth_service.legal_contact_address()}",
     )
     add_check("demo_billing_controls_disabled_in_production", (not billing.is_production()) or (not billing.demo_billing_controls_enabled()), f"enabled={billing.demo_billing_controls_enabled()}")
 

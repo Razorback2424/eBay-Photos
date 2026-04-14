@@ -35,6 +35,15 @@ pip install --upgrade pip
 pip install -r requirements-web.txt
 ```
 
+For the browser frontend, use Node `22.16.x` and verify a clean build:
+
+```bash
+cd web
+npm ci
+npm run build
+cd ..
+```
+
 ## 3. Environment Config
 
 Create a production `.env`:
@@ -75,6 +84,12 @@ Warnings are included for optional-but-recommended monitoring gaps such as missi
 After it passes, start the app and verify:
 - `https://your-domain-or-ip/healthz` -> ok
 - `https://your-domain-or-ip/readiness` -> no issues before go-live
+
+Archive the readiness payload:
+
+```bash
+python3 scripts/capture_readiness.py --base-url https://your-domain.com
+```
 
 ## 5. Run with Gunicorn (single worker)
 
@@ -137,6 +152,7 @@ MVP recommendation:
 7. Confirm Gunicorn is starting with `-c gunicorn.conf.py` and still running one worker
 8. Confirm `SUPPORT_EMAIL`, `LEGAL_ENTITY_NAME`, and `LEGAL_CONTACT_ADDRESS` are set to real launch values
 9. Save the latest DB backup path from `python3 scripts/backup_db.py --label prelaunch`
+10. Build a clean release archive with `python3 scripts/package_release.py --label prelaunch`
 
 ## 11. Post-Launch Smoke Test
 

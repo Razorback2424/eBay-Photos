@@ -27,6 +27,8 @@ Use this checklist for the current Gumroad-gated MVP launch.
 - Add at least one real 48 MP HEIC batch under `qa/assets/heic/`.
 - Run the Chromium profiling flow from `qa/checks/worker_profile_plan.md`.
 - Run `qa/checks/export_validation.py` against both directory and ZIP exports.
+- Save a production `/readiness` artifact with `python3 scripts/capture_readiness.py --base-url https://your-domain.com`.
+- Save one clean web build log using `cd web && npm ci && npm run build`.
 - Attach the HEIC sample source, trace files, and export-validation output to `qa/reports/mvp-readout.md`.
 
 ## 4. Final verification
@@ -36,6 +38,7 @@ Use this checklist for the current Gumroad-gated MVP launch.
 - Verify `GET /readiness` returns `"ok": true` and review any warnings.
 - Execute the buyer flow in `docs/launch/SMOKE_TEST.md`.
 - Run `python3 scripts/backup_db.py --label prelaunch` and confirm the backup file exists.
+- Build the release archive with `python3 scripts/package_release.py --label prelaunch`.
 
 ## 5. Launch-day ops
 
