@@ -5,6 +5,8 @@ This repo distinguishes between two states:
 - **Repo prepared for launch**: code, docs, packaging, and checks are ready for operators to use.
 - **Deployment ready to launch**: a real production environment has been configured and passes readiness checks.
 
+Canonical go/no-go criteria live in [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/launch_readiness.md). This file only defines configuration expectations for the intended launch path.
+
 ## Important rule
 
 `scripts/preflight_check.py` and `GET /readiness` are intended to pass **only** against a real deployment configuration.
@@ -28,11 +30,22 @@ Expected outcomes:
 - `LAUNCH_MODE=true`
 - `GUMROAD_PRODUCT_URL` or `GUMROAD_PRODUCT_PERMALINK` points to the real launch product
 
+These are the required config-side launch blockers for the current public launch path:
+
+- `APP_ENV`
+- `APP_BASE_URL`
+- `PHOTO_PREP_APP_SECRET`
+- `SUPPORT_EMAIL`
+- `LEGAL_ENTITY_NAME`
+- `LEGAL_CONTACT_ADDRESS`
+- Gumroad values required for the intended v1 launch path
+
 ## Warnings vs failures
 
 - Missing `SENTRY_DSN` and `PLAUSIBLE_DOMAIN` produce warnings, not hard launch failures.
 - Stripe settings are not launch blockers when `AUTH_MODE=gumroad`.
 - Auth0 settings are not launch blockers unless `AUTH_MODE=auth0`.
+- Alternate payment or auth paths are out of scope for the v1 launch gate unless explicitly promoted in writing.
 
 ## Recommended proof sequence on the production deployment
 
@@ -50,7 +63,7 @@ python3 scripts/capture_readiness.py --base-url https://your-domain.com
 python3 scripts/package_release.py --label prelaunch
 ```
 
-After that, collect the remaining external launch evidence under `qa/reports/launch-evidence/`.
+After that, collect the remaining external launch evidence under the required artifact groups described in [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/launch_readiness.md).
 
 ## Separate launch controls beyond preflight
 

@@ -12,10 +12,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 INCLUDE_PATHS = (
     ".env.example",
     ".env.production.example",
+    "AGENTS.md",
     "DEPLOY_BLUEHOST_VPS.md",
     "WEB_UI.md",
     "app.py",
     "gunicorn.conf.py",
+    "launch_readiness.md",
     "requirements-web.txt",
     "web_app.py",
     "wsgi.py",
@@ -43,6 +45,11 @@ EXCLUDE_FILE_NAMES = {
 EXCLUDE_SUFFIXES = {
     ".pyc",
 }
+EXCLUDE_RELATIVE_DIR_PREFIXES = (
+    Path("qa/reports/launch-evidence/heic-samples"),
+    Path("qa/reports/launch-evidence/profiling"),
+    Path("qa/reports/launch-evidence/smoke-test"),
+)
 
 
 def iter_release_files():
@@ -56,7 +63,10 @@ def iter_release_files():
         for child in path.rglob("*"):
             if not child.is_file():
                 continue
-            if any(part in EXCLUDE_DIR_NAMES for part in child.relative_to(PROJECT_ROOT).parts):
+            relative = child.relative_to(PROJECT_ROOT)
+            if any(part in EXCLUDE_DIR_NAMES for part in relative.parts):
+                continue
+            if any(relative.is_relative_to(prefix) for prefix in EXCLUDE_RELATIVE_DIR_PREFIXES):
                 continue
             if child.name in EXCLUDE_FILE_NAMES or child.suffix in EXCLUDE_SUFFIXES:
                 continue

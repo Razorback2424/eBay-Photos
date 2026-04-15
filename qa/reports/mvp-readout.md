@@ -2,7 +2,7 @@
 
 ## Current status
 - **Repo/documentation status:** launch prep hardening is in place for config validation, release packaging, and evidence collection scaffolding.
-- **Launch evidence status:** still blocked on external artifacts that must be collected from real HEIC samples and a real production deployment.
+- **Launch evidence status:** still blocked on the Must-Pass launch evidence and real deployment values defined in [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/launch_readiness.md).
 
 ## Asset coverage
 - **JPEG batches** generated via `qa/assets/generate_test_images.py` provide deterministic
@@ -42,6 +42,8 @@
    sign-off. Document frame stability and worker throughput in this report.
 3. **ZIP parity validation** – once exports are produced, archive the validation output
    (pass/fail logs) alongside traces for traceability.
+4. **Real production config values** – launch remains blocked until the actual Gumroad-path
+   production config, legal/support values, and readiness output are supplied outside the repo.
 
 ## Launch evidence checklist
 - HEIC sample notes:
@@ -57,6 +59,14 @@
 - End-to-end smoke test notes:
   - Pending
 
+Required artifact locations:
+
+- `qa/reports/launch-evidence/heic/`
+- `qa/reports/launch-evidence/performance/`
+- `qa/reports/launch-evidence/export-validation/`
+- `qa/reports/launch-evidence/readiness/`
+- `qa/reports/launch-evidence/smoke-tests/`
+
 ## Operator checklist for final sign-off
 - Replace every `REPLACE_IN_DEPLOYMENT_*` value in the production `.env`.
 - Use non-secret dummy values only for config-shape validation outside the real deployment secret store.
@@ -65,9 +75,9 @@
 - Run the project secret-exposure review before launch; do not rely on preflight for secret hygiene.
 - Run `python3 scripts/capture_readiness.py --base-url https://your-domain.com` and save the JSON under `qa/reports/launch-evidence/readiness/`.
 - Confirm the deployed runtime returns the expected security headers and that throttling is observable on the protected public endpoints.
-- Add at least one real 48 MP HEIC batch and notes under `qa/reports/launch-evidence/heic-samples/`.
-- Run the profiling plan and save the trace plus summary under `qa/reports/launch-evidence/profiling/`.
+- Add at least one real 48 MP HEIC batch and notes under `qa/reports/launch-evidence/heic/`.
+- Run the profiling plan and save the trace plus summary under `qa/reports/launch-evidence/performance/`.
 - Run export validation and save the output under `qa/reports/launch-evidence/export-validation/`.
-- Run the buyer smoke test and save notes/screenshots under `qa/reports/launch-evidence/smoke-test/`.
+- Run the buyer smoke test and save notes/screenshots under `qa/reports/launch-evidence/smoke-tests/`.
 
-Release remains gated until the above items are completed and real evidence is attached to this readout.
+Release remains gated until the Must-Pass Launch Gate in [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/launch_readiness.md) is satisfied and real evidence is attached to this readout.

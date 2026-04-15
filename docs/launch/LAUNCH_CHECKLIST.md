@@ -2,7 +2,7 @@
 
 Use this checklist for the current Gumroad-gated MVP launch.
 
-Read [CONFIG_REFERENCE.md](/Users/seankeller/Documents/eBay Photos/docs/launch/CONFIG_REFERENCE.md) first. It explains why local `.env` and checked-in examples are expected to fail readiness until real deployment values are supplied.
+Read [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/launch_readiness.md) first for the canonical launch gate, then [CONFIG_REFERENCE.md](/Users/seankeller/Documents/eBay Photos/docs/launch/CONFIG_REFERENCE.md) for concrete config rules. Local `.env` and checked-in examples are expected to fail readiness until real deployment values are supplied.
 
 ## 1. Production config
 
@@ -28,12 +28,13 @@ Read [CONFIG_REFERENCE.md](/Users/seankeller/Documents/eBay Photos/docs/launch/C
 
 ## 3. Launch evidence
 
-- Add at least one real 48 MP HEIC batch under `qa/assets/heic/`.
-- Run the Chromium profiling flow from `qa/checks/worker_profile_plan.md`.
-- Run `qa/checks/export_validation.py` against both directory and ZIP exports.
-- Save a production `/readiness` artifact with `python3 scripts/capture_readiness.py --base-url https://your-domain.com`.
-- Save one clean web build log using `cd web && npm ci && npm run build`.
-- Attach the HEIC sample source, trace files, and export-validation output to `qa/reports/mvp-readout.md`.
+- Add real HEIC validation evidence for the supported launch scenarios under `qa/reports/launch-evidence/heic/`.
+- Run the Chromium profiling flow from `qa/checks/worker_profile_plan.md` and save artifacts under `qa/reports/launch-evidence/performance/`.
+- Run `qa/checks/export_validation.py` against both directory and ZIP exports and save the results under `qa/reports/launch-evidence/export-validation/`.
+- Save production `/readiness` evidence with `python3 scripts/capture_readiness.py --base-url https://your-domain.com` under `qa/reports/launch-evidence/readiness/`.
+- Execute the buyer smoke test from `docs/launch/SMOKE_TEST.md` and store notes/screenshots under `qa/reports/launch-evidence/smoke-tests/`.
+- Save one clean web build log using `cd web && npm ci && npm run build` under `qa/reports/launch-evidence/frontend-build/`.
+- Update `qa/reports/mvp-readout.md` with the status of each must-pass evidence item.
 
 ## 4. Final verification
 
@@ -43,10 +44,10 @@ Read [CONFIG_REFERENCE.md](/Users/seankeller/Documents/eBay Photos/docs/launch/C
 - Verify `GET /healthz` returns `{"ok":true}`.
 - Verify `GET /readiness` returns `"ok": true` and review any warnings.
 - Verify the deployed app still serves the expected security headers and that request throttling is active on the protected public endpoints.
-- Execute the buyer flow in `docs/launch/SMOKE_TEST.md`.
 - Run `python3 scripts/backup_db.py --label prelaunch` and confirm the backup file exists.
 - Build the release archive with `python3 scripts/package_release.py --label prelaunch`.
 - Use the whitelist packager above as the only supported release bundle path; do not zip the repo root manually.
+- Confirm every Must-Pass Launch Gate item in [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/launch_readiness.md) is either passed, explicitly waived in writing, or intentionally moved post-launch in writing.
 
 ## 5. Launch-day ops
 

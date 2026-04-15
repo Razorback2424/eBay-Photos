@@ -256,6 +256,14 @@ class TestWebRouteSecurity(unittest.TestCase):
         self.assertEqual(second.status_code, 429)
         self.assertIn(b"Too many webhook requests", second.data)
 
+    def test_webhook_uses_runtime_secret_from_environment(self):
+        client = app_module.app.test_client()
+        payload = b'{"id":"evt_secret","type":"checkout.session.completed","data":{"object":{"mode":"subscription"}}}'
+        with mock.patch.dict(os.environ, {"APP_ENV": "production", "STRIPE_WEBHOOK_SECRET": ""}, clear=False):
+            resp = client.post("/webhooks/stripe", data=payload, headers={"Content-Type": "application/json"})
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn(b"webhook-secret-required-in-production", resp.data)
+
     def test_enqueue_rate_limit_returns_429(self):
         client = app_module.app.test_client()
         self._login_session(client, user_id="u1")

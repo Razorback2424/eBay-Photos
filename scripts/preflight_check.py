@@ -43,8 +43,8 @@ def main():
     add_check("secret_key_not_default", app_module.app.config.get("SECRET_KEY") != "local-dev-secret-change-me", "PHOTO_PREP_APP_SECRET must be non-default")
     add_check(
         "app_base_url_https_in_production",
-        (not billing.is_production()) or str(getattr(app_module, "APP_BASE_URL", "")).lower().startswith("https://"),
-        f"APP_BASE_URL={getattr(app_module, 'APP_BASE_URL', '')}",
+        (not billing.is_production()) or str(app_module.current_app_base_url()).lower().startswith("https://"),
+        f"APP_BASE_URL={app_module.current_app_base_url()}",
     )
     add_check(
         "support_email_configured_for_launch",

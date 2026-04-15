@@ -33,7 +33,7 @@ class TestStripeWebhookAudit(unittest.TestCase):
                 "data": {"object": {"mode": "subscription"}},
             }
             payload = json.dumps(event).encode("utf-8")
-            with mock.patch.object(app_module, "DB_PATH", db_path), mock.patch.object(app_module, "STRIPE_WEBHOOK_SECRET", ""):
+            with mock.patch.object(app_module, "DB_PATH", db_path), mock.patch.dict(os.environ, {"STRIPE_WEBHOOK_SECRET": ""}, clear=False):
                 r1 = client.post("/webhooks/stripe", data=payload, headers={"Content-Type": "application/json"})
                 self.assertEqual(r1.status_code, 200)
                 self.assertIn(b'"received":true', r1.data)
@@ -56,7 +56,7 @@ class TestStripeWebhookAudit(unittest.TestCase):
             }
             payload = json.dumps(event).encode("utf-8")
             expected_hash = hashlib.sha256(payload).hexdigest()
-            with mock.patch.object(app_module, "DB_PATH", db_path), mock.patch.object(app_module, "STRIPE_WEBHOOK_SECRET", ""):
+            with mock.patch.object(app_module, "DB_PATH", db_path), mock.patch.dict(os.environ, {"STRIPE_WEBHOOK_SECRET": ""}, clear=False):
                 r = client.post("/webhooks/stripe", data=payload, headers={"Content-Type": "application/json"})
                 self.assertEqual(r.status_code, 200)
 

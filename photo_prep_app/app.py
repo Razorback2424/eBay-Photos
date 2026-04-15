@@ -51,7 +51,7 @@ def _load_dotenv_fallback(dotenv_path):
                 value = value.strip()
                 if len(value) >= 2 and ((value[0] == value[-1]) and value[0] in {"'", '"'}):
                     value = value[1:-1]
-                os.environ[key] = value
+                os.environ.setdefault(key, value)
     except Exception:
         # Fallback parsing should never block app startup.
         return
@@ -73,7 +73,7 @@ PKG_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(PKG_DIR)
 dotenv_path = os.path.join(PROJECT_DIR, ".env")
 if load_dotenv:
-    load_dotenv(dotenv_path, override=True)
+    load_dotenv(dotenv_path, override=False)
 else:
     _load_dotenv_fallback(dotenv_path)
 
@@ -88,8 +88,6 @@ MAX_JOBS_IN_MEMORY = 100
 EXPECTED_JPGS_PER_CARD = 10
 RETENTION_HOURS = 24
 RETENTION_SWEEP_SECONDS = 300
-STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
-APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://127.0.0.1:5000")
 MAX_PAIRS_PER_BATCH = max(1, int(os.environ.get("MAX_PAIRS_PER_BATCH", "100") or "100"))
 LOGGER = logging.getLogger("photo_prep_app")
 if not LOGGER.handlers:
@@ -99,6 +97,14 @@ THROTTLE_EVENTS = {}
 LOGIN_RATE_LIMIT = (10, 15 * 60)
 STRIPE_WEBHOOK_RATE_LIMIT = (120, 60)
 ENQUEUE_RATE_LIMIT = (20, 5 * 60)
+
+
+def current_app_base_url():
+    return (os.environ.get("APP_BASE_URL") or "http://127.0.0.1:5000").strip()
+
+
+def current_stripe_webhook_secret():
+    return (os.environ.get("STRIPE_WEBHOOK_SECRET") or "").strip()
 
 
 def _json_log(event, **fields):
@@ -471,7 +477,7 @@ def _readiness_issues():
         issues.append("APP_ENV must be set to production before launch.")
     if app.config.get("SECRET_KEY") == "local-dev-secret-change-me":
         issues.append("PHOTO_PREP_APP_SECRET is using the default development value.")
-    if billing_service.is_production() and not APP_BASE_URL.lower().startswith("https://"):
+    if billing_service.is_production() and not current_app_base_url().lower().startswith("https://"):
         issues.append("APP_BASE_URL must use https in production.")
     if auth_service.launch_mode_enabled() and not auth_service.support_email_configured():
         issues.append("SUPPORT_EMAIL must be set to a real monitored inbox before launch.")
@@ -486,7 +492,7 @@ def _readiness_issues():
     if auth_service.auth_mode() == "gumroad" and not auth_service.gumroad_product_url():
         issues.append("Gumroad launch mode needs GUMROAD_PRODUCT_URL or GUMROAD_PRODUCT_PERMALINK so buyers have a purchase link.")
     if auth_service.auth_mode() != "gumroad":
-        if not STRIPE_WEBHOOK_SECRET:
+        if not current_stripe_webhook_secret():
             issues.append("STRIPE_WEBHOOK_SECRET is not configured.")
         if not billing_service.stripe_checkout_ready():
             issues.append("Stripe Checkout is not configured (STRIPE_SECRET_KEY / STRIPE_PRICE_ID / APP_BASE_URL).")
@@ -730,7 +736,7 @@ def logout():
     _json_log("auth_logout", user_id=((auth.get("user") or {}).get("id")), email=((auth.get("user") or {}).get("email")))
     auth_service.sign_out()
     if auth.get("mode") == "auth0" and auth_service.auth0_ready():
-        return redirect(auth_service.auth0_logout_url(APP_BASE_URL.rstrip("/") + url_for("workspace")))
+        return redirect(auth_service.auth0_logout_url(current_app_base_url().rstrip("/") + url_for("workspace")))
     return redirect(url_for("workspace"))
 
 
@@ -819,7 +825,7 @@ def stripe_webhook():
     ok, reason = billing_service.verify_stripe_signature(
         payload,
         request.headers.get("Stripe-Signature"),
-        STRIPE_WEBHOOK_SECRET,
+        current_stripe_webhook_secret(),
     )
     if not ok:
         _json_log("stripe_webhook_rejected", reason=reason)

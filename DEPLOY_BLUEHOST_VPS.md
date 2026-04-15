@@ -2,6 +2,8 @@
 
 This app can run on a Bluehost VPS for a paid MVP if you keep the runtime to a **single app process**.
 
+Use [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/launch_readiness.md) as the canonical launch gate. This document explains one supported deployment path and does not redefine what blocks launch.
+
 ## Important MVP Constraint
 
 - Run **one Gunicorn worker only**.
@@ -164,6 +166,7 @@ MVP recommendation:
 11. Use the whitelist archive above instead of zipping the repo root
 12. Run your secret-exposure review before launch; preflight only validates config shape
 13. Verify the live deployment still returns the expected security headers and throttles the protected public endpoints
+14. Confirm the remaining blockers, if any, are only those allowed by [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/launch_readiness.md)
 
 ## 11. Post-Launch Smoke Test
 
@@ -173,4 +176,5 @@ MVP recommendation:
 4. Complete a Gumroad purchase with the real product link
 5. Confirm the buyer can enter the purchase email + license key at `/login`
 6. Confirm paid processing still works
-7. Save `/readiness` output and archive smoke-test evidence under `qa/reports/launch-evidence/`
+7. Save `/readiness` output under `qa/reports/launch-evidence/readiness/`
+8. Archive smoke-test evidence under `qa/reports/launch-evidence/smoke-tests/`

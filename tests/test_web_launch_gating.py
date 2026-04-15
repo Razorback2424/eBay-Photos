@@ -76,8 +76,6 @@ class TestWebLaunchGating(unittest.TestCase):
             app_module.app.config["SECRET_KEY"] = "not-default"
             try:
                 with mock.patch.object(app_module, "DB_PATH", db_path), mock.patch.object(app_module, "RUNS_ROOT", tmpdir), mock.patch.object(
-                    app_module, "APP_BASE_URL", "https://cardworks.example.com"
-                ), mock.patch.object(
                     app_module.shutil, "which", return_value="/usr/bin/tesseract"
                 ), mock.patch.dict(
                     os.environ,
@@ -85,6 +83,7 @@ class TestWebLaunchGating(unittest.TestCase):
                         "APP_ENV": "production",
                         "AUTH_MODE": "gumroad",
                         "LAUNCH_MODE": "true",
+                        "APP_BASE_URL": "https://cardworks.example.com",
                         "SUPPORT_EMAIL": "support@cardworks.app",
                         "GUMROAD_PRODUCT_ID": "prod_123",
                         "GUMROAD_PRODUCT_URL": "",
@@ -110,8 +109,6 @@ class TestWebLaunchGating(unittest.TestCase):
             ), mock.patch.object(
                 app_module, "DB_PATH", os.path.join(tmpdir, "test.db")
             ), mock.patch.object(
-                app_module, "APP_BASE_URL", "https://cardworks.example.com"
-            ), mock.patch.object(
                 app_module.shutil, "which", return_value="/usr/bin/tesseract"
             ), mock.patch.dict(
                 os.environ,
@@ -119,6 +116,7 @@ class TestWebLaunchGating(unittest.TestCase):
                     "APP_ENV": "development",
                     "AUTH_MODE": "gumroad",
                     "LAUNCH_MODE": "true",
+                    "APP_BASE_URL": "https://cardworks.example.com",
                     "SUPPORT_EMAIL": "help@cardworks.app",
                     "LEGAL_ENTITY_NAME": "CardWorks LLC",
                     "LEGAL_CONTACT_ADDRESS": "42 Launch Ave, Denver, CO 80202, USA",
@@ -142,8 +140,6 @@ class TestWebLaunchGating(unittest.TestCase):
             with tempfile.TemporaryDirectory() as tmpdir, mock.patch.object(app_module, "RUNS_ROOT", tmpdir), mock.patch.object(
                 app_module, "DB_PATH", os.path.join(tmpdir, "test.db")
             ), mock.patch.object(
-                app_module, "APP_BASE_URL", "https://cardworks.example.com"
-            ), mock.patch.object(
                 app_module.shutil, "which", return_value="/usr/bin/tesseract"
             ), mock.patch.dict(
                 os.environ,
@@ -151,6 +147,7 @@ class TestWebLaunchGating(unittest.TestCase):
                     "APP_ENV": "production",
                     "AUTH_MODE": "gumroad",
                     "LAUNCH_MODE": "true",
+                    "APP_BASE_URL": "https://cardworks.example.com",
                     "SUPPORT_EMAIL": "help@cardworks.app",
                     "LEGAL_ENTITY_NAME": "CardWorks LLC",
                     "LEGAL_CONTACT_ADDRESS": "42 Launch Ave, Denver, CO 80202, USA",
@@ -170,6 +167,38 @@ class TestWebLaunchGating(unittest.TestCase):
         self.assertIn(b'"warnings"', resp.data)
         self.assertIn(b'SENTRY_DSN', resp.data)
         self.assertIn(b'PLAUSIBLE_DOMAIN', resp.data)
+
+    def test_readiness_uses_runtime_app_base_url_from_environment(self):
+        old_secret = app_module.app.config.get("SECRET_KEY")
+        app_module.app.config["SECRET_KEY"] = "not-default"
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir, mock.patch.object(
+                app_module, "RUNS_ROOT", tmpdir
+            ), mock.patch.object(
+                app_module, "DB_PATH", os.path.join(tmpdir, "test.db")
+            ), mock.patch.object(
+                app_module.shutil, "which", return_value="/usr/bin/tesseract"
+            ), mock.patch.dict(
+                os.environ,
+                {
+                    "APP_ENV": "production",
+                    "AUTH_MODE": "gumroad",
+                    "LAUNCH_MODE": "true",
+                    "APP_BASE_URL": "https://cardworks.example.com",
+                    "SUPPORT_EMAIL": "help@cardworks.app",
+                    "LEGAL_ENTITY_NAME": "CardWorks LLC",
+                    "LEGAL_CONTACT_ADDRESS": "42 Launch Ave, Denver, CO 80202, USA",
+                    "GUMROAD_PRODUCT_PERMALINK": "cardworks-live",
+                    "GUMROAD_PRODUCT_URL": "https://gumroad.com/l/cardworks-live",
+                },
+                clear=False,
+            ):
+                models.init_db(app_module.DB_PATH)
+                issues = app_module._readiness_issues()
+        finally:
+            app_module.app.config["SECRET_KEY"] = old_secret
+
+        self.assertFalse(any("APP_BASE_URL must use https" in item for item in issues))
 
     def test_privacy_page_uses_configured_business_values(self):
         client = app.test_client()
