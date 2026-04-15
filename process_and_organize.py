@@ -1201,19 +1201,20 @@ def create_quadrant_crops(image, folder_path, base_name, crop_ratio=FRONT_QUADRA
     """Creates four overlapping quadrant crops."""
     try:
         H, W, _ = image.shape
-        # Define the regions for the four quadrants (top-left, top-right, bottom-left, bottom-right)
+        # Define the regions for the four quadrants in clockwise order:
+        # top-left, top-right, bottom-right, bottom-left.
         # Each crop uses a configurable ratio of width/height.
         ratio = max(0.5, min(0.9, float(crop_ratio)))
         crop_w, crop_h = int(W * ratio), int(H * ratio)
 
-        quadrants = {
-            "TL": (0, 0, crop_w, crop_h),
-            "TR": (W - crop_w, 0, W, crop_h),
-            "BL": (0, H - crop_h, crop_w, H),
-            "BR": (W - crop_w, H - crop_h, W, H),
-        }
+        quadrants = [
+            ("TL", (0, 0, crop_w, crop_h)),
+            ("TR", (W - crop_w, 0, W, crop_h)),
+            ("BR", (W - crop_w, H - crop_h, W, H)),
+            ("BL", (0, H - crop_h, crop_w, H)),
+        ]
 
-        for name, (left, top, right, bottom) in quadrants.items():
+        for name, (left, top, right, bottom) in quadrants:
             # Ensure crop dimensions are valid
             if right <= left or bottom <= top:
                 continue
@@ -1237,7 +1238,7 @@ def expected_image_names(prefix):
         f"{prefix}_BACK.jpg",
     ]
     for side in ("FRONT", "BACK"):
-        for quad in ("TL", "TR", "BL", "BR"):
+        for quad in ("TL", "TR", "BR", "BL"):
             names.append(f"{prefix}_{side}_{quad}.jpg")
     return names
 

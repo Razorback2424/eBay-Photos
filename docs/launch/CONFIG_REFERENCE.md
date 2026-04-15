@@ -30,6 +30,18 @@ Expected outcomes:
 - `LAUNCH_MODE=true`
 - `GUMROAD_PRODUCT_URL` or `GUMROAD_PRODUCT_PERMALINK` points to the real launch product
 
+## Current local preflight interpretation
+
+A local `.env` may still fail launch readiness even after config structure is fully prepared.
+
+At minimum, launch preflight will remain blocked until these are real values:
+
+- `SUPPORT_EMAIL`
+- `LEGAL_ENTITY_NAME`
+- `LEGAL_CONTACT_ADDRESS`
+
+Placeholder values such as `https://example.com`, `you@example.com`, brand-only names, or dummy street addresses are acceptable only for config-shape validation and must not be treated as launch-ready.
+
 These are the required config-side launch blockers for the current public launch path:
 
 - `APP_ENV`

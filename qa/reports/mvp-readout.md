@@ -2,6 +2,7 @@
 
 ## Current status
 - **Repo/documentation status:** launch prep hardening is in place for config validation, release packaging, and evidence collection scaffolding.
+- **Local preflight interpretation:** local config-shape validation is now mostly complete. Current local preflight passes all launch-config structure checks except the intentionally unresolved real-world launch identity/contact values: `SUPPORT_EMAIL`, `LEGAL_ENTITY_NAME`, and `LEGAL_CONTACT_ADDRESS`.
 - **Launch evidence status:** still blocked on the Must-Pass launch evidence and real deployment values defined in [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/launch_readiness.md).
 
 ## Asset coverage
@@ -70,6 +71,9 @@ Required artifact locations:
 ## Operator checklist for final sign-off
 - Replace every `REPLACE_IN_DEPLOYMENT_*` value in the production `.env`.
 - Use non-secret dummy values only for config-shape validation outside the real deployment secret store.
+- Replace placeholder `SUPPORT_EMAIL` with a real monitored inbox.
+- Replace placeholder `LEGAL_ENTITY_NAME` with the real legal launch name.
+- Replace placeholder `LEGAL_CONTACT_ADDRESS` with the real public-facing contact address.
 - Run `cd web && npm ci && npm run build` on the deployment candidate and save the log under `qa/reports/launch-evidence/frontend-build/`.
 - Run `python3 scripts/preflight_check.py` against the real production env and require `"ok": true`.
 - Run the project secret-exposure review before launch; do not rely on preflight for secret hygiene.

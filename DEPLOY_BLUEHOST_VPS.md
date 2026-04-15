@@ -76,6 +76,13 @@ Set at minimum:
 - `MASTER_USER_EMAILS=<owner emails>`
 - `ENABLE_DEMO_BILLING_CONTROLS=false`
 
+Note:
+A temporary placeholder domain or support email may be used only to validate config shape locally. Real launch readiness still requires:
+- a real public HTTPS origin
+- a real monitored support inbox
+- the real legal business/public launch name
+- a real public-facing contact address
+
 If you still maintain a separate Stripe subscription flow in your deployment, configure the Stripe variables as well. For the current Gumroad launch path, do not use the Auth0 block as your minimum production setup.
 
 ## 4. Preflight Checks
@@ -167,6 +174,7 @@ MVP recommendation:
 12. Run your secret-exposure review before launch; preflight only validates config shape
 13. Verify the live deployment still returns the expected security headers and throttles the protected public endpoints
 14. Confirm the remaining blockers, if any, are only those allowed by [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/launch_readiness.md)
+15. Confirm preflight is failing only for intentionally unresolved real-world values during local prep, or fully green in the real deployment config.
 
 ## 11. Post-Launch Smoke Test
 

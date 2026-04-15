@@ -496,6 +496,13 @@
   padding-top: 4px;
 }
 
+.batch-upload__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+}
+
 .source-pairTabs {
   display: flex;
   flex-wrap: wrap;

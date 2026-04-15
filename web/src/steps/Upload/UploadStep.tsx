@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { StepNavigation } from '../../components/StepNavigation';
 import { BannerChromium } from '../../components/BannerChromium';
 import { Button } from '../../ui/Button';
+import { ProgressBar } from '../../ui/ProgressBar';
 import { Stack } from '../../ui/Stack';
 import { Text } from '../../ui/Text';
 import { FileAsset, useSessionStore } from '../../state/session';
@@ -241,14 +242,21 @@ const Dropzone = ({ label, description, slotKey, state, onFile }: DropzoneProps)
 
 type BatchLoadState = 'idle' | 'loading' | 'ready' | 'error';
 
+interface BatchProgress {
+  completed: number;
+  total: number;
+  currentFileName: string;
+}
+
 export const UploadStep = () => {
   const [slots, setSlots] = useState<Record<SlotKey, SlotState>>({
     primary: { status: 'empty' },
     secondary: { status: 'empty' }
   });
-  const [showBatch, setShowBatch] = useState(false);
+  const [showBatch, setShowBatch] = useState(true);
   const [batchState, setBatchState] = useState<BatchLoadState>('idle');
   const [batchMessage, setBatchMessage] = useState<string>('Select a folder containing one-card front and back scans.');
+  const [batchProgress, setBatchProgress] = useState<BatchProgress | null>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
 
   const {
@@ -298,6 +306,12 @@ export const UploadStep = () => {
     [clearWorkflowData, setIntakeMode]
   );
 
+  useEffect(() => {
+    if (showBatch) {
+      resetWorkflow('batch');
+    }
+  }, [resetWorkflow, showBatch]);
+
   const stashDecodedImage = useCallback(
     (asset: FileAsset, decoded: DecodedImage) => {
       setWorkingImage(asset.id, {
@@ -320,6 +334,7 @@ export const UploadStep = () => {
         resetWorkflow('simple');
         setShowBatch(false);
         setBatchState('idle');
+        setBatchProgress(null);
         setBatchMessage('Select a folder containing one-card front and back scans.');
       }
 
@@ -398,6 +413,7 @@ export const UploadStep = () => {
       secondary: { status: 'empty' }
     });
     setShowBatch(true);
+    setBatchProgress(null);
     folderInputRef.current?.click();
   }, [resetWorkflow, slots.primary, slots.secondary]);
 
@@ -411,12 +427,25 @@ export const UploadStep = () => {
       setShowBatch(true);
       setBatchState('loading');
       setBatchMessage(`Preparing ${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'}...`);
+      setBatchProgress({
+        completed: 0,
+        total: selectedFiles.length,
+        currentFileName: selectedFiles[0]?.name ?? ''
+      });
 
       const preparedAssets: FileAsset[] = [];
       const decodedEntries: Array<{ asset: FileAsset; decoded: DecodedImage }> = [];
 
       try {
-        for (const file of selectedFiles) {
+        for (const [index, file] of selectedFiles.entries()) {
+          setBatchProgress({
+            completed: index,
+            total: selectedFiles.length,
+            currentFileName: file.name
+          });
+          await new Promise<void>((resolve) => {
+            window.requestAnimationFrame(() => resolve());
+          });
           const decoded = await decodeImage(file);
           const asset = toAsset(file);
           preparedAssets.push(asset);
@@ -432,7 +461,12 @@ export const UploadStep = () => {
           decoded.decodedBitmap.close();
           decoded.workingBitmap.close();
         });
-      setBatchState('ready');
+        setBatchProgress({
+          completed: selectedFiles.length,
+          total: selectedFiles.length,
+          currentFileName: selectedFiles[selectedFiles.length - 1]?.name ?? ''
+        });
+        setBatchState('ready');
         setBatchMessage(
           `${matched.files.length} files loaded • ${matched.sourcePairs.length} suggested pair${matched.sourcePairs.length === 1 ? '' : 's'} • ${matched.unmatchedFileIds.length} unmatched`
         );
@@ -467,7 +501,7 @@ export const UploadStep = () => {
         <Text as="h2" variant="title">
           Add front and back scans
         </Text>
-        <Text variant="body">Start with one front and one back, or switch to batch if you already have a folder of scans.</Text>
+        <Text variant="body">Start with a mixed batch folder. If you only have one front and one back, switch to the simple two-file flow.</Text>
       </Stack>
       <BannerChromium compact />
 
@@ -506,6 +540,14 @@ export const UploadStep = () => {
                 Batch folder
               </Text>
               <Text variant="body">{batchMessage}</Text>
+              {batchState === 'loading' && batchProgress && (
+                <div className="batch-upload__progress">
+                  <ProgressBar value={batchProgress.completed} max={batchProgress.total} label="Preparing batch files" />
+                  <Text variant="muted">
+                    Preparing file {Math.min(batchProgress.completed + 1, batchProgress.total)} of {batchProgress.total}: {batchProgress.currentFileName}
+                  </Text>
+                </div>
+              )}
             </Stack>
             <Stack direction="row" gap={8}>
               <Button type="button" onClick={() => folderInputRef.current?.click()}>
@@ -518,10 +560,11 @@ export const UploadStep = () => {
                   resetWorkflow('simple');
                   setShowBatch(false);
                   setBatchState('idle');
+                  setBatchProgress(null);
                   setBatchMessage('Select a folder containing one-card front and back scans.');
                 }}
               >
-                Back to simple upload
+                Use simple front/back upload
               </Button>
             </Stack>
           </div>

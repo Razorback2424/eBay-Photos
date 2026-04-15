@@ -27,8 +27,8 @@ class TestProcessAndOrganize(unittest.TestCase):
             expected = [
                 "card_front_TL.jpg",
                 "card_front_TR.jpg",
-                "card_front_BL.jpg",
                 "card_front_BR.jpg",
+                "card_front_BL.jpg",
             ]
             for name in expected:
                 path = os.path.join(tmpdir, name)
