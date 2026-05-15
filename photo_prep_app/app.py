@@ -10,6 +10,7 @@ import ipaddress
 from datetime import datetime, timedelta
 from collections import deque
 from queue import Queue
+from urllib.parse import urlparse
 
 from flask import Flask, Response, abort, redirect, render_template, request, session, url_for
 
@@ -35,6 +36,7 @@ except Exception:  # pragma: no cover - optional dependency
     FlaskIntegration = None
 
 
+
 def _load_dotenv_fallback(dotenv_path):
     if not os.path.isfile(dotenv_path):
         return
@@ -56,15 +58,33 @@ def _load_dotenv_fallback(dotenv_path):
         # Fallback parsing should never block app startup.
         return
 
+
+# Helper to parse boolean environment variables
+def _env_bool(name, default=False):
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    value = str(raw).strip().lower()
+    if value in {"1", "true", "yes", "on"}:
+        return True
+    if value in {"0", "false", "no", "off"}:
+        return False
+    return default
+
 def create_app():
     app = Flask(__name__, template_folder="templates", static_folder="static")
     app.config["SECRET_KEY"] = os.environ.get("PHOTO_PREP_APP_SECRET", "local-dev-secret-change-me")
     app_env = (os.environ.get("APP_ENV") or "development").strip().lower()
     if app_env == "production":
-        app.config["SESSION_COOKIE_SECURE"] = True
         app.config["SESSION_COOKIE_HTTPONLY"] = True
         app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-        app.config["PREFERRED_URL_SCHEME"] = "https"
+        parsed_base_url = urlparse((os.environ.get("APP_BASE_URL") or "http://127.0.0.1:5000").strip())
+        hostname = (parsed_base_url.hostname or "").strip().lower()
+        is_local_loopback = hostname in {"localhost", "127.0.0.1", "::1"}
+        default_secure = not is_local_loopback
+        app.config["SESSION_COOKIE_SECURE"] = _env_bool("SESSION_COOKIE_SECURE", default=default_secure)
+        if app.config["SESSION_COOKIE_SECURE"]:
+            app.config["PREFERRED_URL_SCHEME"] = "https"
     max_content_mb = int(os.environ.get("MAX_CONTENT_LENGTH_MB", "300") or "300")
     app.config["MAX_CONTENT_LENGTH"] = max(1, max_content_mb) * 1024 * 1024
     return app

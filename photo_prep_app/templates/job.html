@@ -12,9 +12,10 @@
       --ink: #1d2b38;
       --muted: #5f7185;
       --line: rgba(18, 40, 62, 0.14);
-      --panel: #ffffff;
       --bg: #edf3f8;
       --accent: #0a7b6d;
+      --warn: #de9c34;
+      --danger: #a83144;
       --shadow: 0 14px 30px rgba(24, 46, 66, 0.1);
     }
     * { box-sizing: border-box; }
@@ -37,7 +38,65 @@
     }
     body:before { width: 34vw; height: 34vw; top: -10vw; right: -8vw; background: rgba(15,157,138,.95); }
     body:after { width: 36vw; height: 36vw; bottom: -12vw; left: -10vw; background: rgba(90,167,255,.75); }
-    .shell { width: min(1040px, 94vw); margin: 28px auto 60px; position: relative; z-index: 1; }
+    .app-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(14px);
+      background: rgba(246, 250, 254, .78);
+      border-bottom: 1px solid rgba(18, 40, 62, .08);
+    }
+    .toolbar-inner {
+      width: min(1440px, 96vw);
+      margin: 0 auto;
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .brand-wrap { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      background: linear-gradient(145deg, #0f9d8a, #0a7b6d);
+      box-shadow: 0 10px 18px rgba(15,157,138,.22);
+      position: relative;
+    }
+    .brand-mark:before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border-radius: 7px;
+      border: 2px solid rgba(255,255,255,.75);
+      transform: rotate(8deg);
+    }
+    .brand-title { font-size: 15px; font-weight: 800; color: #203447; line-height: 1.1; }
+    .brand-sub { font-size: 12px; color: #5c7388; line-height: 1.1; }
+    .toolbar-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .navlink {
+      display: inline-block;
+      text-decoration: none;
+      border: 1px solid #c4d4e1;
+      background: rgba(255,255,255,.92);
+      color: #284051;
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .userpill {
+      display: inline-block;
+      border-radius: 999px;
+      background: #eef7f4;
+      color: #0f675a;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid #d8ece7;
+    }
+    .shell { width: min(1120px, 94vw); margin: 20px auto 80px; position: relative; z-index: 1; }
     .panel {
       background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(251,253,255,.94));
       border: 1px solid var(--line);
@@ -47,80 +106,40 @@
       margin-bottom: 14px;
       backdrop-filter: blur(8px);
     }
-    .topbar {
+    .status-strip {
+      display: grid;
+      gap: 12px;
+    }
+    .status-head {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      gap: 10px;
+      align-items: flex-start;
+      gap: 12px;
       flex-wrap: wrap;
-      margin-bottom: 10px;
     }
-    .navrow { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    .navlink {
-      display:inline-block;
-      text-decoration:none;
-      border:1px solid #c5d5e1;
-      background: linear-gradient(180deg, #fff, #fbfdff);
-      color:#274152;
-      border-radius:10px;
-      padding:7px 10px;
-      font-size:12px;
-      font-weight:700;
-      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
-    }
-    .navlink:hover {
-      transform: translateY(-1px);
-      border-color: #c0d3e2;
-      box-shadow: 0 8px 14px rgba(20,42,61,.06);
-    }
-    .userpill {
-      display:inline-block;
-      border-radius:999px;
-      background:#eef7f4;
-      color:#0f675a;
-      border:1px solid #d9ece7;
-      padding:7px 10px;
-      font-size:12px;
-      font-weight:700;
-    }
-    .headline { font-size: 24px; margin: 0 0 8px; letter-spacing: -0.01em; }
-    .muted { color: var(--muted); font-size: 14px; margin: 0; }
-    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
-    @media (max-width: 760px) { .kpis { grid-template-columns: 1fr 1fr; } }
-    .kpi { background: #f8fbfd; border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
-    .kpi { box-shadow: inset 0 1px 0 rgba(255,255,255,.92); }
-    .kpi .v { font-size: 22px; font-weight: 800; }
-    .kpi .k { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+    .headline { font-size: 28px; margin: 0; letter-spacing: -0.02em; }
+    .muted { color: var(--muted); font-size: 13px; margin: 0; line-height: 1.5; }
     .pill {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       border-radius: 999px;
-      padding: 5px 10px;
+      padding: 6px 11px;
       font-size: 12px;
       font-weight: 700;
       background: #eaf7f4;
       color: #0e6257;
     }
-    .warn { background: #fff1f0; color: #a83144; }
-    .btn {
-      display: inline-block;
-      margin-top: 12px;
-      text-decoration: none;
-      color: #fff;
-      font-weight: 700;
-      background: var(--accent);
-      border-radius: 10px;
-      padding: 10px 14px;
-      box-shadow: 0 10px 18px rgba(10,123,109,.2);
-    }
-    .btn.secondary {
-      background: #fff;
-      color: #274152;
-      border: 1px solid #c5d5e1;
-      box-shadow: none;
-      margin-left: 8px;
+    .pill.warn { background: #fff6ea; color: #8c5d12; }
+    .pill.danger { background: #fff1f0; color: var(--danger); }
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: currentColor;
+      animation: pulse 1.4s ease-in-out infinite;
     }
     .progress {
-      margin-top: 12px;
       height: 10px;
       background: #edf3f7;
       border-radius: 999px;
@@ -134,13 +153,77 @@
       transition: width .2s ease;
       position: relative;
     }
-    .progress > div:after {
+    .progress.live > div:after {
       content: "";
       position: absolute;
       inset: 0;
       background: linear-gradient(112deg, rgba(255,255,255,0) 25%, rgba(255,255,255,.33) 50%, rgba(255,255,255,0) 75%);
       transform: translateX(-115%);
       animation: sweep 2.2s linear infinite;
+    }
+    .progress-row {
+      display: grid;
+      gap: 8px;
+    }
+    .status-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #537083;
+      font-weight: 700;
+    }
+    .action-panel {
+      display: grid;
+      gap: 14px;
+    }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    @media (max-width: 760px) { .kpis { grid-template-columns: 1fr 1fr; } }
+    .kpi {
+      background: #f8fbfd;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.92);
+    }
+    .kpi .v { font-size: 24px; font-weight: 800; }
+    .kpi .k {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .cta-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .btn {
+      display: inline-block;
+      text-decoration: none;
+      color: #fff;
+      font-weight: 700;
+      background: var(--accent);
+      border-radius: 12px;
+      padding: 12px 16px;
+      box-shadow: 0 10px 18px rgba(10,123,109,.2);
+      font-size: 14px;
+    }
+    .btn.secondary {
+      background: #fff;
+      color: #274152;
+      border: 1px solid #c5d5e1;
+      box-shadow: none;
+    }
+    .btn.full {
+      width: min(420px, 100%);
+      text-align: center;
     }
     .grid-cards {
       display: grid;
@@ -149,11 +232,14 @@
     }
     .card-tile {
       border: 1px solid #dfe9f1;
+      border-left: 4px solid #dfe9f1;
       border-radius: 16px;
       background: linear-gradient(180deg, #fbfdff, #f8fbff);
-      padding: 10px;
+      padding: 12px;
       transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
     }
+    .card-tile.ready { border-left-color: var(--accent); }
+    .card-tile.warn { border-left-color: var(--warn); }
     .card-tile:hover {
       transform: translateY(-2px);
       border-color: #cedfeb;
@@ -162,7 +248,7 @@
     .card-tile h3 {
       margin: 0 0 8px;
       font-size: 14px;
-      line-height: 1.2;
+      line-height: 1.3;
     }
     .thumb-grid {
       display: grid;
@@ -189,10 +275,10 @@
       margin-right: 6px;
       margin-top: 4px;
     }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid #e5edf4; }
-    thead th { background: #f7fbff; position: sticky; top: 0; z-index: 1; }
-    tbody tr:hover { background: rgba(15,157,138,.03); }
+    .small-chip.warn {
+      background: #fff1f0;
+      color: var(--danger);
+    }
     pre {
       margin: 0;
       border: 1px solid var(--line);
@@ -220,105 +306,113 @@
       border-bottom: 1px solid #e5edf4;
     }
     details.disclosure > summary::-webkit-details-marker { display: none; }
-    details.disclosure > summary:after {
-      content: "Expand";
-      float: right;
-      color: #5a7186;
-      font-weight: 600;
-      font-size: 12px;
-    }
-    details.disclosure[open] > summary:after { content: "Collapse"; }
     details.disclosure .body { padding: 12px; }
-    .table-wrap {
-      border: 1px solid #dfe9f1;
-      border-radius: 14px;
-      overflow: hidden;
-      background: #fff;
+    .floating-download {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 18;
     }
-    .lift { animation: riseIn .28s ease; }
-    @keyframes riseIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
+    @media (max-width: 760px) {
+      .floating-download {
+        left: 14px;
+        right: 14px;
+        bottom: 14px;
+      }
+      .floating-download .btn { width: 100%; text-align: center; }
     }
     @keyframes sweep { to { transform: translateX(125%); } }
+    @keyframes pulse {
+      0%, 100% { opacity: .55; transform: scale(.92); }
+      50% { opacity: 1; transform: scale(1); }
+    }
   </style>
 </head>
 <body>
-  <main class="shell">
-    <section class="panel lift">
-      <div class="topbar">
-        <div class="navrow">
-          <a class="navlink" href="{{ url_for('workspace') }}">Workspace</a>
-          <a class="navlink" href="{{ url_for('batches_page') }}">Batches</a>
-          <a class="navlink" href="{{ url_for('account_page') }}">Account</a>
-        </div>
-        <div class="navrow">
-          {% if auth and auth.is_authenticated %}
-          <span class="userpill">{{ auth.user.email }}</span>
-          <a class="navlink" href="{{ url_for('logout') }}">Sign Out</a>
-          {% endif %}
+  <header class="app-toolbar">
+    <div class="toolbar-inner">
+      <div class="brand-wrap">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div>
+          <div class="brand-title">CardWorks</div>
+          <div class="brand-sub">seller workspace</div>
         </div>
       </div>
-      <h1 class="headline">{{ job.page_title }}</h1>
-      <span class="pill {{ 'warn' if job.status in ('failed','completed_with_warnings') else '' }}">{{ job.status_label }}</span>
-      <p class="muted" style="margin-top:8px;">{{ job.batch_name or "Untitled batch" }} • Created {{ job.created_at }}{% if job.expires_at %} • Download available until {{ job.expires_at }}{% endif %}</p>
-      <div class="progress"><div></div></div>
-      <p class="muted" style="margin-top:8px;">{{ job.progress_label }}</p>
-      {% if job.status in ("queued", "running") %}
-      <p class="muted" style="margin-top:6px;">You can wait here or leave this page. It refreshes automatically while processing.</p>
-      {% elif job.status in ("completed", "completed_with_warnings") %}
-      <p class="muted" style="margin-top:6px;">Review the previews below, then download the ZIP when everything looks right.</p>
-      {% elif job.status == "failed" %}
-      <p class="muted" style="margin-top:6px; color:#a83144;">Review the error below, then return to the workspace and re-run the batch.</p>
-      {% endif %}
+      <div class="toolbar-actions">
+        <a class="navlink" href="{{ url_for('workspace') }}">Workspace</a>
+        <a class="navlink" href="{{ url_for('batches_page') }}">Batches</a>
+        <a class="navlink" href="{{ url_for('account_page') }}">Account</a>
+        {% if auth and auth.is_authenticated %}
+        <span class="userpill">{{ auth.user.email }}</span>
+        <a class="navlink" href="{{ url_for('logout') }}">Sign Out</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="panel status-strip">
+      <div class="status-head">
+        <div>
+          <h1 class="headline">{{ job.page_title }}</h1>
+          <p class="muted" style="margin-top:8px;">{{ job.batch_name or "Untitled batch" }} • Created {{ job.created_at }}{% if job.expires_at %} • Download available until {{ job.expires_at }}{% endif %}</p>
+        </div>
+        <span class="pill {% if job.status == 'failed' %}danger{% elif job.status in ('completed_with_warnings') %}warn{% endif %}">
+          {% if job.status in ('queued', 'running') %}<span class="live-dot" aria-hidden="true"></span>{% endif %}
+          {{ job.status_label }}
+        </span>
+      </div>
+      <div class="progress-row">
+        <div class="progress {% if job.status in ('queued', 'running') %}live{% endif %}"><div></div></div>
+        <p class="muted">{{ job.progress_label }}</p>
+        {% if job.status in ("queued", "running") %}
+        <div class="status-live"><span class="live-dot" aria-hidden="true"></span>Checking status… This page refreshes automatically while processing.</div>
+        {% elif job.status in ("completed", "completed_with_warnings") %}
+        <p class="muted">Review the previews below, then download the ZIP when everything looks right.</p>
+        {% elif job.status == "failed" %}
+        <p class="muted" style="color:#a83144;">Review the error below, then return to the workspace and re-run the batch.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="panel action-panel">
       <div class="kpis">
+        {% if job.status in ("queued", "running") %}
+        <div class="kpi"><div class="v">{{ job.processed_pairs }} / {{ job.pair_count }}</div><div class="k">Pairs Complete</div></div>
+        {% if job.total_cards %}
+        <div class="kpi"><div class="v">{{ job.total_cards }}</div><div class="k">Cards Exported</div></div>
+        {% endif %}
+        {% if job.total_images %}
+        <div class="kpi"><div class="v">{{ job.total_images }}</div><div class="k">Photos Generated</div></div>
+        {% endif %}
+        {% else %}
         <div class="kpi"><div class="v">{{ job.pair_count }}</div><div class="k">Pairs Submitted</div></div>
         <div class="kpi"><div class="v">{{ job.processed_pairs }}</div><div class="k">Pairs Processed</div></div>
         <div class="kpi"><div class="v">{{ job.total_cards }}</div><div class="k">Cards Exported</div></div>
         <div class="kpi"><div class="v">{{ job.total_images }}</div><div class="k">Photos Generated</div></div>
+        {% endif %}
       </div>
       {% if job.status in ("completed", "completed_with_warnings") %}
-      <a class="btn" href="{{ url_for('download_job_zip', job_id=job.id) }}">Download ZIP</a>
-      <a class="btn secondary" href="{{ url_for('workspace') }}">Start Another Batch</a>
+      <div class="cta-row">
+        <a class="btn full" href="{{ url_for('download_job_zip', job_id=job.id) }}">Download {{ job.total_cards }}-card ZIP</a>
+        <a class="btn secondary" href="{{ url_for('workspace') }}">Start Another Batch</a>
+      </div>
       {% endif %}
       {% if job.error %}
       <p class="muted" style="color:#a83144;">Error: {{ job.error }}</p>
       {% endif %}
       {% if job.status == "expired" %}
-      <p class="muted" style="margin-top:10px; color:#8a5a19;">This batch has expired after the 24-hour retention window. Go back to the workspace and re-upload to generate a fresh export.</p>
+      <p class="muted" style="color:#8a5a19;">This batch has expired after the 24-hour retention window. Go back to the workspace and re-upload to generate a fresh export.</p>
       {% endif %}
     </section>
 
-    {% if job.pair_results %}
-    <section class="panel lift">
-      <h2 class="headline" style="font-size:20px;">Pair Results</h2>
-      <p class="muted" style="margin-bottom:10px;">Check each pair before downloading.</p>
-      <div class="table-wrap">
-      <table>
-        <thead><tr><th>Pair</th><th>Status</th><th>Cards</th><th>Photos</th><th>Notes</th></tr></thead>
-        <tbody>
-          {% for item in job.pair_results %}
-          <tr>
-            <td>{{ item.name }}<br><span class="muted" style="font-size:12px;">{{ item.front_name }} ↔ {{ item.back_name }}</span></td>
-            <td>{{ item.status_label }}</td>
-            <td>{{ item.card_count }}</td>
-            <td>{{ item.image_count }}</td>
-            <td>{% if item.status == 'warning' %}Needs review{% else %}Ready{% endif %}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      </div>
-    </section>
-    {% endif %}
-
     {% if job.card_tiles %}
-    <section class="panel lift">
+    <section class="panel">
       <h2 class="headline" style="font-size:20px;">Card Preview</h2>
       <p class="muted" style="margin-bottom:10px;">Spot-check the fronts and backs here before you download.</p>
       <div class="grid-cards">
         {% for tile in job.card_tiles %}
-        <article class="card-tile">
+        <article class="card-tile {{ 'warn' if tile.warning else 'ready' }}">
           <h3>{{ tile.pair_name }}</h3>
           <div class="thumb-grid">
             {% if tile.front_url %}<img src="{{ tile.front_url }}" alt="Front preview" />{% endif %}
@@ -326,13 +420,39 @@
           </div>
           <span class="small-chip">{{ tile.image_count }} images</span>
           {% if tile.warning %}
-          <span class="small-chip" style="background:#fff1f0;color:#a83144;">Needs review</span>
+          <span class="small-chip warn">Needs review</span>
+          {% else %}
+          <span class="small-chip">Ready</span>
           {% endif %}
         </article>
         {% endfor %}
       </div>
     </section>
+    {% elif job.pair_results %}
+    <section class="panel">
+      <h2 class="headline" style="font-size:20px;">Pair Results</h2>
+      <div class="grid-cards" style="margin-top:12px;">
+        {% for item in job.pair_results %}
+        <article class="card-tile {{ 'warn' if item.status == 'warning' else 'ready' }}">
+          <h3>{{ item.name }}</h3>
+          <p class="muted">{{ item.front_name }} ↔ {{ item.back_name }}</p>
+          <span class="small-chip">{{ item.card_count }} cards</span>
+          <span class="small-chip">{{ item.image_count }} photos</span>
+          <span class="small-chip {% if item.status == 'warning' %}warn{% endif %}">{{ item.status_label }}</span>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
     {% endif %}
+
+    {% if job.status in ("completed", "completed_with_warnings") %}
+    <section class="panel">
+      <div class="cta-row">
+        <a class="btn full" href="{{ url_for('download_job_zip', job_id=job.id) }}">Download {{ job.total_cards }}-card ZIP</a>
+      </div>
+    </section>
+    {% endif %}
+
     {% if debug_mode %}
     <section class="panel">
       <details class="disclosure">
@@ -350,5 +470,11 @@
     </section>
     {% endif %}
   </main>
+
+  {% if job.status in ("completed", "completed_with_warnings") %}
+  <div class="floating-download">
+    <a class="btn" href="{{ url_for('download_job_zip', job_id=job.id) }}">Download {{ job.total_cards }}-card ZIP</a>
+  </div>
+  {% endif %}
 </body>
 </html>

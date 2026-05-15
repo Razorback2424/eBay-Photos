@@ -4,6 +4,7 @@
 
 - Assign one owner for production deploys.
 - Assign one owner for the support inbox.
+- Until the real support inbox is configured, treat support-path setup as pending and do not mark launch support readiness complete.
 - Assign one owner for Gumroad product settings and refund handling.
 
 ## Monitoring
@@ -43,4 +44,5 @@
 ## Rollback
 
 - Keep the previous app revision and latest DB backup available before deploy.
+- Minimum rollback path for MVP: restore the latest known-good DB backup, redeploy the previous bundle, and disable or limit public access if the live issue cannot be contained safely.
 - If launch introduces a blocker, stop announcements, restore the previous revision, run `/readiness`, and verify login plus batch processing before reopening access.

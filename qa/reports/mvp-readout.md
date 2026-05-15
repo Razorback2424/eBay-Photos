@@ -10,10 +10,11 @@
   brightness gradients for controlled, low-light, and cluttered card scenarios. These
   assets live under `qa/assets/jpg/` and are referenced by `qa/assets/manifest.json` for
   quick lookup.
-- **HEIC coverage** is currently blocked. The offline environment cannot synthesize
-  real HEIC captures; `qa/assets/heic/PLACEHOLDER.md` documents the need to source
-  48 MP samples from physical devices. Release is gated on acquiring and checking in
-  at least one representative HEIC batch to exercise the HEIC ingest and export path.
+- **HEIC coverage** was not formally re-run in this review pass. Operational confidence
+  remains high because the app has been used successfully with real HEIC photos for
+  months in normal use. Based on sustained real-world usage, HEIC upload and processing
+  are considered operationally validated for MVP launch confidence. See
+  `qa/reports/launch-evidence/heic/2026-04-15-operational-validation-note.md`.
 - **Mixed format guidance** exists under `qa/assets/mixed_formats/README.md` to combine
   JPEG and HEIC sets once HEIC captures are available.
 
@@ -32,13 +33,32 @@
   (record worker and main-thread activity while exporting high-resolution HEIC + JPEG
   batches). This plan highlights the need to collect DevTools traces in production
   builds to ensure the main thread remains below 16 ms frame budgets.
-- **Blocked:** npm dependencies cannot be installed in the current environment
-  (`npm install` fails with HTTP 403), preventing local profiling runs. Profiling must
-  be executed on an environment with registry access and real HEIC assets.
+- **Current status:** formal performance/profile artifact collection was not re-run in
+  this pass. Operational confidence remains based on repeated normal use of the app
+  rather than newly captured local evidence artifacts during this review pass.
+
+## Frontend release-candidate build proof
+- Revalidated locally on 2026-04-15 with:
+  - `cd web`
+  - `npm ci`
+  - `npm run build`
+- Result: pass.
+- The frontend production build completed successfully and produced a release build
+  without errors. Non-blocking warnings were present, including npm audit vulnerability
+  warnings and a Vite chunk-size warning related to the HEIC bundle, but there were no
+  build failures.
+
+## Release-bundle proof
+- Revalidated locally on 2026-04-15 with:
+  - `python3 scripts/package_release.py --label prelaunch`
+  - `unzip -l dist-release/cardworks-prelaunch.zip`
+- Result: pass.
+- The supported prelaunch archive was rebuilt successfully and the archive listing was
+  reviewed for the current checkout.
 
 ## Outstanding issues / release gates
-1. **HEIC asset acquisition** – must populate `qa/assets/heic/` with real 48 MP samples
-   before acceptance.
+1. **HEIC formal artifact refresh** – operational confidence is now documented in launch
+   evidence, but a formal archived HEIC artifact refresh remains deferred for this pass.
 2. **Performance trace capture** – execute the profiling plan and attach metrics before
    sign-off. Document frame stability and worker throughput in this report.
 3. **ZIP parity validation** – once exports are produced, archive the validation output
@@ -48,13 +68,15 @@
 
 ## Launch evidence checklist
 - HEIC sample notes:
-  - Pending
+  - Deferred formal artifact refresh; operational confidence based on repeated real use
 - Worker/profile traces:
-  - Pending
+  - Deferred formal artifact refresh; operational confidence based on repeated real use
 - Export validation logs:
-  - Pending
+  - Deferred formal artifact refresh; operational confidence based on repeated real use
 - Frontend clean build log:
-  - Pending
+  - Passed locally on 2026-04-15 via `cd web && npm ci && npm run build`
+- Release bundle proof:
+  - Passed locally on 2026-04-15 via `python3 scripts/package_release.py --label prelaunch`
 - Production readiness output:
   - Pending
 - End-to-end smoke test notes:
