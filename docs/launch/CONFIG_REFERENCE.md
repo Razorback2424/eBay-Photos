@@ -75,6 +75,8 @@ python3 scripts/capture_readiness.py --base-url https://your-domain.com
 python3 scripts/package_release.py --label prelaunch
 ```
 
+The Vite build is a supplemental repository-integrity check. The v1 public application is the Flask/Gunicorn runtime and does not serve `web/dist`.
+
 After that, collect the remaining external launch evidence under the required artifact groups described in [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/launch_readiness.md).
 
 ## Separate launch controls beyond preflight

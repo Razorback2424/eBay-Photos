@@ -26,7 +26,7 @@ except ImportError:
     HAS_REQUESTS = False
 
 # --- Configuration ---
-SUPPORTED_EXTENSIONS = ('.jpg', '.jpeg', '.heic')
+SUPPORTED_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.heic')
 PADDING = 150
 OCR_CONFIG = "--psm 6 -l eng"
 
@@ -149,11 +149,27 @@ def find_scan_file(basename):
         return candidates[0][2]
     return None
 
+def normalize_cv_image(image):
+    if image is None:
+        return None
+    if len(image.shape) == 2:
+        return cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    if image.shape[2] == 3:
+        return image
+    if image.shape[2] == 4:
+        color = image[:, :, :3].astype(np.float32)
+        alpha = image[:, :, 3:4].astype(np.float32) / 255.0
+        flattened = color * alpha + 255.0 * (1.0 - alpha)
+        return np.clip(flattened, 0, 255).astype(np.uint8)
+    return None
+
 def read_image_universal(filepath):
     """To take any valid filepath and return a standardized OpenCV image object."""
     try:
         if filepath.lower().endswith(('.jpg', '.jpeg')):
-            return cv2.imread(filepath)
+            return normalize_cv_image(cv2.imread(filepath, cv2.IMREAD_UNCHANGED))
+        elif filepath.lower().endswith('.png'):
+            return normalize_cv_image(cv2.imread(filepath, cv2.IMREAD_UNCHANGED))
         elif filepath.lower().endswith('.heic'):
             if not HAS_PILLOW_HEIF:
                 print("Error: pillow_heif is required to process HEIC images. Install pillow-heif or convert the file.")

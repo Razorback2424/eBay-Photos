@@ -15,6 +15,11 @@ import type {
   ExportWorkerPairResult,
   ExportWorkerSidePayload
 } from '../workers/export.types';
+import {
+  buildFrontCenteringManifest,
+  estimateCenteringOverlayFiles,
+  type FrontCenteringExportPayload
+} from '../utils/centering/exportLinkage';
 
 const workerUrl = new URL('../workers/export.worker.ts', import.meta.url);
 
@@ -24,6 +29,8 @@ interface ExportOptions {
   format: 'jpeg' | 'png';
   quality: number;
   includeWarped: boolean;
+  includeCenteringOverlay: boolean;
+  frontCenteringByPairId?: Record<string, FrontCenteringExportPayload | undefined>;
 }
 
 export type ExportProgressStage = 'initializing' | 'processing' | 'writing' | 'finalizing';
@@ -63,6 +70,7 @@ interface ManifestEntry {
   files: string[];
   front?: ManifestSide;
   back?: ManifestSide;
+  frontCentering?: ReturnType<typeof buildFrontCenteringManifest>;
 }
 
 type ExportWorker = {
@@ -70,11 +78,12 @@ type ExportWorker = {
   [releaseProxy]?: () => void;
 };
 
-const estimateFilesForPair = (pair: Pairing, includeWarped: boolean) => {
+const estimateFilesForPair = (pair: Pairing, includeWarped: boolean, includeCenteringOverlay: boolean) => {
   let total = includeWarped ? 6 : 5; // front listing + quadrants (+ warped when requested)
   if (pair.secondaryFileId) {
     total += 5; // back listing + quadrants
   }
+  total += estimateCenteringOverlayFiles(1, includeCenteringOverlay);
   return total;
 };
 
@@ -149,7 +158,8 @@ const mapWarpSize = (card: DetectedCard, image: WorkingImageInfo) => ({
 const toWorkerPayload = (
   side: 'front' | 'back',
   card: DetectedCard,
-  image: WorkingImageInfo
+  image: WorkingImageInfo,
+  centeringOverlay?: FrontCenteringExportPayload
 ): ExportWorkerSidePayload => ({
   side,
   blob: image.originalBlob,
@@ -157,7 +167,8 @@ const toWorkerPayload = (
   height: image.originalHeight,
   bbox: mapBoundingBox(card, image),
   quad: mapQuad(card, image),
-  warpSize: mapWarpSize(card, image)
+  warpSize: mapWarpSize(card, image),
+  centeringOverlay
 });
 
 const ensureDirectoryHandle = async (
@@ -264,7 +275,7 @@ export const exportSession = async ({
   const zip = options.directoryHandle ? null : new JSZip();
   const manifests: { segments: string[]; entry: ManifestEntry; pairIndex: number }[] = [];
   const totalFiles = pairs.reduce(
-    (count, pair) => count + estimateFilesForPair(pair, options.includeWarped),
+    (count, pair) => count + estimateFilesForPair(pair, options.includeWarped, Boolean(options.frontCenteringByPairId?.[pair.id])),
     0
   );
   const manifestSteps = options.includeManifests ? pairs.length : 0;
@@ -322,13 +333,14 @@ export const exportSession = async ({
             detectionAdjustments
           )
         : null;
+      const frontCentering = options.frontCenteringByPairId?.[pair.id];
 
       const request: ExportWorkerPairRequest = {
         format: mimeType,
         fileExtension: extension,
         quality: normalizedQuality,
         includeWarped: options.includeWarped,
-        front: toWorkerPayload('front', frontCard, frontImage),
+        front: toWorkerPayload('front', frontCard, frontImage, frontCentering),
         back: backImage && backCard ? toWorkerPayload('back', backCard, backImage) : undefined
       };
 
@@ -380,7 +392,8 @@ export const exportSession = async ({
             folderPath,
             files: result.images.map((item) => item.name),
             front: frontManifest,
-            back: backManifest
+            back: backManifest,
+            frontCentering: frontCentering ? buildFrontCenteringManifest(frontCentering) : undefined
           },
           pairIndex: index
         });

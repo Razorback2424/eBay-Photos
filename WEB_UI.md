@@ -1,4 +1,6 @@
-# Card Scan Splitter Web UI (Batch + Queue)
+# Card Scan Splitter Vite Prototype
+
+> Launch scope: this `web/` client is not served by the v1 Flask/Gunicorn deployment and is not part of the Gumroad public launch. The public v1 workspace is `photo_prep_app/templates/workspace.html`. The Vite centering tool and browser export linkage remain post-launch until they are wired into the authenticated deployment and receive live smoke-test evidence.
 
 Use Node `22.16.x` for the web build.
 

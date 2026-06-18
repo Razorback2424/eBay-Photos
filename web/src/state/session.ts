@@ -83,6 +83,7 @@ export interface OutputConfig {
   format: 'jpeg' | 'png';
   quality: number;
   includeWarped: boolean;
+  includeCenteringOverlay: boolean;
 }
 
 const SIMPLE_STEPS: SessionStep[] = ['files', 'detections', 'pairs', 'naming', 'output'];

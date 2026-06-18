@@ -18,7 +18,7 @@ def safe_label(label):
 
 
 def build_pairs(front_files, back_files, inputs_dir, pair_names=None, allowed_extensions=None, label_sanitizer=None):
-    allowed_extensions = allowed_extensions or {".jpg", ".jpeg", ".heic"}
+    allowed_extensions = allowed_extensions or {".jpg", ".jpeg", ".png", ".heic"}
     label_sanitizer = label_sanitizer or safe_label
     errors = []
     valid_fronts = []

@@ -7,6 +7,8 @@ import type {
   ExportWorkerSidePayload
 } from './export.types';
 import { ensureOpenCv, CV } from './opencv';
+import { CENTERING_OVERLAY_FILE_NAME } from '../utils/centering/exportLinkage';
+import { drawCenteringGuideLines } from '../utils/centering/renderOverlay';
 
 const QUADRANT_SUFFIXES = ['TOP_LEFT', 'TOP_RIGHT', 'BOTTOM_LEFT', 'BOTTOM_RIGHT'] as const;
 
@@ -51,6 +53,42 @@ const drawCrop = async (
     type: format,
     quality: format === 'image/jpeg' ? quality : undefined
   });
+};
+
+const drawCenteringOverlay = async (
+  bitmap: ImageBitmap,
+  rect: ExportWorkerBoundingBox,
+  payload: ExportWorkerSidePayload
+) => {
+  const overlay = payload.centeringOverlay;
+  if (!overlay) {
+    return null;
+  }
+
+  const canvas = new OffscreenCanvas(rect.width, rect.height);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Unable to create 2D context for centering overlay.');
+  }
+  ctx.clearRect(0, 0, rect.width, rect.height);
+  ctx.drawImage(bitmap, rect.x, rect.y, rect.width, rect.height, 0, 0, rect.width, rect.height);
+  drawCenteringGuideLines(
+    ctx,
+    {
+      image_width_px: overlay.imageWidth,
+      image_height_px: overlay.imageHeight,
+      outer_edges: overlay.outerEdges,
+      inner_edges: overlay.innerEdges,
+      borders_px: overlay.bordersPx,
+      centering: overlay.centering,
+      edge_diagnostics: {},
+      warnings: overlay.warnings,
+      rotation_degrees: 0
+    },
+    rect.width,
+    rect.height
+  );
+  return await canvas.convertToBlob({ type: 'image/png' });
 };
 
 const bitmapToMat = (cv: CV, bitmap: ImageBitmap) => {
@@ -137,6 +175,13 @@ const processSide = async (
     if (payload.side === 'front' && includeWarped && payload.quad.length === 4) {
       const warpedBlob = await createWarpedBlob(payload, bitmap, format, quality);
       results.push({ name: `${prefix}_WARPED.${extension}`, blob: warpedBlob });
+    }
+
+    if (payload.side === 'front' && payload.centeringOverlay) {
+      const overlayBlob = await drawCenteringOverlay(bitmap, baseBox, payload);
+      if (overlayBlob) {
+        results.push({ name: CENTERING_OVERLAY_FILE_NAME, blob: overlayBlob });
+      }
     }
   } finally {
     bitmap.close();

@@ -15,6 +15,8 @@ Read [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/launch_readin
 - Set `LEGAL_ENTITY_NAME` and `LEGAL_CONTACT_ADDRESS` to the real business values.
 - Set `AUTH_MODE=gumroad` and `LAUNCH_MODE=true`.
 - Set `GUMROAD_PRODUCT_URL` or `GUMROAD_PRODUCT_PERMALINK`.
+- Confirm the one launch offer shown by CardWorks matches the price and billing terms on that Gumroad product.
+- Replace both `REPLACE_WITH_*` tokens in `GUMROAD_CONFIRMATION_COPY.md` before publishing the receipt message.
 - Keep `ENABLE_DEMO_BILLING_CONTROLS=false`.
 
 ## 2. Server/runtime
@@ -33,7 +35,7 @@ Read [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/launch_readin
 - Run `qa/checks/export_validation.py` against both directory and ZIP exports and save the results under `qa/reports/launch-evidence/export-validation/`.
 - Save production `/readiness` evidence with `python3 scripts/capture_readiness.py --base-url https://your-domain.com` under `qa/reports/launch-evidence/readiness/`.
 - Execute the buyer smoke test from `docs/launch/SMOKE_TEST.md` and store notes/screenshots under `qa/reports/launch-evidence/smoke-tests/`.
-- Save one clean web build log using `cd web && npm ci && npm run build` under `qa/reports/launch-evidence/frontend-build/`.
+- Save one clean supplemental Vite build log using `cd web && npm ci && npm run build` under `qa/reports/launch-evidence/frontend-build/`; this client is not served by the v1 Flask deployment.
 - Update `qa/reports/mvp-readout.md` with the status of each must-pass evidence item.
 
 ## 4. Final verification

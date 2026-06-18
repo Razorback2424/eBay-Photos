@@ -27,10 +27,42 @@
   padding: 28px var(--ui-spacing-lg) 64px;
 }
 
+.app-shell--wide {
+  max-width: 1240px;
+}
+
 .app-shell__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.app-shell__nav {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.app-shell__link {
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: var(--ui-radius-sm);
+  color: var(--ui-color-text);
+  font-weight: 700;
+  padding: 8px 12px;
+  text-decoration: none;
+}
+
+.app-shell__link:hover,
+.app-shell__link:focus-visible {
+  border-color: var(--ui-color-primary);
+  outline: none;
+}
+
+.app-shell__link.active {
+  background: rgba(37, 99, 235, 0.12);
+  border-color: rgba(37, 99, 235, 0.45);
 }
 
 .ui-card {
@@ -258,6 +290,211 @@
   display: flex;
   flex-direction: column;
   gap: var(--ui-spacing-lg);
+}
+
+.centering-tool {
+  min-width: 0;
+}
+
+.centering-upload-card {
+  box-shadow: none;
+}
+
+.centering-upload {
+  align-items: center;
+  border: 1px dashed rgba(37, 99, 235, 0.35);
+  border-radius: var(--ui-radius-sm);
+  cursor: pointer;
+  display: flex;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 86px;
+  padding: 18px;
+}
+
+.centering-upload input {
+  display: none;
+}
+
+.centering-layout {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  align-items: start;
+}
+
+.centering-preview-panel,
+.centering-controls {
+  min-width: 0;
+}
+
+.centering-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.centering-toolbar label {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.centering-zoom-group {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.centering-canvas {
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: var(--ui-radius-sm);
+  display: block;
+  height: auto;
+  max-width: 100%;
+}
+
+.centering-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.centering-panel {
+  box-shadow: none;
+}
+
+.centering-rotation-grid {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 10px 0;
+}
+
+.centering-panel input[type='number'] {
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  border-radius: var(--ui-radius-sm);
+  font: inherit;
+  max-width: 100%;
+  padding: 9px 10px;
+  width: 100%;
+}
+
+.centering-edge-row {
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.centering-edge-control {
+  align-items: center;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 44px repeat(2, 46px) minmax(58px, 1fr) repeat(2, 46px);
+}
+
+.centering-edge-control span {
+  color: var(--ui-color-text-muted);
+  font-weight: 700;
+}
+
+.centering-edge-control .ui-button {
+  padding: 8px 0;
+}
+
+.centering-results {
+  box-shadow: none;
+}
+
+.centering-metrics {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.centering-metrics span {
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: var(--ui-radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px;
+}
+
+.centering-warning,
+.centering-error {
+  background: rgba(254, 243, 199, 0.8);
+  border: 1px solid rgba(217, 119, 6, 0.32);
+  border-radius: var(--ui-radius-sm);
+  margin-top: 14px;
+  padding: 12px;
+}
+
+.centering-warning p {
+  margin: 0;
+}
+
+.centering-warning p + p {
+  margin-top: 6px;
+}
+
+.centering-downloads {
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.centering-review {
+  min-width: 0;
+}
+
+.centering-review__canvas {
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: var(--ui-radius-sm);
+  display: block;
+  height: auto;
+  max-width: 100%;
+}
+
+.centering-review__edges {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.centering-review__actions {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 920px) {
+  .centering-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .centering-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .centering-review__edges {
+    grid-template-columns: 1fr;
+  }
+
+  .centering-edge-control {
+    grid-template-columns: 42px repeat(2, 42px) minmax(52px, 1fr) repeat(2, 42px);
+  }
+
+  .centering-edge-control .ui-button {
+    font-size: 0.85rem;
+  }
 }
 
 .name-step__previewCanvasWrapper {

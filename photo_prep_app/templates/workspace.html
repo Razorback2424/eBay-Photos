@@ -1002,12 +1002,12 @@
                 <div class="field">
                   <label>Front scans</label>
                   <div class="drop" data-drop>
-                    <input name="front_files" type="file" accept=".jpg,.jpeg,.heic,image/jpeg,image/heic" multiple />
+                    <input name="front_files" type="file" accept=".jpg,.jpeg,.png,.heic,image/jpeg,image/png,image/heic" multiple />
                     <div class="drop-icon" aria-hidden="true">
                       <svg viewBox="0 0 24 24" fill="none" stroke="#0a7b6d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
                     </div>
                     <div class="drop-label">Drop front scans here</div>
-                    <div class="drop-sub">JPG or HEIC · one or many</div>
+                    <div class="drop-sub">JPG, PNG, or HEIC · one or many</div>
                     <span class="browse-btn" role="button" tabindex="0">Browse files</span>
                     <div class="drop-meta" data-meta>No files selected</div>
                   </div>
@@ -1015,7 +1015,7 @@
                 <div class="field">
                   <label>Back scans</label>
                   <div class="drop" data-drop>
-                    <input name="back_files" type="file" accept=".jpg,.jpeg,.heic,image/jpeg,image/heic" multiple />
+                    <input name="back_files" type="file" accept=".jpg,.jpeg,.png,.heic,image/jpeg,image/png,image/heic" multiple />
                     <div class="drop-icon" aria-hidden="true">
                       <svg viewBox="0 0 24 24" fill="none" stroke="#0a7b6d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18"/><path d="M15 21V9"/></svg>
                     </div>
@@ -1035,7 +1035,7 @@
                 </div>
                 <div class="mixed-title">Choose a folder of card scans</div>
                 <div class="mixed-sub">CardWorks will sort likely fronts and backs automatically for review.</div>
-                <input id="mixed-folder-input" class="folder-input" type="file" accept=".jpg,.jpeg,.heic,image/jpeg,image/heic" multiple webkitdirectory directory />
+                <input id="mixed-folder-input" class="folder-input" type="file" accept=".jpg,.jpeg,.png,.heic,image/jpeg,image/png,image/heic" multiple webkitdirectory directory />
                 <button type="button" class="ghost" id="mixed-folder-btn">Select Folder</button>
               </div>
             </div>
@@ -1296,7 +1296,7 @@
     const pairMixedFolderFiles = (files) => {
       const candidates = files
         .filter((file) => file && file.name)
-        .filter((file) => /\.(jpe?g|heic)$/i.test(file.name || ""));
+        .filter((file) => /\.(jpe?g|png|heic)$/i.test(file.name || ""));
 
       const fronts = [];
       const backs = [];
@@ -1408,7 +1408,7 @@
       scheduleRenderPairPreview();
 
       if (!result.totalImported) {
-        setFolderStatus("No supported JPG or HEIC files were found in that folder.", "warn");
+        setFolderStatus("No supported JPG, PNG, or HEIC files were found in that folder.", "warn");
         return;
       }
 

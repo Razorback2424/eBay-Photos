@@ -1,6 +1,6 @@
 # Launch Readiness Review
 
-Review date: 2026-04-15
+Review date: 2026-06-18
 
 Canonical gate: [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/launch_readiness.md)
 
@@ -8,7 +8,7 @@ Canonical gate: [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/la
 
 Current judgment: **No-Go**
 
-The repo is structurally prepared for launch configuration. Backend tests pass, the frontend production build succeeds in the local review environment, the release packager runs, and the launch docs now consistently describe the Gumroad-first public launch path.
+The repo-side launch checks are prepared for the Flask/Gumroad path. Backend tests pass independently of the local production-like `.env`, the standalone Vite client builds, the release packager runs, and launch docs identify Flask/Gunicorn as the only v1 public runtime.
 
 Real launch is still blocked by missing real-world launch identity/contact values and missing real deployment evidence.
 
@@ -19,6 +19,7 @@ Real launch is still blocked by missing real-world launch identity/contact value
 - Real `LEGAL_CONTACT_ADDRESS` not yet set
 - Real deployment origin/domain not yet set
 - Real launch evidence artifacts not yet collected
+- Gumroad confirmation copy still needs the real public URL and support inbox inserted by the operator
 
 ## Current interpretation
 
@@ -31,11 +32,13 @@ Real launch is still blocked by missing real-world launch identity/contact value
 Repo-side verification already completed in the current review cycle:
 
 - Backend automated tests passed.
-- Frontend production build passed in the local review environment.
+- The supplemental Vite production build passed in the local review environment; it is not served by the v1 deployment.
 - Release packaging succeeded.
 - Launch-like preflight can pass when supplied with real-shaped Gumroad launch values.
 
 These checks reduced repo ambiguity, but they do not replace the remaining real-world launch inputs.
+
+The standalone Vite centering tool and its browser export linkage remain post-launch until they are wired into the authenticated public deployment and receive live smoke-test evidence.
 
 ## Remaining manual proof needed
 

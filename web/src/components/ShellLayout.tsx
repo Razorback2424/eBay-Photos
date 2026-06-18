@@ -1,5 +1,5 @@
 import { ReactNode, useEffect } from 'react';
-import { useRouterState } from '@tanstack/react-router';
+import { Link, useRouterState } from '@tanstack/react-router';
 
 import { SessionStep, STEP_PATHS, useSessionStore } from '../state/session';
 import { Card } from '../ui/Card';
@@ -27,6 +27,8 @@ export const ShellLayout = ({ banner, children }: ShellLayoutProps) => {
     currentStep: state.currentStep
   }));
 
+  const isCenteringTool = routerState.location.pathname === '/centering';
+
   useEffect(() => {
     const pathname = routerState.location.pathname;
     const step = pathToStep(pathname);
@@ -36,15 +38,23 @@ export const ShellLayout = ({ banner, children }: ShellLayoutProps) => {
   }, [routerState.location.pathname, currentStep, setCurrentStep]);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${isCenteringTool ? ' app-shell--wide' : ''}`}>
       <Stack gap={20}>
         {banner}
         <header className="app-shell__header">
           <Text as="h1" variant="title">
             eBay Photos
           </Text>
+          <nav className="app-shell__nav" aria-label="Tools">
+            <Link to="/" className="app-shell__link">
+              Workflow
+            </Link>
+            <Link to="/centering" className="app-shell__link">
+              Centering
+            </Link>
+          </nav>
         </header>
-        <StepIndicator />
+        {!isCenteringTool && <StepIndicator />}
         <Card>{children}</Card>
       </Stack>
     </div>

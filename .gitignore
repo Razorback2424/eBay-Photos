@@ -6,9 +6,11 @@
 .playwright-fixtures/
 __MACOSX/
 dist-release/
+backups/
 .env
 .env.*
 !.env.example
+!.env.production.example
 _Web_Runs/
 __pycache__/
 */__pycache__/

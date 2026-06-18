@@ -475,6 +475,10 @@ a { color: inherit; }
   grid-template-columns: repeat(3, 1fr);
 }
 
+.pricing-grid {
+  grid-template-columns: minmax(0, 440px);
+}
+
 .proof-card,
 .problem-card,
 .price-card,
@@ -1185,9 +1189,9 @@ function trackLandingEvent(name) {
         {% endif %}
         <div class="trust-strip">
           <span class="trust-chip">2 photos → 10 images per card</span>
-          <span class="trust-chip">Runs in your browser</span>
-          <span class="trust-chip">No server uploads</span>
-          <span class="trust-chip">Best on Chrome/Edge/Brave</span>
+          <span class="trust-chip">Secure web workspace</span>
+          <span class="trust-chip">Automatic 24-hour cleanup</span>
+          <span class="trust-chip">Works in modern browsers</span>
         </div>
       </div>
     </div>
@@ -1277,7 +1281,7 @@ function trackLandingEvent(name) {
 
 <div class="browser-note">
   <div class="browser-note-inner">
-    <p><strong>Best on Chrome, Edge, or Brave.</strong> Safari still works, but exports as a ZIP download instead of direct folder write.</p>
+    <p><strong>No installation required.</strong> Upload a batch in the secure web workspace, then download the completed ZIP when processing finishes.</p>
   </div>
 </div>
 
@@ -1299,7 +1303,7 @@ function trackLandingEvent(name) {
       <article class="problem-card">
         <div class="proof-kicker">Pain 02</div>
         <div class="problem-quote">The phone-to-desktop handoff breaks the flow.</div>
-        <p class="problem-answer">The browser-based workflow lets you process the batch where you list, then export complete 10-image card folders instead of juggling photos across devices.</p>
+        <p class="problem-answer">The web workflow lets you process the batch where you list, then download complete 10-image card folders instead of juggling photos across devices.</p>
       </article>
       <article class="problem-card">
         <div class="proof-kicker">Pain 03</div>
@@ -1459,45 +1463,20 @@ function trackLandingEvent(name) {
     <div class="pricing-intro">
       <div>
         <div class="section-label">Pricing</div>
-        <h2 class="section-headline">Simple pricing.<br>Pick the plan that fits.</h2>
+        <h2 class="section-headline">Simple launch access.</h2>
       </div>
       <p class="section-sub">You are paying for ready-to-list card images from the photos you already took — no manual cropping, no sorting, no extra shots.</p>
     </div>
     <div class="pricing-grid">
       <article class="price-card featured">
-        <div class="price-tier">Founding member</div>
-        <div class="price-amount"><sup>$</sup>5</div>
-        <p class="price-period">per month</p>
+        <div class="price-tier">Current Gumroad offer</div>
+        <p class="price-period">See the current price and billing terms on the secure Gumroad checkout page.</p>
         <ul class="price-features">
           <li>Full access to CardWorks</li>
-          <li>Unlimited cards and batches</li>
-          <li>Rate locked forever. This price never increases.</li>
-          <li>Lowest monthly rate for early supporters</li>
+          <li>License key delivered with your receipt</li>
+          <li>Use the purchase email and license key to sign in</li>
         </ul>
-        <a href="{{ purchase_url or url_for('login', next=url_for('workspace')) }}" class="price-btn-solid" {% if purchase_url %}target="_blank" rel="noopener noreferrer"{% endif %} onclick="trackLandingEvent('Pricing Founding Click')">{{ "Buy founding access on Gumroad →" if purchase_url else "Enter license key →" }}</a>
-      </article>
-      <article class="price-card">
-        <div class="price-tier">Monthly</div>
-        <div class="price-amount"><sup>$</sup>9</div>
-        <p class="price-period">per month</p>
-        <ul class="price-features">
-          <li>Full access to CardWorks</li>
-          <li>Unlimited cards and batches</li>
-          <li>Best if you're trying CardWorks before committing to a year</li>
-        </ul>
-        <a href="{{ purchase_url or url_for('login', next=url_for('workspace')) }}" class="price-btn-ghost" {% if purchase_url %}target="_blank" rel="noopener noreferrer"{% endif %} onclick="trackLandingEvent('Pricing Monthly Click')">{{ "Buy monthly access →" if purchase_url else "Enter license key →" }}</a>
-      </article>
-      <article class="price-card">
-        <div class="price-tier">Annual</div>
-        <div class="price-amount"><sup>$</sup>79</div>
-        <p class="price-period">per year · $6.58/month</p>
-        <ul class="price-features">
-          <li>Full access to CardWorks</li>
-          <li>Unlimited cards and batches</li>
-          <li>Save $29 versus paying monthly for a full year</li>
-          <li>Best value for regular sellers</li>
-        </ul>
-        <a href="{{ purchase_url or url_for('login', next=url_for('workspace')) }}" class="price-btn-ghost" {% if purchase_url %}target="_blank" rel="noopener noreferrer"{% endif %} onclick="trackLandingEvent('Pricing Annual Click')">{{ "Buy annual access →" if purchase_url else "Enter license key →" }}</a>
+        <a href="{{ purchase_url or url_for('login', next=url_for('workspace')) }}" class="price-btn-solid" {% if purchase_url %}target="_blank" rel="noopener noreferrer"{% endif %} onclick="trackLandingEvent('Pricing Launch Click')">{{ "Buy launch access on Gumroad →" if purchase_url else "Enter license key →" }}</a>
       </article>
     </div>
     {% if not auth.is_authenticated %}
@@ -1513,11 +1492,11 @@ function trackLandingEvent(name) {
     <div class="faq-list">
       <article class="faq-item">
         <h3>Do my photos upload to your server?</h3>
-        <p>No. Processing runs entirely in your browser. Your card photos never leave your device.</p>
+        <p>Yes. Photos are uploaded and processed securely on CardWorks to create your export. Batch files are temporary and removed automatically after 24 hours.</p>
       </article>
       <article class="faq-item">
         <h3>Which browsers work best?</h3>
-        <p>Chrome, Edge, and Brave are the preferred path. Safari still works, but exports as a ZIP download rather than writing directly to a folder.</p>
+        <p>Use a current version of Chrome, Edge, Safari, or Firefox. Completed batches download as ZIP files.</p>
       </article>
       <article class="faq-item">
         <h3>Who is this best for?</h3>
@@ -1533,7 +1512,7 @@ function trackLandingEvent(name) {
       </article>
       <article class="faq-item">
         <h3>Do I need to install anything?</h3>
-        <p>No. Nothing to install. The app runs entirely in your browser, so you open it, upload your photos, and export from there.</p>
+        <p>No. Open the web workspace, upload your photos for processing, and download the completed export.</p>
       </article>
     </div>
   </div>
@@ -1563,4 +1542,4 @@ function trackLandingEvent(name) {
       <a href="/cdn-cgi/l/email-protection#99e2e2b9eaece9e9f6ebedc6fcf4f8f0f5b9e4e4">{{ support_email }}</a>
     </div>
     {% endif %}
-    <div class="footer-fine">No server uploads · Your photos stay on your device</div>
+    <div class="footer-fine">Secure processing · Automatic 24-hour batch cleanup</div>

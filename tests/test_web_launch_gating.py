@@ -68,6 +68,24 @@ class TestWebLaunchGating(unittest.TestCase):
         self.assertEqual(client.get("/privacy").status_code, 200)
         self.assertEqual(client.get("/terms").status_code, 200)
 
+    def test_landing_page_matches_server_processing_and_single_gumroad_offer(self):
+        client = app.test_client()
+        with mock.patch.dict(
+            os.environ,
+            {"GUMROAD_PRODUCT_URL": "https://gumroad.com/l/cardworks-live"},
+            clear=False,
+        ):
+            resp = client.get("/")
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b"processed securely on CardWorks", resp.data)
+        self.assertIn(b"removed automatically after 24 hours", resp.data)
+        self.assertNotIn(b"Your card photos never leave your device", resp.data)
+        self.assertNotIn(b"No server uploads", resp.data)
+        self.assertEqual(resp.data.count(b"Buy launch access on Gumroad"), 1)
+        self.assertNotIn(b"$9", resp.data)
+        self.assertNotIn(b"$79", resp.data)
+
     def test_readiness_flags_missing_launch_contact_and_purchase_link(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = os.path.join(tmpdir, "test.db")

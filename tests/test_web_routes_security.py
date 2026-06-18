@@ -1,9 +1,13 @@
 import os
 import tempfile
 import unittest
+from io import BytesIO
 from unittest import mock
 
 import importlib
+
+import cv2
+import numpy as np
 
 
 app_module = importlib.import_module("photo_prep_app.app")
@@ -13,6 +17,8 @@ models = importlib.import_module("photo_prep_app.models")
 class TestWebRouteSecurity(unittest.TestCase):
     def setUp(self):
         app_module.THROTTLE_EVENTS.clear()
+        with app_module.JOB_LOCK:
+            app_module.JOBS.clear()
 
     def _login_session(self, client, user_id="u1", email="u1@example.com"):
         with client.session_transaction() as sess:
@@ -110,6 +116,39 @@ class TestWebRouteSecurity(unittest.TestCase):
             self.assertEqual(q["status"], "failed")
             self.assertEqual(r["status"], "failed")
             self.assertIn("re-run", (q.get("error") or "").lower())
+
+    def test_enqueue_accepts_png_uploads(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = os.path.join(tmpdir, "app.db")
+            models.init_db(db_path)
+            _, encoded = cv2.imencode(".png", np.zeros((8, 8, 3), dtype=np.uint8))
+            png_bytes = encoded.tobytes()
+
+            client = app_module.app.test_client()
+            self._login_session(client, user_id="u1")
+            with mock.patch.object(app_module, "DB_PATH", db_path), mock.patch.object(
+                app_module, "RUNS_ROOT", tmpdir
+            ), mock.patch.object(app_module.JOB_QUEUE, "put") as queue_put, mock.patch.dict(
+                os.environ,
+                {
+                    "AUTH_MODE": "gumroad",
+                    "LAUNCH_MODE": "true",
+                },
+                clear=False,
+            ):
+                resp = client.post(
+                    "/enqueue",
+                    data={
+                        "csrf_token": "test-csrf",
+                        "front_files": (BytesIO(png_bytes), "front.png"),
+                        "back_files": (BytesIO(png_bytes), "back.PNG"),
+                    },
+                    content_type="multipart/form-data",
+                )
+
+            self.assertEqual(resp.status_code, 302)
+            self.assertIn("/job/", resp.headers["Location"])
+            queue_put.assert_called_once()
 
     def test_debug_log_panel_disabled_in_production(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -249,7 +288,11 @@ class TestWebRouteSecurity(unittest.TestCase):
     def test_webhook_rate_limit_returns_429(self):
         client = app_module.app.test_client()
         payload = b'{"id":"evt_1","type":"checkout.session.completed","data":{"object":{"mode":"subscription"}}}'
-        with mock.patch.object(app_module, "STRIPE_WEBHOOK_RATE_LIMIT", (1, 60)):
+        with mock.patch.object(app_module, "STRIPE_WEBHOOK_RATE_LIMIT", (1, 60)), mock.patch.dict(
+            os.environ,
+            {"APP_ENV": "development", "STRIPE_WEBHOOK_SECRET": ""},
+            clear=False,
+        ):
             first = client.post("/webhooks/stripe", data=payload, headers={"Content-Type": "application/json"})
             second = client.post("/webhooks/stripe", data=payload, headers={"Content-Type": "application/json"})
         self.assertEqual(first.status_code, 200)

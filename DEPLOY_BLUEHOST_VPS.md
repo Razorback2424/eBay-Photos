@@ -37,7 +37,7 @@ pip install --upgrade pip
 pip install -r requirements-web.txt
 ```
 
-For the browser frontend, use Node `22.16.x` and verify a clean build:
+The standalone Vite client is not served by the v1 Flask deployment. As a supplemental repository check, use Node `22.16.x` and verify it still builds:
 
 ```bash
 cd web
@@ -45,6 +45,8 @@ npm ci
 npm run build
 cd ..
 ```
+
+Do not configure the reverse proxy to serve `web/dist` for v1. The authenticated public workspace is rendered by Flask.
 
 ## 3. Environment Config
 

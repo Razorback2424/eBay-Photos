@@ -100,7 +100,7 @@ else:
 app = create_app()
 RUNS_ROOT = os.path.join(PROJECT_DIR, "_Web_Runs")
 DB_PATH = os.path.join(PROJECT_DIR, "photo_prep_app.db")
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".heic"}
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".heic"}
 JOB_QUEUE = Queue()
 JOB_LOCK = threading.Lock()
 JOBS = {}

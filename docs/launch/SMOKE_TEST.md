@@ -19,7 +19,7 @@ Run this against the real production deployment after preflight passes.
 3. Wait for processing to finish.
 4. Open the batch page and preview at least one output image.
 5. Download the ZIP and verify the expected image count and filenames.
-6. If directory export is enabled in the browser flow, validate both directory and ZIP outputs with `python3 qa/checks/export_validation.py`.
+6. Validate the downloaded ZIP with `python3 qa/checks/export_validation.py`.
 
 ## Failure-path checks
 

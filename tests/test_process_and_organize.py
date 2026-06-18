@@ -1,11 +1,14 @@
 import os
 import tempfile
 import unittest
+from io import BytesIO
 
 import cv2
 import numpy as np
+from werkzeug.datastructures import FileStorage
 
 import process_and_organize as po
+from photo_prep_app.services import processing as processing_service
 
 
 class TestProcessAndOrganize(unittest.TestCase):
@@ -19,6 +22,61 @@ class TestProcessAndOrganize(unittest.TestCase):
                 self.assertEqual(found, "fronts.HEIC")
             finally:
                 os.chdir(prev)
+
+    def test_find_scan_file_accepts_png_case_insensitive(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            prev = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                open("fronts.PNG", "wb").close()
+                found = po.find_scan_file("fronts")
+                self.assertEqual(found, "fronts.PNG")
+            finally:
+                os.chdir(prev)
+
+    def test_read_image_universal_reads_rgb_png_as_bgr(self):
+        image = np.zeros((12, 10, 3), dtype=np.uint8)
+        image[:, :] = (10, 20, 30)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "scan.png")
+            cv2.imwrite(path, image)
+
+            loaded = po.read_image_universal(path)
+
+        self.assertIsNotNone(loaded)
+        self.assertEqual(loaded.shape, image.shape)
+        self.assertEqual(loaded.dtype, image.dtype)
+
+    def test_read_image_universal_flattens_rgba_png_over_white(self):
+        image = np.zeros((2, 2, 4), dtype=np.uint8)
+        image[:, :] = (0, 0, 255, 0)
+        image[0, 0] = (0, 0, 255, 255)
+        image[0, 1] = (0, 0, 255, 128)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "scan.png")
+            cv2.imwrite(path, image)
+
+            loaded = po.read_image_universal(path)
+
+        self.assertIsNotNone(loaded)
+        self.assertEqual(loaded.shape, (2, 2, 3))
+        np.testing.assert_array_equal(loaded[0, 0], np.array([0, 0, 255], dtype=np.uint8))
+        np.testing.assert_array_equal(loaded[1, 1], np.array([255, 255, 255], dtype=np.uint8))
+
+    def test_build_pairs_accepts_png_by_default(self):
+        _, png_data = cv2.imencode(".png", np.zeros((8, 8, 3), dtype=np.uint8))
+        front = FileStorage(stream=BytesIO(png_data.tobytes()), filename="front.png")
+        back = FileStorage(stream=BytesIO(png_data.tobytes()), filename="back.PNG")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pairs, errors = processing_service.build_pairs([front], [back], tmpdir)
+
+            self.assertEqual(errors, [])
+            self.assertEqual(len(pairs), 1)
+            self.assertTrue(os.path.exists(os.path.join(tmpdir, "pair-0001", "fronts.png")))
+            self.assertTrue(os.path.exists(os.path.join(tmpdir, "pair-0001", "backs.png")))
 
     def test_create_quadrant_crops_outputs_four_images(self):
         image = np.full((1000, 800, 3), 255, dtype=np.uint8)

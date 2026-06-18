@@ -14,6 +14,7 @@ INCLUDE_PATHS = (
     ".env.production.example",
     "AGENTS.md",
     "DEPLOY_BLUEHOST_VPS.md",
+    "GUMROAD_CONFIRMATION_COPY.md",
     "WEB_UI.md",
     "app.py",
     "gunicorn.conf.py",

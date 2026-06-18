@@ -2,6 +2,7 @@
 
 ## Current status
 - **Repo/documentation status:** launch prep hardening is in place for config validation, release packaging, and evidence collection scaffolding.
+- **Public runtime:** the v1 launch path is the Flask/Gunicorn app. The standalone Vite client and centering route are post-launch and are not served by the documented deployment.
 - **Local preflight interpretation:** local config-shape validation is now mostly complete. Current local preflight passes all launch-config structure checks except the intentionally unresolved real-world launch identity/contact values: `SUPPORT_EMAIL`, `LEGAL_ENTITY_NAME`, and `LEGAL_CONTACT_ADDRESS`.
 - **Launch evidence status:** still blocked on the Must-Pass launch evidence and real deployment values defined in [launch_readiness.md](/Users/seankeller/Documents/eBay Photos/launch_readiness.md).
 
@@ -37,19 +38,19 @@
   this pass. Operational confidence remains based on repeated normal use of the app
   rather than newly captured local evidence artifacts during this review pass.
 
-## Frontend release-candidate build proof
-- Revalidated locally on 2026-04-15 with:
+## Supplemental Vite build proof
+- Revalidated locally on 2026-06-18 with:
   - `cd web`
   - `npm ci`
   - `npm run build`
-- Result: pass.
+- Result: pass. This is a repository-integrity check, not proof that the Vite routes are publicly deployed.
 - The frontend production build completed successfully and produced a release build
   without errors. Non-blocking warnings were present, including npm audit vulnerability
   warnings and a Vite chunk-size warning related to the HEIC bundle, but there were no
   build failures.
 
 ## Release-bundle proof
-- Revalidated locally on 2026-04-15 with:
+- Revalidated locally on 2026-06-18 with:
   - `python3 scripts/package_release.py --label prelaunch`
   - `unzip -l dist-release/cardworks-prelaunch.zip`
 - Result: pass.

@@ -1,5 +1,6 @@
 import { createRouter } from '@tanstack/react-router';
 
+import { centeringRoute } from './centering';
 import { detectionsRoute } from './detections';
 import { filesRoute } from './files';
 import { namingRoute } from './naming';
@@ -10,6 +11,7 @@ import { rootRoute } from './__root';
 
 const routeTree = rootRoute.addChildren([
   filesRoute,
+  centeringRoute,
   sourcePairsRoute,
   detectionsRoute,
   pairsRoute,

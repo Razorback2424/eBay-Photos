@@ -14,6 +14,7 @@ This launch-readiness definition applies to the first public launch of the eBay 
 
 - Public web app launch
 - Intended auth / purchase path: `AUTH_MODE=gumroad`
+- Public application runtime: the Flask/Gunicorn app and its server-rendered workspace
 - Backend, frontend, packaging, deployment configuration, and launch evidence required to support that path
 - Production legal/business/support values
 - Operational checks needed to safely run and support the app
@@ -27,6 +28,7 @@ These items are not launch blockers unless promoted into the Must-Pass Launch Ga
 - Nice-to-have UX polish that does not affect trust, payments, security, core use, or supportability
 - Performance optimization beyond the agreed launch evidence threshold
 - Broad roadmap features unrelated to the current launch promise
+- The standalone Vite client under `web/`, including `/centering`, until it is explicitly wired into the authenticated public deployment
 - Extra automation around internal operations that is not required for safe launch
 
 ## Canonical Definition
@@ -101,7 +103,8 @@ These are the only items that block launch.
 All of the following must be true:
 
 - Backend automated tests pass on the supported launch branch/commit.
-- Frontend production build succeeds from the documented path.
+- The server-rendered launch UI is covered by the backend launch/security tests.
+- The standalone Vite production build succeeds as a supplemental repository-integrity check, but is not evidence that those routes are publicly deployed.
 - The documented release packaging command succeeds.
 - The produced release archive contains only intended contents.
 - Launch docs, preflight docs, and packaging docs are consistent with the current repo.

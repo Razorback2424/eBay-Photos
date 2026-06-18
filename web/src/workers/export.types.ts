@@ -1,4 +1,5 @@
 import type { DetectionQuadPoint } from '../types/detections';
+import type { FrontCenteringExportPayload } from '../utils/centering/exportLinkage';
 
 export interface ExportWorkerBoundingBox {
   x: number;
@@ -15,6 +16,7 @@ export interface ExportWorkerSidePayload {
   bbox: ExportWorkerBoundingBox;
   quad: DetectionQuadPoint[];
   warpSize: { width: number; height: number };
+  centeringOverlay?: FrontCenteringExportPayload;
 }
 
 export interface ExportWorkerPairRequest {
