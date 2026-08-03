@@ -10,13 +10,17 @@ import {
 } from '../utils/centering/centeringCore';
 
 const bitmapToImageData = (bitmap: ImageBitmap): CardCenteringImageDataLike => {
-  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+  const maxEdge = 1600;
+  const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+  const width = Math.max(1, Math.round(bitmap.width * scale));
+  const height = Math.max(1, Math.round(bitmap.height * scale));
+  const canvas = new OffscreenCanvas(width, height);
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) {
     throw new Error('Unable to create 2D context for centering detection.');
   }
-  ctx.drawImage(bitmap, 0, 0);
-  const imageData = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  const imageData = ctx.getImageData(0, 0, width, height);
   return {
     width: imageData.width,
     height: imageData.height,
@@ -31,10 +35,13 @@ const rotateBitmap = async (bitmap: ImageBitmap, degrees: number) => {
   }
 
   const radians = (normalized * Math.PI) / 180;
+  const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+  const sourceWidth = Math.max(1, Math.round(bitmap.width * scale));
+  const sourceHeight = Math.max(1, Math.round(bitmap.height * scale));
   const sin = Math.abs(Math.sin(radians));
   const cos = Math.abs(Math.cos(radians));
-  const width = Math.max(1, Math.ceil(bitmap.width * cos + bitmap.height * sin));
-  const height = Math.max(1, Math.ceil(bitmap.width * sin + bitmap.height * cos));
+  const width = Math.max(1, Math.ceil(sourceWidth * cos + sourceHeight * sin));
+  const height = Math.max(1, Math.ceil(sourceWidth * sin + sourceHeight * cos));
   const canvas = new OffscreenCanvas(width, height);
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) {
@@ -44,7 +51,7 @@ const rotateBitmap = async (bitmap: ImageBitmap, degrees: number) => {
   ctx.fillRect(0, 0, width, height);
   ctx.translate(width / 2, height / 2);
   ctx.rotate(radians);
-  ctx.drawImage(bitmap, -bitmap.width / 2, -bitmap.height / 2);
+  ctx.drawImage(bitmap, -sourceWidth / 2, -sourceHeight / 2, sourceWidth, sourceHeight);
   const imageData = ctx.getImageData(0, 0, width, height);
   return {
     width: imageData.width,

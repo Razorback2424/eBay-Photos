@@ -333,20 +333,15 @@ export const NameCardsStep = () => {
       }
       if (direction === 1) {
         const cardValid = activeRecord.cardName.trim().length > 0;
-        const setValid = activeRecord.setName.trim().length > 0;
-        if (!cardValid || !setValid) {
+        if (!cardValid) {
           setTouched((current) => ({
             ...current,
             [activeRecord.pairId]: {
               cardName: true,
-              setName: true
+              setName: current[activeRecord.pairId]?.setName ?? false
             }
           }));
-          if (!cardValid) {
-            cardInputRef.current?.focus();
-          } else if (!setValid) {
-            setInputRef.current?.focus();
-          }
+          cardInputRef.current?.focus();
           return;
         }
       }
@@ -374,7 +369,7 @@ export const NameCardsStep = () => {
   );
 
   const allValid = normalizedRecords.every(
-    (record) => record.cardName.trim().length > 0 && record.setName.trim().length > 0
+    (record) => record.cardName.trim().length > 0
   );
 
   return (
@@ -384,7 +379,7 @@ export const NameCardsStep = () => {
           Name each card
         </Text>
         <Text variant="body">
-          Provide a clear card name and its set. We will keep folders consistent and safe for your filesystem.
+          Provide a clear card name. Set name is optional and is only used as an organizing folder label.
         </Text>
       </Stack>
       {pairs.length === 0 ? (
@@ -399,7 +394,7 @@ export const NameCardsStep = () => {
               {normalizedRecords.map((record, index) => {
                 const isActive = index === activeIndex;
                 const isComplete =
-                  record.cardName.trim().length > 0 && record.setName.trim().length > 0;
+                  record.cardName.trim().length > 0;
                 return (
                   <li key={record.pairId} className="name-step__listItem">
                     <button
@@ -494,7 +489,7 @@ export const NameCardsStep = () => {
                   </label>
                   <label className="name-step__field">
                     <Text as="span" variant="muted">
-                      Set name
+                      Set name (optional)
                     </Text>
                     <input
                       ref={setInputRef}
@@ -513,11 +508,6 @@ export const NameCardsStep = () => {
                       aria-describedby={`set-${activeRecord.pairId}-error`}
                       placeholder="e.g. Crown Zenith"
                     />
-                    {!activeRecord.setName.trim() && touched[activeRecord.pairId]?.setName && (
-                      <span className="name-step__error" id={`set-${activeRecord.pairId}-error`}>
-                        Set name is required.
-                      </span>
-                    )}
                   </label>
                   <div className="name-step__actions">
                     <Button type="button" variant="secondary" onClick={applySetNameToRemaining}>

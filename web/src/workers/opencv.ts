@@ -1,5 +1,5 @@
-const OPENCV_BASE_URL = 'https://docs.opencv.org/4.x/';
-const OPENCV_SCRIPT_URL = `${OPENCV_BASE_URL}opencv.js`;
+const OPENCV_BASE_URL = new URL(import.meta.env.BASE_URL, self.location.origin);
+const OPENCV_SCRIPT_URL = new URL('opencv.js', OPENCV_BASE_URL).href;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type CV = typeof globalThis extends { cv: infer T } ? T : any;
@@ -38,9 +38,9 @@ const loadOpenCv = async (): Promise<CV> => {
   const moduleConfig = {
     locateFile(path: string) {
       if (path.endsWith('.wasm')) {
-        return `${OPENCV_BASE_URL}${path}`;
+        return new URL(path, OPENCV_BASE_URL).href;
       }
-      return `${OPENCV_BASE_URL}${path}`;
+      return new URL(path, OPENCV_BASE_URL).href;
     },
     onRuntimeInitialized() {
       /* replaced during load */

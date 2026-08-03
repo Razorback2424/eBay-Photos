@@ -148,13 +148,20 @@ export const CenteringToolPage = () => {
     setStatus('detecting');
     setError(null);
     try {
-      const result = await current.worker.measureImage(blob, rotationDegrees);
+      const result = await Promise.race([
+        current.worker.measureImage(blob, rotationDegrees),
+        new Promise<never>((_, reject) => {
+          window.setTimeout(() => reject(new Error('Card edge detection took too long. Try a smaller image or a clearer scan.')), 20000);
+        })
+      ]);
       setMeasurement(result.measurement);
       setAutoOuter(edgePositionsFromMeasurement(result.measurement, 'outer_edges'));
       setAutoInner(edgePositionsFromMeasurement(result.measurement, 'inner_edges'));
       setAppliedRotation(normalizeRotationDegrees(rotationDegrees));
       setStatus('ready');
     } catch (err) {
+      disposeCenteringWorker(current);
+      workerRef.current = createCenteringWorker();
       setStatus('error');
       setError(err instanceof Error ? err.message : 'Card centering detection failed.');
     }

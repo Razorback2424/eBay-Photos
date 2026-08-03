@@ -691,12 +691,17 @@
 .upload-dropzone__previewCanvas {
   display: block;
   background: transparent;
+  object-fit: contain;
 }
 
 .upload-dropzone__previewImage {
   object-fit: cover;
   opacity: 0.25;
   filter: saturate(1.1);
+}
+
+.upload-dropzone__previewImage {
+  object-fit: contain;
 }
 
 .upload-dropzone__input {
