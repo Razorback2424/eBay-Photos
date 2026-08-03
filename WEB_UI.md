@@ -16,6 +16,11 @@ processing. ZIP export is the portable path for phones and browsers without the
 File System Access API; desktop Chromium can additionally export directly to a
 selected folder.
 
+The repository root also contains the latest static build because this
+repository is currently configured in GitHub Pages' `Deploy from a branch`
+mode. Keep those generated root files synchronized with `web/dist` until Pages
+is switched to the Actions workflow.
+
 For a local production-style check:
 
 ```bash
