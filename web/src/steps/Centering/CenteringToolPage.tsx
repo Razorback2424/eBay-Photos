@@ -12,8 +12,38 @@ import { drawCenteringGuideLines, getRotatedSize } from '../../utils/centering/r
 
 const EDGE_SIDES: CardCenteringSide[] = ['left', 'right', 'top', 'bottom'];
 const ZOOM_LEVELS = [1, 2, 4, 8];
+const CENTERING_ANALYSIS_MAX_EDGE = 320;
 
 type EdgePositions = Record<CardCenteringSide, number>;
+
+const prepareCenteringAnalysisBlob = async (blob: Blob) => {
+  const bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+  try {
+    const scale = Math.min(1, CENTERING_ANALYSIS_MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+    if (scale === 1) {
+      return blob;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Unable to prepare the centering analysis image.');
+    }
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((result) => {
+        if (result) {
+          resolve(result);
+        } else {
+          reject(new Error('Unable to prepare the centering analysis image.'));
+        }
+      }, 'image/jpeg', 0.85);
+    });
+  } finally {
+    bitmap.close();
+  }
+};
 
 const downloadBlob = (blob: Blob, fileName: string) => {
   const url = URL.createObjectURL(blob);
@@ -149,7 +179,10 @@ export const CenteringToolPage = () => {
     setError(null);
     try {
       const result = await Promise.race([
-        current.worker.measureImage(blob, rotationDegrees),
+        (async () => {
+          const analysisBlob = await prepareCenteringAnalysisBlob(blob);
+          return await current.worker.measureImage(analysisBlob, rotationDegrees);
+        })(),
         new Promise<never>((_, reject) => {
           window.setTimeout(() => reject(new Error('Card edge detection took too long. Try a smaller image or a clearer scan.')), 12000);
         })
