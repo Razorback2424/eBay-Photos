@@ -6,10 +6,10 @@ Use Node `22.16.x` for the web build.
 
 ## GitHub Pages
 
-The browser-only client can be published as a static GitHub Pages site. The
-workflow at `.github/workflows/deploy-pages.yml` builds `web/`, sets the
-repository-relative Vite base path, and copies the app entry point to
-`404.html` so direct navigation to workflow routes continues to work on Pages.
+The browser-only client is published as a static GitHub Pages site from the
+repository root. The committed build uses the repository-relative Vite base
+path and includes `404.html` so direct navigation to workflow routes continues
+to work on Pages.
 
 The Pages build does not include Flask, Gumroad authentication, or server-side
 processing. ZIP export is the portable path for phones and browsers without the
