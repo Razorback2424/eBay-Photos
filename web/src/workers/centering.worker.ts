@@ -9,7 +9,10 @@ import {
   ROTATION_EPSILON
 } from '../utils/centering/centeringCore';
 
-const CENTERING_ANALYSIS_MAX_EDGE = 900;
+// Centering only needs approximate edge positions. Keep the expensive Lab
+// gradient pass small enough for iPhone Safari and leave the original image
+// untouched for the preview and exports.
+const CENTERING_ANALYSIS_MAX_EDGE = 320;
 
 const bitmapToImageData = (bitmap: ImageBitmap): CardCenteringImageDataLike => {
   const scale = Math.min(1, CENTERING_ANALYSIS_MAX_EDGE / Math.max(bitmap.width, bitmap.height));
