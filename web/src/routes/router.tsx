@@ -26,5 +26,6 @@ declare module '@tanstack/react-router' {
 }
 
 export const router = createRouter({
-  routeTree
+  routeTree,
+  basepath: import.meta.env.BASE_URL
 });
