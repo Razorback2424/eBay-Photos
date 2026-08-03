@@ -17,20 +17,21 @@ const CENTERING_ANALYSIS_MAX_EDGE = 320;
 type EdgePositions = Record<CardCenteringSide, number>;
 
 const prepareCenteringAnalysisBlob = async (blob: Blob) => {
-  const bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+  const url = URL.createObjectURL(blob);
+  const image = new Image();
+  image.decoding = 'async';
+  image.src = url;
   try {
-    const scale = Math.min(1, CENTERING_ANALYSIS_MAX_EDGE / Math.max(bitmap.width, bitmap.height));
-    if (scale === 1) {
-      return blob;
-    }
+    await image.decode();
+    const scale = Math.min(1, CENTERING_ANALYSIS_MAX_EDGE / Math.max(image.naturalWidth, image.naturalHeight));
     const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
     const context = canvas.getContext('2d');
     if (!context) {
       throw new Error('Unable to prepare the centering analysis image.');
     }
-    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
     return await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((result) => {
         if (result) {
@@ -41,7 +42,8 @@ const prepareCenteringAnalysisBlob = async (blob: Blob) => {
       }, 'image/jpeg', 0.85);
     });
   } finally {
-    bitmap.close();
+    URL.revokeObjectURL(url);
+    image.src = '';
   }
 };
 
