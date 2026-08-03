@@ -245,7 +245,9 @@ const triggerZipDownload = async (zip: JSZip, fileName: string) => {
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
-  URL.revokeObjectURL(url);
+  // Mobile Safari can defer starting the download until after the click handler
+  // returns. Revoking synchronously leaves it with a dead object URL.
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 };
 
 export const exportSession = async ({
