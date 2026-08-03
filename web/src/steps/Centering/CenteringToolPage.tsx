@@ -151,7 +151,7 @@ export const CenteringToolPage = () => {
       const result = await Promise.race([
         current.worker.measureImage(blob, rotationDegrees),
         new Promise<never>((_, reject) => {
-          window.setTimeout(() => reject(new Error('Card edge detection took too long. Try a smaller image or a clearer scan.')), 20000);
+          window.setTimeout(() => reject(new Error('Card edge detection took too long. Try a smaller image or a clearer scan.')), 12000);
         })
       ]);
       setMeasurement(result.measurement);

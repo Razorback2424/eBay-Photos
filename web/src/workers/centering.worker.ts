@@ -9,9 +9,10 @@ import {
   ROTATION_EPSILON
 } from '../utils/centering/centeringCore';
 
+const CENTERING_ANALYSIS_MAX_EDGE = 900;
+
 const bitmapToImageData = (bitmap: ImageBitmap): CardCenteringImageDataLike => {
-  const maxEdge = 1600;
-  const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+  const scale = Math.min(1, CENTERING_ANALYSIS_MAX_EDGE / Math.max(bitmap.width, bitmap.height));
   const width = Math.max(1, Math.round(bitmap.width * scale));
   const height = Math.max(1, Math.round(bitmap.height * scale));
   const canvas = new OffscreenCanvas(width, height);
@@ -35,7 +36,7 @@ const rotateBitmap = async (bitmap: ImageBitmap, degrees: number) => {
   }
 
   const radians = (normalized * Math.PI) / 180;
-  const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+  const scale = Math.min(1, CENTERING_ANALYSIS_MAX_EDGE / Math.max(bitmap.width, bitmap.height));
   const sourceWidth = Math.max(1, Math.round(bitmap.width * scale));
   const sourceHeight = Math.max(1, Math.round(bitmap.height * scale));
   const sin = Math.abs(Math.sin(radians));
