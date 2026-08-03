@@ -57,7 +57,9 @@ export const BannerChromium = ({ compact = false }: BannerChromiumProps) => {
         <Stack gap={4}>
           <Text variant="label">{compact ? 'Browser note' : 'Chromium recommended'}</Text>
           <Text variant="body">
-            For the best file system experience, use a Chromium-based browser such as Chrome, Edge, or Brave.
+            {report?.hasWorker && report?.hasImageBitmap && report?.hasOffscreenCanvas
+              ? 'The workflow is available here. ZIP download works on mobile; desktop Chromium adds optional folder export.'
+              : 'This browser is missing image-processing capabilities needed for the workflow. Try current Safari, Chrome, Edge, or Brave.'}
           </Text>
         </Stack>
         <div className="chromium-banner__actions">

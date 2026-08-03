@@ -25,6 +25,7 @@
   width: 100%;
   margin: 0 auto;
   padding: 28px var(--ui-spacing-lg) 64px;
+  min-width: 0;
 }
 
 .app-shell--wide {
@@ -72,6 +73,7 @@
   padding: var(--ui-spacing-lg);
   box-shadow: var(--ui-shadow-md);
   backdrop-filter: blur(8px);
+  min-width: 0;
 }
 
 .ui-button {
@@ -85,6 +87,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  min-height: 44px;
 }
 
 .ui-button:focus-visible {
@@ -618,6 +621,7 @@
   text-align: center;
   background: rgba(255, 255, 255, 0.8);
   cursor: pointer;
+  touch-action: manipulation;
   overflow: hidden;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
@@ -1153,12 +1157,134 @@
     align-items: stretch;
   }
 
+  .app-shell {
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+      max(40px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+
+  .ui-card {
+    padding: var(--ui-spacing-md);
+    border-radius: 10px;
+  }
+
+  .app-shell__header {
+    align-items: stretch;
+  }
+
+  .app-shell__nav,
+  .app-shell__link {
+    width: 100%;
+  }
+
+  .app-shell__nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-shell__link {
+    text-align: center;
+  }
+
+  .step-indicator {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .navigation-bar__actions,
+  .navigation-bar__actions .ui-button {
+    width: 100%;
+  }
+
+  .navigation-bar__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .upload-dropzone {
+    min-height: 220px;
+    aspect-ratio: 16 / 10;
+    padding: var(--ui-spacing-md);
+  }
+
+  .batch-upload__header,
+  .upload-batchCallout,
+  .pair-auto__row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .batch-upload__header .ui-button,
+  .upload-batchCallout .ui-button,
+  .pair-auto__row .ui-button,
+  .centering-downloads .ui-button,
+  .name-step__actions .ui-button {
+    width: 100%;
+  }
+
+  .name-step__aside {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .name-step__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .name-step__listButton {
+    min-height: 44px;
+    width: 100%;
+  }
+
+  .name-step__keyboardHelp {
+    display: none;
+  }
+
+  .centering-toolbar,
+  .centering-review__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .centering-toolbar > *,
+  .centering-review__actions > * {
+    width: 100%;
+  }
+
+  .centering-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .centering-zoom-group {
+    width: 100%;
+  }
+
+  .centering-zoom-group .ui-button {
+    flex: 1;
+  }
+
   .ui-modalOverlay {
     padding: 16px;
   }
 
   .ui-modal {
     padding: var(--ui-spacing-md);
+    max-height: calc(100dvh - 16px);
+    border-radius: 14px 14px 8px 8px;
+  }
+
+  .chromium-banner__content,
+  .chromium-banner__actions {
+    width: 100%;
+  }
+
+  .chromium-banner__actions {
+    margin-left: 0;
+  }
+
+  .chromium-banner__actions .ui-button {
+    width: 100%;
   }
 }
 

@@ -1,7 +1,9 @@
 import type { DetectedCard } from '../../types/detections';
 
 const bitmapToImageData = (bitmap: ImageBitmap) => {
-  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+  const canvas = 'OffscreenCanvas' in globalThis
+    ? new OffscreenCanvas(bitmap.width, bitmap.height)
+    : Object.assign(document.createElement('canvas'), { width: bitmap.width, height: bitmap.height });
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) {
     throw new Error('Unable to create 2D context for detection.');

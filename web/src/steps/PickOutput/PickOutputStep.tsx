@@ -288,9 +288,6 @@ export const PickOutputStep = () => {
         directoryHandle: null,
         directoryName: ''
       });
-      setErrorTitle('Directory access unavailable');
-      setErrorMessage('Your browser does not support directory exports. A ZIP archive will be prepared instead.');
-      setExportState('error');
       return;
     }
 
@@ -522,10 +519,12 @@ export const PickOutputStep = () => {
       </Stack>
       <BannerChromium compact />
       <Stack gap={12}>
-        <Stack direction="row" gap={12} align="center">
-          <Button type="button" onClick={handlePickDirectory}>
-            {config.directoryHandle ? 'Change folder' : 'Choose folder'}
-          </Button>
+        <Stack direction="row" gap={12} align="center" className="output-location">
+          {directorySupported && (
+            <Button type="button" onClick={handlePickDirectory}>
+              {config.directoryHandle ? 'Change folder' : 'Choose folder'}
+            </Button>
+          )}
           <Text as="span" variant="body" aria-live="polite">
             {config.directoryHandle ? `Selected: ${config.directoryName}` : 'No folder selected — ZIP download will be used.'}
           </Text>

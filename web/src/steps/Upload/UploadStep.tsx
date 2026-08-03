@@ -223,7 +223,7 @@ const Dropzone = ({ label, description, slotKey, state, onFile }: DropzoneProps)
             {stateMessage}
           </Text>
           <Text as="span" variant="muted">
-            Click to select or drop a file
+            Tap to select, or drop a file on desktop
           </Text>
         </Stack>
         {state.status === 'ready' && state.decoded && <ImagePreview decoded={state.decoded} />}

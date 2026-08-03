@@ -3,6 +3,9 @@ export interface ChromiumFeatureReport {
   hasFileSystemAccessAPI: boolean;
   hasLaunchQueue: boolean;
   hasViewTransitionAPI: boolean;
+  hasWorker: boolean;
+  hasOffscreenCanvas: boolean;
+  hasImageBitmap: boolean;
 }
 
 const isClient = typeof window !== 'undefined' && typeof navigator !== 'undefined';
@@ -15,7 +18,10 @@ export const detectChromiumFeatures = (): ChromiumFeatureReport => {
       isChromiumUserAgent: false,
       hasFileSystemAccessAPI: false,
       hasLaunchQueue: false,
-      hasViewTransitionAPI: false
+      hasViewTransitionAPI: false,
+      hasWorker: false,
+      hasOffscreenCanvas: false,
+      hasImageBitmap: false
     };
   }
 
@@ -37,7 +43,10 @@ export const detectChromiumFeatures = (): ChromiumFeatureReport => {
     isChromiumUserAgent,
     hasFileSystemAccessAPI,
     hasLaunchQueue,
-    hasViewTransitionAPI
+    hasViewTransitionAPI,
+    hasWorker: 'Worker' in window,
+    hasOffscreenCanvas: 'OffscreenCanvas' in window,
+    hasImageBitmap: 'createImageBitmap' in window
   };
 };
 
